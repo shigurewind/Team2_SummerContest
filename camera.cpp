@@ -9,6 +9,8 @@
 #include "camera.h"
 #include "debugproc.h"
 
+#include "player.h"
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -16,9 +18,9 @@
 #define	POS_Y_CAM			(50.0f)			// カメラの初期位置(Y座標)
 #define	POS_Z_CAM			(-140.0f)		// カメラの初期位置(Z座標)
 
-//#define	POS_X_CAM		(0.0f)			// カメラの初期位置(X座標)
-//#define	POS_Y_CAM		(200.0f)		// カメラの初期位置(Y座標)
-//#define	POS_Z_CAM		(-400.0f)		// カメラの初期位置(Z座標)
+//TODO:マウス感度の調整機能
+#define SENS                (0.002f)			// マウスの感度
+
 
 
 #define	VIEW_ANGLE		(XMConvertToRadians(45.0f))						// ビュー平面の視野角
@@ -74,87 +76,36 @@ void UpdateCamera(void)
 
 #ifdef _DEBUG
 
-	if (GetKeyboardPress(DIK_Z))
-	{// 視点旋回「左」
-		g_Camera.rot.y += VALUE_ROTATE_CAMERA;
-		if (g_Camera.rot.y > XM_PI)
-		{
-			g_Camera.rot.y -= XM_PI * 2.0f;
-		}
+	//中心点
+	int centerX = SCREEN_WIDTH / 2;
+	int centerY = SCREEN_HEIGHT / 2;
 
-		g_Camera.pos.x = g_Camera.at.x - sinf(g_Camera.rot.y) * g_Camera.len;
-		g_Camera.pos.z = g_Camera.at.z - cosf(g_Camera.rot.y) * g_Camera.len;
-	}
+	//今マオスの位置を取得
+	POINT mousePos;
+	GetCursorPos(&mousePos);
 
-	if (GetKeyboardPress(DIK_C))
-	{// 視点旋回「右」
-		g_Camera.rot.y -= VALUE_ROTATE_CAMERA;
-		if (g_Camera.rot.y < -XM_PI)
-		{
-			g_Camera.rot.y += XM_PI * 2.0f;
-		}
+	float offsetX = (mousePos.x - centerX) * SENS;
+	float offsetY = (mousePos.y - centerY) * SENS;
 
-		g_Camera.pos.x = g_Camera.at.x - sinf(g_Camera.rot.y) * g_Camera.len;
-		g_Camera.pos.z = g_Camera.at.z - cosf(g_Camera.rot.y) * g_Camera.len;
-	}
 
-	if (GetKeyboardPress(DIK_Y))
-	{// 視点移動「上」
-		g_Camera.pos.y += VALUE_MOVE_CAMERA;
-	}
+	g_Camera.rot.y += offsetX;
+	g_Camera.rot.x -= offsetY;
+	g_Camera.rot.x = max(min(g_Camera.rot.x, XM_PI / 2.0f), -XM_PI / 2.0f);
 
-	if (GetKeyboardPress(DIK_N))
-	{// 視点移動「下」
-		g_Camera.pos.y -= VALUE_MOVE_CAMERA;
-	}
+	//マオスを中心に戻す
+	SetCursorPos(centerX, centerY);
 
-	if (GetKeyboardPress(DIK_Q))
-	{// 注視点旋回「左」
-		g_Camera.rot.y -= VALUE_ROTATE_CAMERA;
-		if (g_Camera.rot.y < -XM_PI)
-		{
-			g_Camera.rot.y += XM_PI * 2.0f;
-		}
+	//カメラの位置
+	PLAYER* player = GetPlayer();
+	g_Camera.pos = { player->pos.x, player->pos.y + 20.0f, player->pos.z };
+	g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y);
+	g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
+	g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y);
 
-		g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y) * g_Camera.len;
-		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y) * g_Camera.len;
-	}
+	//マオスを隠す
+	ShowCursor(FALSE);
 
-	if (GetKeyboardPress(DIK_E))
-	{// 注視点旋回「右」
-		g_Camera.rot.y += VALUE_ROTATE_CAMERA;
-		if (g_Camera.rot.y > XM_PI)
-		{
-			g_Camera.rot.y -= XM_PI * 2.0f;
-		}
 
-		g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y) * g_Camera.len;
-		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y) * g_Camera.len;
-	}
-
-	if (GetKeyboardPress(DIK_T))
-	{// 注視点移動「上」
-		g_Camera.at.y += VALUE_MOVE_CAMERA;
-	}
-
-	if (GetKeyboardPress(DIK_B))
-	{// 注視点移動「下」
-		g_Camera.at.y -= VALUE_MOVE_CAMERA;
-	}
-
-	if (GetKeyboardPress(DIK_U))
-	{// 近づく
-		g_Camera.len -= VALUE_MOVE_CAMERA;
-		g_Camera.pos.x = g_Camera.at.x - sinf(g_Camera.rot.y) * g_Camera.len;
-		g_Camera.pos.z = g_Camera.at.z - cosf(g_Camera.rot.y) * g_Camera.len;
-	}
-
-	if (GetKeyboardPress(DIK_M))
-	{// 離れる
-		g_Camera.len += VALUE_MOVE_CAMERA;
-		g_Camera.pos.x = g_Camera.at.x - sinf(g_Camera.rot.y) * g_Camera.len;
-		g_Camera.pos.z = g_Camera.at.z - cosf(g_Camera.rot.y) * g_Camera.len;
-	}
 
 	// カメラを初期に戻す
 	if (GetKeyboardPress(DIK_R))

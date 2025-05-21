@@ -149,6 +149,7 @@ void UpdateGame(void)
 		SetViewPort(g_ViewPortType_Game);
 	}
 
+	// 時間を止める
 	if (GetKeyboardTrigger(DIK_P))
 	{
 		g_bPause = g_bPause ? FALSE : TRUE;
@@ -253,9 +254,9 @@ void DrawGame(void)
 #endif
 
 	// プレイヤー視点
-	pos = GetPlayer()->pos;
-	pos.y = 0.0f;			// カメラ酔いを防ぐためにクリアしている
-	SetCameraAT(pos);
+	//pos = GetPlayer()->pos;
+	//pos.y = 0.0f;			// カメラ酔いを防ぐためにクリアしている
+	//SetCameraAT(pos);
 	SetCamera();
 
 	switch(g_ViewPortType_Game)
