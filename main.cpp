@@ -19,6 +19,11 @@
 #include "result.h"
 #include "debugproc.h"
 
+//IMGUI
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -197,8 +202,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 //=============================================================================
 // プロシージャ
 //=============================================================================
+
+
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+
+	extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+		return true;
+	// (Your code process Win32 messages)
+
 	switch(message)
 	{
 	case WM_DESTROY:
@@ -232,6 +246,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 {
 	InitRenderer(hInstance, hWnd, bWindow);
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // imguiのキーボード操作
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // imguiのパッド操作
+
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplWin32_Init(hWnd);
+	ImGui_ImplDX11_Init(GetDevice(), GetDeviceContext());
+
 
 	InitLight();
 
@@ -267,6 +294,11 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 //=============================================================================
 void Uninit(void)
 {
+
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
 	// 終了のモードをセット
 	SetMode(MODE_MAX);
 
@@ -287,6 +319,13 @@ void Uninit(void)
 //=============================================================================
 void Update(void)
 {
+	// (Your code process and dispatch Win32 messages)
+    // Imguiの画面を作る
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	ImGui::ShowDemoWindow(); // imgui_demo.cpp内のものを表示（サンプル表示）
+
 	// 入力の更新処理
 	UpdateInput();
 
@@ -401,6 +440,13 @@ void Draw(void)
 	// デバッグ表示
 	DrawDebugProc();
 #endif
+
+
+	// Imguiの描画
+	// (Your code clears your framebuffer, renders your other stuff etc.)
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	// (Your code calls swapchain's Present() function)
 
 	// バックバッファ、フロントバッファ入れ替え
 	Present();
