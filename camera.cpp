@@ -40,7 +40,7 @@ static int				g_ViewPortType = TYPE_FULL_SCREEN;
 
 
 bool isFirstPersonMode = false; // 最初はマオス自由操作状態
-bool altKeyWasPressed = false; // 前フレームのAltキー状態
+bool tabKeyWasPressed = false; // 前フレームのTabキー状態
 
 //=============================================================================
 // 初期化処理
@@ -85,7 +85,7 @@ void UpdateCamera(void)
 
 
 #ifdef _DEBUG
-	CheckAltToggle();
+	CheckTabToggle();
 
 
 	//第一人称視点
@@ -117,7 +117,7 @@ void UpdateCamera(void)
 		g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
 		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y);
 
-		
+
 
 
 	}
@@ -256,30 +256,31 @@ void SetCameraAT(XMFLOAT3 pos)
 
 }
 
-void CheckAltToggle()
+//Tabキーを押したかどうか
+void CheckTabToggle()
 {
-	SHORT altState = GetAsyncKeyState(VK_MENU); // VK_MENU は Altキー
+	SHORT tabState = GetAsyncKeyState(VK_TAB); // VK_TAB は Tabキー
 
-	if ((altState & 0x8000) && !altKeyWasPressed)
+	if ((tabState & 0x8000) && !tabKeyWasPressed)
 	{
-		// Altキーが今回押されていて、前回は押されていなかった → トグル検出
+		// Tabキーが今回押されていて、前回は押されていなかった → トグル検出
 		isFirstPersonMode = !isFirstPersonMode;
 
 		if (isFirstPersonMode)
 		{
 			ShowCursor(FALSE);
-			//SetCapture(hWnd);
-			//CenterMouse();
+			/*SetCapture(hWnd);
+			CenterMouse();*/
 		}
 		else
 		{
 			ShowCursor(TRUE);
-			//ReleaseCapture();
+			/*ReleaseCapture();*/
 		}
 	}
 
-	// Altキーの状態を更新（次のフレームのため）
-	altKeyWasPressed = (altState & 0x8000);
+	// Tabキーの状態を更新（次のフレームのため）
+	tabKeyWasPressed = (tabState & 0x8000);
 }
 
 

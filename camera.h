@@ -57,4 +57,4 @@ int GetViewPortType(void);
 
 void SetCameraAT(XMFLOAT3 pos);
 
-void CheckAltToggle();
+void CheckTabToggle();
