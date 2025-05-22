@@ -38,14 +38,18 @@ static CAMERA			g_Camera;		// カメラデータ
 
 static int				g_ViewPortType = TYPE_FULL_SCREEN;
 
+
+bool isFirstPersonMode = false; // 最初はマオス自由操作状態
+bool altKeyWasPressed = false; // 前フレームのAltキー状態
+
 //=============================================================================
 // 初期化処理
 //=============================================================================
 void InitCamera(void)
 {
 	g_Camera.pos = { POS_X_CAM, POS_Y_CAM, POS_Z_CAM };
-	g_Camera.at  = { 0.0f, 0.0f, 0.0f };
-	g_Camera.up  = { 0.0f, 1.0f, 0.0f };
+	g_Camera.at = { 0.0f, 0.0f, 0.0f };
+	g_Camera.up = { 0.0f, 1.0f, 0.0f };
 	g_Camera.rot = { 0.0f, 0.0f, 0.0f };
 
 	// 視点と注視点の距離を計算
@@ -53,7 +57,7 @@ void InitCamera(void)
 	vx = g_Camera.pos.x - g_Camera.at.x;
 	vz = g_Camera.pos.z - g_Camera.at.z;
 	g_Camera.len = sqrtf(vx * vx + vz * vz);
-	
+
 	// ビューポートタイプの初期化
 	SetViewPort(g_ViewPortType);
 }
@@ -74,38 +78,49 @@ void UninitCamera(void)
 void UpdateCamera(void)
 {
 
+#ifdef _DEBUG	// デバッグ情報を表示する
+	PrintDebugProc("Altキーでマオスの描画切り替え\n");
+#endif
+
+
+
 #ifdef _DEBUG
-
-	//中心点
-	int centerX = SCREEN_WIDTH / 2;
-	int centerY = SCREEN_HEIGHT / 2;
-
-	//今マオスの位置を取得
-	POINT mousePos;
-	GetCursorPos(&mousePos);
-
-	float offsetX = (mousePos.x - centerX) * SENS;
-	float offsetY = (mousePos.y - centerY) * SENS;
+	CheckAltToggle();
 
 
-	g_Camera.rot.y += offsetX;
-	g_Camera.rot.x -= offsetY;
-	g_Camera.rot.x = max(min(g_Camera.rot.x, XM_PI / 2.0f), -XM_PI / 2.0f);
+	//第一人称視点
+	if (isFirstPersonMode)
+	{
+		//中心点
+		int centerX = SCREEN_WIDTH / 2;
+		int centerY = SCREEN_HEIGHT / 2;
 
-	//マオスを中心に戻す
-	SetCursorPos(centerX, centerY);
+		//今マオスの位置を取得
+		POINT mousePos;
+		GetCursorPos(&mousePos);
 
-	//カメラの位置
-	PLAYER* player = GetPlayer();
-	g_Camera.pos = { player->pos.x, player->pos.y + 20.0f, player->pos.z };
-	g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y);
-	g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
-	g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y);
-
-	//マオスを隠す
-	ShowCursor(FALSE);
+		float offsetX = (mousePos.x - centerX) * SENS;
+		float offsetY = (mousePos.y - centerY) * SENS;
 
 
+		g_Camera.rot.y += offsetX;
+		g_Camera.rot.x -= offsetY;
+		g_Camera.rot.x = max(min(g_Camera.rot.x, XM_PI / 2.0f), -XM_PI / 2.0f);
+
+		//マオスを中心に戻す
+		SetCursorPos(centerX, centerY);
+
+		//カメラの位置
+		PLAYER* player = GetPlayer();
+		g_Camera.pos = { player->pos.x, player->pos.y + 20.0f, player->pos.z };
+		g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y);
+		g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
+		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y);
+
+		
+
+
+	}
 
 	// カメラを初期に戻す
 	if (GetKeyboardPress(DIK_R))
@@ -118,16 +133,14 @@ void UpdateCamera(void)
 
 
 
-#ifdef _DEBUG	// デバッグ情報を表示する
-	PrintDebugProc("Camera:ZC QE TB YN UM R\n");
-#endif
+
 }
 
 
 //=============================================================================
 // カメラの更新
 //=============================================================================
-void SetCamera(void) 
+void SetCamera(void)
 {
 	// ビューマトリックス設定
 	XMMATRIX mtxView;
@@ -154,7 +167,7 @@ void SetCamera(void)
 //=============================================================================
 // カメラの取得
 //=============================================================================
-CAMERA *GetCamera(void) 
+CAMERA* GetCamera(void)
 {
 	return &g_Camera;
 }
@@ -164,7 +177,7 @@ CAMERA *GetCamera(void)
 //=============================================================================
 void SetViewPort(int type)
 {
-	ID3D11DeviceContext *g_ImmediateContext = GetDeviceContext();
+	ID3D11DeviceContext* g_ImmediateContext = GetDeviceContext();
 	D3D11_VIEWPORT vp;
 
 	g_ViewPortType = type;
@@ -242,4 +255,32 @@ void SetCameraAT(XMFLOAT3 pos)
 	g_Camera.pos.z = g_Camera.at.z - cosf(g_Camera.rot.y) * g_Camera.len;
 
 }
+
+void CheckAltToggle()
+{
+	SHORT altState = GetAsyncKeyState(VK_MENU); // VK_MENU は Altキー
+
+	if ((altState & 0x8000) && !altKeyWasPressed)
+	{
+		// Altキーが今回押されていて、前回は押されていなかった → トグル検出
+		isFirstPersonMode = !isFirstPersonMode;
+
+		if (isFirstPersonMode)
+		{
+			ShowCursor(FALSE);
+			//SetCapture(hWnd);
+			//CenterMouse();
+		}
+		else
+		{
+			ShowCursor(TRUE);
+			//ReleaseCapture();
+		}
+	}
+
+	// Altキーの状態を更新（次のフレームのため）
+	altKeyWasPressed = (altState & 0x8000);
+}
+
+
 
