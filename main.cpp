@@ -260,7 +260,8 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	ImGui_ImplDX11_Init(GetDevice(), GetDeviceContext());
 
 	// 日本語フォントの指定
-	io.Fonts->AddFontFromFileTTF(u8"c:\\Windows\\Fonts\\meiryo.ttc", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());   
+	//実際を表示したい日本語表示する前のダブルクォーテーションにu8を入れる（Unicode指定）
+	io.Fonts->AddFontFromFileTTF(u8"c:\\Windows\\Fonts\\meiryo.ttc", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
 
 
 	InitLight();
@@ -317,6 +318,11 @@ void Uninit(void)
 	UninitRenderer();
 }
 
+//test Data
+bool testBool = false;
+int testInt = 10;
+float testFloat = 5.5f;
+
 //=============================================================================
 // 更新処理
 //=============================================================================
@@ -327,7 +333,34 @@ void Update(void)
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow(); // imgui_demo.cpp内のものを表示（サンプル表示）
+	//ImGui::ShowDemoWindow(); // imgui_demo.cpp内のものを表示（サンプル表示）
+
+	//新しいImGuiを作る
+	//ImGui::SetWindowSize(ImVec2(300, 200));//次のImGuiサイズ
+
+	if (ImGui::Begin("Test"),NULL,ImGuiWindowFlags_NoResize) 
+	{
+		ImGui::Text(u8"これはテスト用の文書");
+
+		ImGui::Checkbox("TestBool", &testBool);
+
+		if (ImGui::Button(u8"こっち!",ImVec2(80,30)))
+		{
+			testBool = true;
+		}
+
+		ImGui::SliderInt("TestInt", &testInt, 0, 20 );
+
+		ImGui::SliderFloat("TestFloat", &testFloat, 0, 10.0f);
+
+		ImGui::SetCursorPos(ImVec2(300, 100));
+		if (ImGui::Button("Click me2!", ImVec2(80, 30)))
+		{
+			
+		}
+
+	}ImGui::End();
+
 
 	// 入力の更新処理
 	UpdateInput();
