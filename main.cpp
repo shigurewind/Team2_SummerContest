@@ -353,11 +353,13 @@ void Update(void)
 
 		ImGui::SliderFloat("TestFloat", &testFloat, 0, 10.0f);
 
-		ImGui::SetCursorPos(ImVec2(300, 100));
+		//ImGui::SetCursorPos(ImVec2(400, 100));
 		if (ImGui::Button("Click me2!", ImVec2(80, 30)))
 		{
 			
 		}
+
+		ImGui::InputInt("InputInt", &testInt, 1, 10);	// ”’l“ü—Í—“
 
 	}ImGui::End();
 
