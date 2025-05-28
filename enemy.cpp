@@ -1,9 +1,13 @@
-//=============================================================================
+ï»¿//=============================================================================
 //
-// ƒGƒlƒ~[ƒ‚ƒfƒ‹ˆ— [enemy.cpp]
+// ã‚¨ãƒãƒŸãƒ¼ãƒ¢ãƒ‡ãƒ«å‡¦ç† [enemy.cpp]
 // Author : 
 //
 //=============================================================================
+#include <cstdlib>  // rand()
+#include <ctime>    // time()
+#include <cmath>    // cos, sin
+
 #include "main.h"
 #include "renderer.h"
 #include "model.h"
@@ -12,38 +16,48 @@
 #include "enemy.h"
 #include "shadow.h"
 
-//*****************************************************************************
-// ƒ}ƒNƒ’è‹`
-//*****************************************************************************
-#define	MODEL_ENEMY			"data/MODEL/enemy.obj"		// “Ç‚İ‚Şƒ‚ƒfƒ‹–¼
-
-#define	VALUE_MOVE			(5.0f)						// ˆÚ“®—Ê
-#define	VALUE_ROTATE		(XM_PI * 0.02f)				// ‰ñ“]—Ê
-
-#define ENEMY_SHADOW_SIZE	(0.4f)						// ‰e‚Ì‘å‚«‚³
-#define ENEMY_OFFSET_Y		(7.0f)						// ƒGƒlƒ~[‚Ì‘«Œ³‚ğ‚ ‚í‚¹‚é
-
 
 //*****************************************************************************
-// ƒvƒƒgƒ^ƒCƒvéŒ¾
+// ãƒã‚¯ãƒ­å®šç¾©
+//*****************************************************************************
+#define	MODEL_ENEMY			"data/MODEL/enemy.obj"		// èª­ã¿è¾¼ã‚€ãƒ¢ãƒ‡ãƒ«å
+
+#define	VALUE_MOVE			(5.0f)						// ç§»å‹•é‡
+#define	VALUE_ROTATE		(XM_PI * 0.02f)				// å›è»¢é‡
+
+#define ENEMY_SHADOW_SIZE	(0.4f)						// å½±ã®å¤§ãã•
+#define ENEMY_OFFSET_Y		(7.0f)						// ã‚¨ãƒãƒŸãƒ¼ã®è¶³å…ƒã‚’ã‚ã‚ã›ã‚‹
+
+//ã‚¨ãƒãƒŸãƒ¼ã®å‹•ãç¯„å›²
+#define ENEMY_AREA_MIN_X	(-80.0f)
+#define ENEMY_AREA_MAX_X	(80.0f)
+#define ENEMY_AREA_MIN_Z	(-80.0f)
+#define ENEMY_AREA_MAX_Z	(80.0f)
+#define ENEMY_AREA_MIN_Y	(7.0f)
+#define ENEMY_AREA_MAX_Y	(80.0f)
+
+#define MOVECOUNTER			(300)		// å‘ãå¤‰ã‚ã‚‹ã‚¿ã‚¤ãƒãƒ¼
+
+
+
+//*****************************************************************************
+// ãƒ—ãƒ­ãƒˆã‚¿ã‚¤ãƒ—å®£è¨€
 //*****************************************************************************
 
 
 //*****************************************************************************
-// ƒOƒ[ƒoƒ‹•Ï”
+// ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°
 //*****************************************************************************
-static ENEMY			g_Enemy[MAX_ENEMY];				// ƒGƒlƒ~[
+static ENEMY			g_Enemy[MAX_ENEMY];				// ã‚¨ãƒãƒŸãƒ¼
 
 int g_Enemy_load = 0;
 
-
 static INTERPOLATION_DATA g_MoveTbl0[] = {	// pos, rot, scl, frame
-	{ XMFLOAT3(0.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 2 },
-	{ XMFLOAT3(-200.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 6.28f, 0.0f), XMFLOAT3(3.0f, 3.0f, 3.0f), 60 * 1 },
-	{ XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 200.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 0.5f },
+	{ XMFLOAT3(0.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 5.0f },
+	{ XMFLOAT3(-200.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 5.0f },
+	{ XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 200.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 5.0f },
 
 };
-
 
 static INTERPOLATION_DATA* g_MoveTblAdr[] =
 {
@@ -52,9 +66,8 @@ static INTERPOLATION_DATA* g_MoveTblAdr[] =
 };
 
 
-
 //=============================================================================
-// ‰Šú‰»ˆ—
+// åˆæœŸåŒ–å‡¦ç†
 //=============================================================================
 HRESULT InitEnemy(void)
 {
@@ -67,34 +80,37 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Enemy[i].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
-		g_Enemy[i].spd  = 0.0f;			// ˆÚ“®ƒXƒs[ƒhƒNƒŠƒA
-		g_Enemy[i].size = ENEMY_SIZE;	// “–‚½‚è”»’è‚Ì‘å‚«‚³
+		g_Enemy[i].spd  = 0.0f;			// ç§»å‹•ã‚¹ãƒ”ãƒ¼ãƒ‰ã‚¯ãƒªã‚¢
+		g_Enemy[i].size = ENEMY_SIZE;	// å½“ãŸã‚Šåˆ¤å®šã®å¤§ãã•
 
-		// ƒ‚ƒfƒ‹‚ÌƒfƒBƒtƒ…[ƒY‚ğ•Û‘¶‚µ‚Ä‚¨‚­BF•Ï‚¦‘Î‰‚Ìˆ×B
+		// ãƒ¢ãƒ‡ãƒ«ã®ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºã‚’ä¿å­˜ã—ã¦ãŠãã€‚è‰²å¤‰ãˆå¯¾å¿œã®ç‚ºã€‚
 		GetModelDiffuse(&g_Enemy[i].model, &g_Enemy[i].diffuse[0]);
 
 		XMFLOAT3 pos = g_Enemy[i].pos;
 		pos.y -= (ENEMY_OFFSET_Y - 0.1f);
 		g_Enemy[i].shadowIdx = CreateShadow(pos, ENEMY_SHADOW_SIZE, ENEMY_SHADOW_SIZE);
 		
-		g_Enemy[i].time = 0.0f;			// üŒ`•âŠÔ—p‚Ìƒ^ƒCƒ}[‚ğƒNƒŠƒA
-		g_Enemy[i].tblNo = 0;			// Ä¶‚·‚és“®ƒf[ƒ^ƒe[ƒuƒ‹No‚ğƒZƒbƒg
-		g_Enemy[i].tblMax = 0;			// Ä¶‚·‚és“®ƒf[ƒ^ƒe[ƒuƒ‹‚ÌƒŒƒR[ƒh”‚ğƒZƒbƒg
 
-		g_Enemy[i].use = TRUE;			// TRUE:¶‚«‚Ä‚é
+		g_Enemy[i].time = 0.0f;			// ç·šå½¢è£œé–“ç”¨ã®ã‚¿ã‚¤ãƒãƒ¼ã‚’ã‚¯ãƒªã‚¢
+		g_Enemy[i].tblNo = 0;			// å†ç”Ÿã™ã‚‹è¡Œå‹•ãƒ‡ãƒ¼ã‚¿ãƒ†ãƒ¼ãƒ–ãƒ«Noã‚’ã‚»ãƒƒãƒˆ
+		g_Enemy[i].tblMax = 0;			// å†ç”Ÿã™ã‚‹è¡Œå‹•ãƒ‡ãƒ¼ã‚¿ãƒ†ãƒ¼ãƒ–ãƒ«ã®ãƒ¬ã‚³ãƒ¼ãƒ‰æ•°ã‚’ã‚»ãƒƒãƒˆ
+	
 
+		g_Enemy[i].use = TRUE;			// TRUE:ç”Ÿãã¦ã‚‹
 	}
 
-	// 0”Ô‚¾‚¯üŒ`•âŠÔ‚Å“®‚©‚µ‚Ä‚İ‚é
-	g_Enemy[0].time = 0.0f;		// üŒ`•âŠÔ—p‚Ìƒ^ƒCƒ}[‚ğƒNƒŠƒA
-	g_Enemy[0].tblNo = 0;		// Ä¶‚·‚éƒAƒjƒƒf[ƒ^‚Ìæ“ªƒAƒhƒŒƒX‚ğƒZƒbƒg
-	g_Enemy[0].tblMax = sizeof(g_MoveTbl0) / sizeof(INTERPOLATION_DATA);	// Ä¶‚·‚éƒAƒjƒƒf[ƒ^‚ÌƒŒƒR[ƒh”‚ğƒZƒbƒg
+	ChangeEnemyDirection(0);
+	g_Enemy[0].spd = 0.2f;
 
+	// 1ç•ªã ã‘ç·šå½¢è£œé–“ã§å‹•ã‹ã—ã¦ã¿ã‚‹
+	g_Enemy[1].time = 0.0f;		// ç·šå½¢è£œé–“ç”¨ã®ã‚¿ã‚¤ãƒãƒ¼ã‚’ã‚¯ãƒªã‚¢
+	g_Enemy[1].tblNo = 0;		// å†ç”Ÿã™ã‚‹ã‚¢ãƒ‹ãƒ¡ãƒ‡ãƒ¼ã‚¿ã®å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ã‚»ãƒƒãƒˆ
+	g_Enemy[1].tblMax = sizeof(g_MoveTbl0) / sizeof(INTERPOLATION_DATA);	// å†ç”Ÿã™ã‚‹ã‚¢ãƒ‹ãƒ¡ãƒ‡ãƒ¼ã‚¿ã®ãƒ¬ã‚³ãƒ¼ãƒ‰æ•°ã‚’ã‚»ãƒƒãƒˆ
 	return S_OK;
 }
 
 //=============================================================================
-// I—¹ˆ—
+// çµ‚äº†å‡¦ç†
 //=============================================================================
 void UninitEnemy(void)
 {
@@ -111,58 +127,80 @@ void UninitEnemy(void)
 }
 
 //=============================================================================
-// XVˆ—
+// æ›´æ–°å‡¦ç†
 //=============================================================================
 void UpdateEnemy(void)
 {
-	// ƒGƒlƒ~[‚ğ“®‚©‚­ê‡‚ÍA‰e‚à‡‚í‚¹‚Ä“®‚©‚·–‚ğ–Y‚ê‚È‚¢‚æ‚¤‚É‚ËI
+
+	// ã‚¨ãƒãƒŸãƒ¼ã‚’å‹•ã‹ãå ´åˆã¯ã€å½±ã‚‚åˆã‚ã›ã¦å‹•ã‹ã™äº‹ã‚’å¿˜ã‚Œãªã„ã‚ˆã†ã«ã­ï¼
 	for (int i = 0; i < MAX_ENEMY; i++)
 	{
-		if (g_Enemy[i].use == TRUE)		// ‚±‚ÌƒGƒlƒ~[‚ªg‚í‚ê‚Ä‚¢‚éH
-		{								// Yes
+		// ç™ºè¦‹ã—ãªã„ç§»å‹•å‡¦ç†
+		//ã‚´ãƒ¼ã‚¹ãƒˆã®ç§»å‹•å‡¦ç†
+		if (g_Enemy[i].use == TRUE)
+		{
+			float nextX = g_Enemy[0].pos.x + g_Enemy[0].dir.x * g_Enemy[0].spd;
+			float nextZ = g_Enemy[0].pos.z + g_Enemy[0].dir.z * g_Enemy[0].spd;
+			float nextY = g_Enemy[0].pos.y + g_Enemy[0].dir.y * g_Enemy[0].spd;
 
-			// ˆÚ“®ˆ—
-			if (g_Enemy[i].tblMax > 0)	// üŒ`•âŠÔ‚ğÀs‚·‚éH
-			{	// üŒ`•âŠÔ‚Ìˆ—
-				int nowNo = (int)g_Enemy[i].time;			// ®”•ª‚Å‚ ‚éƒe[ƒuƒ‹”Ô†‚ğæ‚èo‚µ‚Ä‚¢‚é
-				int maxNo = g_Enemy[i].tblMax;				// “o˜^ƒe[ƒuƒ‹”‚ğ”‚¦‚Ä‚¢‚é
-				int nextNo = (nowNo + 1) % maxNo;			// ˆÚ“®æƒe[ƒuƒ‹‚Ì”Ô†‚ğ‹‚ß‚Ä‚¢‚é
-				INTERPOLATION_DATA* tbl = g_MoveTblAdr[g_Enemy[i].tblNo];	// s“®ƒe[ƒuƒ‹‚ÌƒAƒhƒŒƒX‚ğæ“¾
-
-				XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);	// XMVECTOR‚Ö•ÏŠ·
-				XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);	// XMVECTOR‚Ö•ÏŠ·
-				XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);	// XMVECTOR‚Ö•ÏŠ·
-
-				XMVECTOR Pos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;	// XYZˆÚ“®—Ê‚ğŒvZ‚µ‚Ä‚¢‚é
-				XMVECTOR Rot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;	// XYZ‰ñ“]—Ê‚ğŒvZ‚µ‚Ä‚¢‚é
-				XMVECTOR Scl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;	// XYZŠg‘å—¦‚ğŒvZ‚µ‚Ä‚¢‚é
-
-				float nowTime = g_Enemy[i].time - nowNo;	// ŠÔ•”•ª‚Å‚ ‚é­”‚ğæ‚èo‚µ‚Ä‚¢‚é
-
-				Pos *= nowTime;								// Œ»İ‚ÌˆÚ“®—Ê‚ğŒvZ‚µ‚Ä‚¢‚é
-				Rot *= nowTime;								// Œ»İ‚Ì‰ñ“]—Ê‚ğŒvZ‚µ‚Ä‚¢‚é
-				Scl *= nowTime;								// Œ»İ‚ÌŠg‘å—¦‚ğŒvZ‚µ‚Ä‚¢‚é
-
-				// ŒvZ‚µ‚Ä‹‚ß‚½ˆÚ“®—Ê‚ğŒ»İ‚ÌˆÚ“®ƒe[ƒuƒ‹XYZ‚É‘«‚µ‚Ä‚¢‚é•\¦À•W‚ğ‹‚ß‚Ä‚¢‚é
-				XMStoreFloat3(&g_Enemy[i].pos, nowPos + Pos);
-
-				// ŒvZ‚µ‚Ä‹‚ß‚½‰ñ“]—Ê‚ğŒ»İ‚ÌˆÚ“®ƒe[ƒuƒ‹‚É‘«‚µ‚Ä‚¢‚é
-				XMStoreFloat3(&g_Enemy[i].rot, nowRot + Rot);
-
-				// ŒvZ‚µ‚Ä‹‚ß‚½Šg‘å—¦‚ğŒ»İ‚ÌˆÚ“®ƒe[ƒuƒ‹‚É‘«‚µ‚Ä‚¢‚é
-				XMStoreFloat3(&g_Enemy[i].scl, nowScl + Scl);
-
-				// frame‚ğg‚ÄŠÔŒo‰ßˆ—‚ğ‚·‚é
-				g_Enemy[i].time += 1.0f / tbl[nowNo].frame;	// ŠÔ‚ği‚ß‚Ä‚¢‚é
-				if ((int)g_Enemy[i].time >= maxNo)			// “o˜^ƒe[ƒuƒ‹ÅŒã‚Ü‚ÅˆÚ“®‚µ‚½‚©H
-				{
-					g_Enemy[i].time -= maxNo;				// ‚O”Ô–Ú‚ÉƒŠƒZƒbƒg‚µ‚Â‚Â‚à¬”•”•ª‚ğˆø‚«Œp‚¢‚Å‚¢‚é
-				}
-
+			if (nextX < ENEMY_AREA_MIN_X || nextX > ENEMY_AREA_MAX_X ||
+				nextZ < ENEMY_AREA_MIN_Z || nextZ > ENEMY_AREA_MAX_Z ||
+				nextY < ENEMY_AREA_MIN_Y || nextY > ENEMY_AREA_MAX_Y)
+			{
+				ChangeEnemyDirection(0);
+			}
+			else
+			{
+				g_Enemy[0].pos.x = nextX;
+				g_Enemy[0].pos.z = nextZ;
+				g_Enemy[0].pos.y = nextY;
 			}
 
+			g_Enemy[0].moveCounter--;
+			if (g_Enemy[0].moveCounter <= 0)
+			{
+				ChangeEnemyDirection(0);
+			}
 
-			// ‰e‚àƒvƒŒƒCƒ„[‚ÌˆÊ’u‚É‡‚í‚¹‚é
+			// Skeletonã®ç§»å‹•å‡¦ç†
+			if (g_Enemy[1].tblMax > 0)	// ç·šå½¢è£œé–“ã‚’å®Ÿè¡Œã™ã‚‹ï¼Ÿ
+			{	// ç·šå½¢è£œé–“ã®å‡¦ç†
+				int nowNo = (int)g_Enemy[1].time;			// æ•´æ•°åˆ†ã§ã‚ã‚‹ãƒ†ãƒ¼ãƒ–ãƒ«ç•ªå·ã‚’å–ã‚Šå‡ºã—ã¦ã„ã‚‹
+				int maxNo = g_Enemy[1].tblMax;				// ç™»éŒ²ãƒ†ãƒ¼ãƒ–ãƒ«æ•°ã‚’æ•°ãˆã¦ã„ã‚‹
+				int nextNo = (nowNo + 1) % maxNo;			// ç§»å‹•å…ˆãƒ†ãƒ¼ãƒ–ãƒ«ã®ç•ªå·ã‚’æ±‚ã‚ã¦ã„ã‚‹
+				INTERPOLATION_DATA* tbl = g_MoveTblAdr[g_Enemy[1].tblNo];	// è¡Œå‹•ãƒ†ãƒ¼ãƒ–ãƒ«ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—
+
+				XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);	// XMVECTORã¸å¤‰æ›
+				XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);	// XMVECTORã¸å¤‰æ›
+				XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);	// XMVECTORã¸å¤‰æ›
+
+				XMVECTOR Pos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;	// XYZç§»å‹•é‡ã‚’è¨ˆç®—ã—ã¦ã„ã‚‹
+				XMVECTOR Rot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;	// XYZå›è»¢é‡ã‚’è¨ˆç®—ã—ã¦ã„ã‚‹
+				XMVECTOR Scl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;	// XYZæ‹¡å¤§ç‡ã‚’è¨ˆç®—ã—ã¦ã„ã‚‹
+
+				float nowTime = g_Enemy[1].time - nowNo;	// æ™‚é–“éƒ¨åˆ†ã§ã‚ã‚‹å°‘æ•°ã‚’å–ã‚Šå‡ºã—ã¦ã„ã‚‹
+
+				Pos *= nowTime;								// ç¾åœ¨ã®ç§»å‹•é‡ã‚’è¨ˆç®—ã—ã¦ã„ã‚‹
+				Rot *= nowTime;								// ç¾åœ¨ã®å›è»¢é‡ã‚’è¨ˆç®—ã—ã¦ã„ã‚‹
+				Scl *= nowTime;								// ç¾åœ¨ã®æ‹¡å¤§ç‡ã‚’è¨ˆç®—ã—ã¦ã„ã‚‹
+
+				// è¨ˆç®—ã—ã¦æ±‚ã‚ãŸç§»å‹•é‡ã‚’ç¾åœ¨ã®ç§»å‹•ãƒ†ãƒ¼ãƒ–ãƒ«XYZã«è¶³ã—ã¦ã„ã‚‹ï¼è¡¨ç¤ºåº§æ¨™ã‚’æ±‚ã‚ã¦ã„ã‚‹
+				XMStoreFloat3(&g_Enemy[1].pos, nowPos + Pos);
+
+				// è¨ˆç®—ã—ã¦æ±‚ã‚ãŸå›è»¢é‡ã‚’ç¾åœ¨ã®ç§»å‹•ãƒ†ãƒ¼ãƒ–ãƒ«ã«è¶³ã—ã¦ã„ã‚‹
+				XMStoreFloat3(&g_Enemy[1].rot, nowRot + Rot);
+
+				// è¨ˆç®—ã—ã¦æ±‚ã‚ãŸæ‹¡å¤§ç‡ã‚’ç¾åœ¨ã®ç§»å‹•ãƒ†ãƒ¼ãƒ–ãƒ«ã«è¶³ã—ã¦ã„ã‚‹
+				XMStoreFloat3(&g_Enemy[1].scl, nowScl + Scl);
+
+				// frameã‚’ä½¿ã¦æ™‚é–“çµŒéå‡¦ç†ã‚’ã™ã‚‹
+				g_Enemy[1].time += 1.0f / tbl[nowNo].frame;	// æ™‚é–“ã‚’é€²ã‚ã¦ã„ã‚‹
+				if ((int)g_Enemy[1].time >= maxNo)			// ç™»éŒ²ãƒ†ãƒ¼ãƒ–ãƒ«æœ€å¾Œã¾ã§ç§»å‹•ã—ãŸã‹ï¼Ÿ
+				{
+					g_Enemy[1].time -= maxNo;				// 1ç•ªç›®ã«ãƒªã‚»ãƒƒãƒˆã—ã¤ã¤ã‚‚å°æ•°éƒ¨åˆ†ã‚’å¼•ãç¶™ã„ã§ã„ã‚‹
+				}
+			}
+			// å½±ã‚‚ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ä½ç½®ã«åˆã‚ã›ã‚‹
 			XMFLOAT3 pos = g_Enemy[i].pos;
 			pos.y -= (ENEMY_OFFSET_Y - 0.1f);
 			SetPositionShadow(g_Enemy[i].shadowIdx, pos);
@@ -172,11 +210,12 @@ void UpdateEnemy(void)
 
 
 
+
 #ifdef _DEBUG
 
 	if (GetKeyboardTrigger(DIK_P))
 	{
-		// ƒ‚ƒfƒ‹‚ÌF‚ğ•ÏX‚Å‚«‚é‚æI”¼“§–¾‚É‚à‚Å‚«‚é‚æB
+		// ãƒ¢ãƒ‡ãƒ«ã®è‰²ã‚’å¤‰æ›´ã§ãã‚‹ã‚ˆï¼åŠé€æ˜ã«ã‚‚ã§ãã‚‹ã‚ˆã€‚
 		for (int j = 0; j < g_Enemy[0].model.SubsetNum; j++)
 		{
 			SetModelDiffuse(&g_Enemy[0].model, j, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.5f));
@@ -185,7 +224,7 @@ void UpdateEnemy(void)
 
 	if (GetKeyboardTrigger(DIK_L))
 	{
-		// ƒ‚ƒfƒ‹‚ÌF‚ğŒ³‚É–ß‚µ‚Ä‚¢‚é
+		// ãƒ¢ãƒ‡ãƒ«ã®è‰²ã‚’å…ƒã«æˆ»ã—ã¦ã„ã‚‹
 		for (int j = 0; j < g_Enemy[0].model.SubsetNum; j++)
 		{
 			SetModelDiffuse(&g_Enemy[0].model, j, g_Enemy[0].diffuse[j]);
@@ -193,56 +232,79 @@ void UpdateEnemy(void)
 	}
 #endif
 
-
 }
 
+
+
 //=============================================================================
-// •`‰æˆ—
+// æç”»å‡¦ç†
 //=============================================================================
 void DrawEnemy(void)
 {
+
+
 	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld;
 
-	// ƒJƒŠƒ“ƒO–³Œø
+	// ã‚«ãƒªãƒ³ã‚°ç„¡åŠ¹
 	SetCullingMode(CULL_MODE_NONE);
 
 	for (int i = 0; i < MAX_ENEMY; i++)
 	{
 		if (g_Enemy[i].use == FALSE) continue;
 
-		// ƒ[ƒ‹ƒhƒ}ƒgƒŠƒbƒNƒX‚Ì‰Šú‰»
+		// ãƒ¯ãƒ¼ãƒ«ãƒ‰ãƒãƒˆãƒªãƒƒã‚¯ã‚¹ã®åˆæœŸåŒ–
 		mtxWorld = XMMatrixIdentity();
 
-		// ƒXƒP[ƒ‹‚ğ”½‰f
+		// ã‚¹ã‚±ãƒ¼ãƒ«ã‚’åæ˜ 
 		mtxScl = XMMatrixScaling(g_Enemy[i].scl.x, g_Enemy[i].scl.y, g_Enemy[i].scl.z);
 		mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
-		// ‰ñ“]‚ğ”½‰f
+		// å›è»¢ã‚’åæ˜ 
 		mtxRot = XMMatrixRotationRollPitchYaw(g_Enemy[i].rot.x, g_Enemy[i].rot.y + XM_PI, g_Enemy[i].rot.z);
 		mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
 
-		// ˆÚ“®‚ğ”½‰f
+		// ç§»å‹•ã‚’åæ˜ 
 		mtxTranslate = XMMatrixTranslation(g_Enemy[i].pos.x, g_Enemy[i].pos.y, g_Enemy[i].pos.z);
 		mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
-		// ƒ[ƒ‹ƒhƒ}ƒgƒŠƒbƒNƒX‚Ìİ’è
+		// ãƒ¯ãƒ¼ãƒ«ãƒ‰ãƒãƒˆãƒªãƒƒã‚¯ã‚¹ã®è¨­å®š
 		SetWorldMatrix(&mtxWorld);
 
 		XMStoreFloat4x4(&g_Enemy[i].mtxWorld, mtxWorld);
 
 
-		// ƒ‚ƒfƒ‹•`‰æ
+		// ãƒ¢ãƒ‡ãƒ«æç”»
 		DrawModel(&g_Enemy[i].model);
 	}
 
-	// ƒJƒŠƒ“ƒOİ’è‚ğ–ß‚·
+	// ã‚«ãƒªãƒ³ã‚°è¨­å®šã‚’æˆ»ã™
 	SetCullingMode(CULL_MODE_BACK);
 }
 
 //=============================================================================
-// ƒGƒlƒ~[‚Ìæ“¾
+// ã‚¨ãƒãƒŸãƒ¼ã®å–å¾—
 //=============================================================================
 ENEMY *GetEnemy()
 {
 	return &g_Enemy[0];
+}
+
+//=============================================================================
+// ã‚¨ãƒãƒŸãƒ¼ã®å‹•ãå‘ãã®å¤‰ã‚ã‚Š
+//=============================================================================
+
+void ChangeEnemyDirection(int i) {
+	float theta = (rand() % 360) * XM_PI / 180.0f;
+	float phi = ((rand() % 90) + 45) * XM_PI / 180.0f;
+
+	XMFLOAT3 dir;
+	dir.x = sinf(phi) * cosf(theta);
+	dir.y = cosf(phi);
+	dir.z = sinf(phi) * sinf(theta);
+
+	XMVECTOR v = XMLoadFloat3(&dir);
+	v = XMVector3Normalize(v);
+	XMStoreFloat3(&g_Enemy[i].dir, v);
+
+	g_Enemy[i].moveCounter = MOVECOUNTER + rand() % 60;
 }

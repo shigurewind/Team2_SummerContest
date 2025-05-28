@@ -24,6 +24,8 @@ struct ENEMY
 	XMFLOAT3			pos;				// モデルの位置
 	XMFLOAT3			rot;				// モデルの向き(回転)
 	XMFLOAT3			scl;				// モデルの大きさ(スケール)
+	XMFLOAT3			dir;				// 動きの向き
+
 
 	BOOL				use;
 	BOOL				load;
@@ -38,6 +40,8 @@ struct ENEMY
 	int					tblNo;				// 行動データのテーブル番号
 	int					tblMax;				// そのテーブルのデータ数
 
+	int					moveCounter;		// 向き変わるタイマー
+
 };
 
 //*****************************************************************************
@@ -50,3 +54,4 @@ void DrawEnemy(void);
 
 ENEMY *GetEnemy(void);
 
+void ChangeEnemyDirection(int i);
