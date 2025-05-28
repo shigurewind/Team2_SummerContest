@@ -201,8 +201,18 @@ void UpdatePlayer(void)
 		}
 
 
-		//Bullet”­ŽË
+		//‚È‚ñ‚¿‚á‚Á‚ÄBullet”­ŽË
+		if ( IsMouseLeftTriggered())
+		{
+			
+			XMFLOAT3 pos = cam->pos;  // 
 
+			XMFLOAT3 direction;
+			direction = cam->rot;
+			direction.y += 3.14f;
+			// 
+			SetBullet(pos, direction);
+		}
 
 	}
 
