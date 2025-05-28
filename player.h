@@ -32,7 +32,7 @@ struct PLAYER
 
 	int					shadowIdx;			// 影のインデックス番号
 
-	BOOL				use;
+	BOOL				alive;
 
 	float				size;
 
@@ -48,6 +48,13 @@ struct PLAYER
 	XMFLOAT4			Quaternion;
 
 	XMFLOAT3			UpVector;			// 自分が立っている所
+
+
+	BOOL			isGround;	//地面チェック
+	float			verticalSpeed;	//落とすSpeed
+	float			maxFallSpeed;//最大落とすSpeed
+	float			jumpPower;	//jumpのパワー
+
 
 };
 
