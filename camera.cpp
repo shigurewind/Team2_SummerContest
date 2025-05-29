@@ -79,7 +79,7 @@ void UpdateCamera(void)
 {
 
 #ifdef _DEBUG	// デバッグ情報を表示する
-	PrintDebugProc("Altキーでマオスの描画切り替え\n");
+	PrintDebugProc("Tabキーでマオスの描画切り替え\n");
 #endif
 
 
