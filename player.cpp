@@ -65,7 +65,7 @@ static INTERPOLATION_DATA move_tbl_left[] = {	// pos, rot, scl, frame
 
 static INTERPOLATION_DATA move_tbl_right[] = {	// pos, rot, scl, frame
 	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),      XMFLOAT3(1.0f, 1.0f, 1.0f), 120 },
-	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(XM_PI/2, 0.0f, 0.0f),   XMFLOAT3(1.0f, 1.0f, 1.0f), 240 },
+	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(XM_PI / 2, 0.0f, 0.0f),   XMFLOAT3(1.0f, 1.0f, 1.0f), 240 },
 
 };
 
@@ -90,7 +90,7 @@ HRESULT InitPlayer(void)
 	g_Player.load = TRUE;
 	LoadModel(MODEL_PLAYER, &g_Player.model);
 
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y+50.0f, -50.0f);
+	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y + 50.0f, -50.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -109,17 +109,17 @@ HRESULT InitPlayer(void)
 	// キーを押した時のプレイヤーの向き
 	roty = 0.0f;
 
-	
+
 
 
 	g_Player.isGround = FALSE;
 	g_Player.maxFallSpeed = 6.0f;
 	g_Player.jumpPower = 8.0f;
-	
 
 
 
-	
+
+
 
 
 
@@ -138,7 +138,7 @@ void UninitPlayer(void)
 		g_Player.load = FALSE;
 	}
 
-	
+
 
 
 
@@ -149,7 +149,7 @@ void UninitPlayer(void)
 //=============================================================================
 void UpdatePlayer(void)
 {
-	CAMERA *cam = GetCamera();
+	CAMERA* cam = GetCamera();
 
 
 	if (g_Player.alive)
@@ -202,9 +202,9 @@ void UpdatePlayer(void)
 
 
 		//なんちゃってBullet発射
-		if ( IsMouseLeftTriggered())
+		if (IsMouseLeftTriggered())
 		{
-			
+
 			XMFLOAT3 pos = cam->pos;  // 
 
 			XMFLOAT3 direction;
@@ -216,7 +216,7 @@ void UpdatePlayer(void)
 
 	}
 
-	
+
 
 #ifdef _DEBUG
 	/*if (GetKeyboardPress(DIK_R))
@@ -265,12 +265,12 @@ void UpdatePlayer(void)
 	SetPositionShadow(g_Player.shadowIdx, pos);
 
 
-	
+
 
 
 	// ポイントライトのテスト
 	{
-		LIGHT *light = GetLightData(1);
+		LIGHT* light = GetLightData(1);
 		XMFLOAT3 pos = g_Player.pos;
 		pos.y += 20.0f;
 
@@ -347,7 +347,7 @@ void DrawPlayer(void)
 //=============================================================================
 // プレイヤー情報を取得
 //=============================================================================
-PLAYER *GetPlayer(void)
+PLAYER* GetPlayer(void)
 {
 	return &g_Player;
 }
