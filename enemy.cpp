@@ -14,7 +14,9 @@
 #include "input.h"
 #include "debugproc.h"
 #include "enemy.h"
+#include "player.h"
 #include "shadow.h"
+#include "collision.h"
 
 
 //*****************************************************************************
@@ -135,6 +137,8 @@ void UpdateEnemy(void)
 	// エネミーを動かく場合は、影も合わせて動かす事を忘れないようにね！
 	for (int i = 0; i < MAX_ENEMY; i++)
 	{
+		ChasingPlayer(0);
+
 		// 発見しない移動処理
 		//ゴーストの移動処理
 		if (g_Enemy[i].use == TRUE)
@@ -241,8 +245,6 @@ void UpdateEnemy(void)
 //=============================================================================
 void DrawEnemy(void)
 {
-
-
 	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld;
 
 	// カリング無効
@@ -307,4 +309,36 @@ void ChangeEnemyDirection(int i) {
 	XMStoreFloat3(&g_Enemy[i].dir, v);
 
 	g_Enemy[i].moveCounter = MOVECOUNTER + rand() % 60;
+}
+
+void ChasingPlayer(int i)
+{
+	PLAYER* player = GetPlayer();	// プレイヤーのポインターを初期化
+
+	//BCの当たり判定
+	//追いかけらえる範囲
+	if (CollisionBC(player->pos, g_Enemy[i].pos, player->size + 40.0f, g_Enemy[i].size + 40.0f))
+	{
+		PLAYER* player = GetPlayer();
+
+		// エネミーからプレイヤーまでのベクトル
+		XMFLOAT3 dir;
+		dir.x = player->pos.x - g_Enemy[i].pos.x;
+		dir.y = player->pos.y - g_Enemy[i].pos.y;
+		dir.z = player->pos.z - g_Enemy[i].pos.z;
+
+		// ベクトル正規化
+		XMVECTOR v = XMLoadFloat3(&dir);
+		v = XMVector3Normalize(v);
+		XMStoreFloat3(&dir, v);
+
+		// スピードの応用
+		float speed = g_Enemy[i].spd;
+
+		g_Enemy[i].pos.x += dir.x * speed;
+		g_Enemy[i].pos.y += dir.y * speed;
+		g_Enemy[i].pos.z += dir.z * speed;
+
+	}
+
 }

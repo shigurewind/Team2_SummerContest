@@ -55,3 +55,4 @@ void DrawEnemy(void);
 ENEMY *GetEnemy(void);
 
 void ChangeEnemyDirection(int i);
+void ChasingPlayer(int i);
