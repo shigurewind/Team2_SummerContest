@@ -56,6 +56,9 @@ struct PLAYER
 	float			jumpPower;	//jump‚Ìƒpƒ[
 
 
+	int ammo;       // Œ»İ‚Ì’e”  
+	int maxAmmo;    // Å‘å’e”
+
 };
 
 

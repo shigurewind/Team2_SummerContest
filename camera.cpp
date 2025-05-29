@@ -122,12 +122,12 @@ void UpdateCamera(void)
 
 	}
 
-	// ƒJƒƒ‰‚ğ‰Šú‚É–ß‚·
-	if (GetKeyboardPress(DIK_R))
-	{
-		UninitCamera();
-		InitCamera();
-	}
+	//// ƒJƒƒ‰‚ğ‰Šú‚É–ß‚·
+	//if (GetKeyboardPress(DIK_R))
+	//{
+	//	UninitCamera();
+	//	InitCamera();
+	//}
 
 #endif
 

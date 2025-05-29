@@ -30,7 +30,7 @@
 
 #define PLAYER_PARTS_MAX	(2)								// プレイヤーのパーツの数
 
-
+#define RELOAD_AMOUNT		(5)								//リロードされる弾数
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -98,6 +98,9 @@ HRESULT InitPlayer(void)
 
 	g_Player.alive = TRUE;			// TRUE:生きてる
 	g_Player.size = PLAYER_SIZE;	// 当たり判定の大きさ
+
+	g_Player.ammo = 10;				//弾数
+	g_Player.maxAmmo = 20;			//最大弾数
 
 	// ここでプレイヤー用の影を作成している
 	XMFLOAT3 pos = g_Player.pos;
@@ -202,7 +205,7 @@ void UpdatePlayer(void)
 
 
 		//なんちゃってBullet発射
-		if ( IsMouseLeftTriggered())
+		if ( IsMouseLeftTriggered() && g_Player.ammo > 0)
 		{
 			
 			XMFLOAT3 pos = cam->pos;  // 
@@ -212,6 +215,15 @@ void UpdatePlayer(void)
 			direction.y += 3.14f;
 			// 
 			SetBullet(pos, direction);
+			g_Player.ammo--;  //弾を消費
+		}
+
+		// Rキーでリロード処理
+		if (GetKeyboardTrigger(DIK_R))
+		{
+			g_Player.ammo += RELOAD_AMOUNT;
+			if (g_Player.ammo > g_Player.maxAmmo)
+				g_Player.ammo = g_Player.maxAmmo;
 		}
 
 	}

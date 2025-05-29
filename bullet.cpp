@@ -18,7 +18,7 @@
 #define	BULLET_WIDTH		(10.0f)			// 頂点サイズ
 #define	BULLET_HEIGHT		(10.0f)			// 頂点サイズ
 
-#define	BULLET_SPEED		(5.0f)			// 弾の移動スピード
+#define	BULLET_SPEED		(10.0f)			// 弾の移動スピード
 
 
 //*****************************************************************************
