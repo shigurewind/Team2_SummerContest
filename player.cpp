@@ -15,6 +15,9 @@
 #include "bullet.h"
 #include "debugproc.h"
 #include "meshfield.h"
+#include "wallandfloor.h"
+#include "collision.h"
+
 
 //*****************************************************************************
 // マクロ定義
@@ -242,6 +245,111 @@ void UpdatePlayer(void)
 	}
 
 
+	//壁床判定
+	bool isHit = false;
+
+	bool isOnGround = false;
+	float maxGroundY = -FLT_MAX;
+
+	WALLANDFLOOR* walls = GetWallAndFloor();
+	XMFLOAT3 from = g_Player.pos;
+	XMFLOAT3 to = from;
+
+	float moveDistance = 2.0f;
+	float buffer = 8.0f;
+	moveDistance += buffer;
+
+	to.x -= sinf(g_Player.rot.y) * moveDistance;
+	to.z -= cosf(g_Player.rot.y) * moveDistance;
+
+	for (int i = 0; i < MAX_WALLANDFLOOR; i++)
+	{
+		if (!walls[i].use) continue;
+		VERTEX_3D* verts = walls[i].model.VertexArrayCPU;
+		unsigned short* indices = walls[i].model.IndexArrayCPU;
+		unsigned int numIndices = walls[i].model.IndexNumCPU;
+		XMMATRIX world = XMLoadFloat4x4(&walls[i].mtxWorld);
+
+		for (unsigned int j = 0; j < numIndices; j += 3)
+		{
+			XMFLOAT3 p0, p1, p2;
+			XMStoreFloat3(&p0, XMVector3TransformCoord(XMLoadFloat3(&verts[indices[j]].Position), world));
+			XMStoreFloat3(&p1, XMVector3TransformCoord(XMLoadFloat3(&verts[indices[j + 1]].Position), world));
+			XMStoreFloat3(&p2, XMVector3TransformCoord(XMLoadFloat3(&verts[indices[j + 2]].Position), world));
+
+			//wallhit
+			{
+				XMVECTOR v0 = XMLoadFloat3(&p0);
+				XMVECTOR v1 = XMLoadFloat3(&p1);
+				XMVECTOR v2 = XMLoadFloat3(&p2);
+				XMVECTOR edge1 = v1 - v0;
+				XMVECTOR edge2 = v2 - v0;
+				XMVECTOR faceNormal = XMVector3Normalize(XMVector3Cross(edge1, edge2));
+
+				XMVECTOR rayDir = XMVector3Normalize(XMLoadFloat3(&to) - XMLoadFloat3(&from));
+				
+				bool isWall = true;
+				if (fabs(XMVectorGetY(faceNormal)) > 0.7f)
+				{
+					isWall = false;
+				};
+
+				float dot = XMVectorGetX(XMVector3Dot(faceNormal, rayDir));
+				if (dot > 0.0f) { isWall = false; };
+
+				if (isWall)
+				{
+					XMFLOAT3 hit, normal;
+					if (RayCast(p0, p1, p2, from, to, &hit, &normal))
+					{
+						g_Player.pos.x += sinf(g_Player.rot.y) * g_Player.spd;
+						g_Player.pos.z += cosf(g_Player.rot.y) * g_Player.spd;
+
+						isHit = true;
+						break;
+					}
+				}
+				//floorhit
+				{
+					XMFLOAT3 fromGround = g_Player.pos;
+					XMFLOAT3 toGround = g_Player.pos;
+					fromGround.y += 10.0f;
+					toGround.y -= 1000.0f;
+
+					XMFLOAT3 hit, normal;
+					if (RayCast(p0, p1, p2, fromGround, toGround, &hit, &normal))
+					{
+						isOnGround = true;
+						if (hit.y > maxGroundY)
+							maxGroundY = hit.y;
+					}
+				}
+			}
+		}
+
+
+
+	}
+	if (isOnGround)
+	{
+		const float tolerance = 1.0f;
+		float targetY = maxGroundY + PLAYER_OFFSET_Y;
+		float diff = g_Player.pos.y - targetY;
+
+		if (diff < -tolerance || diff > tolerance)
+		{
+			g_Player.pos.y += (targetY - g_Player.pos.y) * 0.2f;
+		}
+		else
+		{
+			g_Player.pos.y = targetY;
+		}
+	}
+	else
+	{
+		g_Player.pos.y = PLAYER_OFFSET_Y;
+	}
+
 	// レイキャストして足元の高さを求める
 	XMFLOAT3 HitPosition;		// 交点
 	XMFLOAT3 Normal;			// ぶつかったポリゴンの法線ベクトル（向き）
@@ -255,7 +363,7 @@ void UpdatePlayer(void)
 		g_Player.pos.y = PLAYER_OFFSET_Y;
 		Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	}
-
+	
 
 	// 弾発射処理
 	if (GetKeyboardTrigger(DIK_SPACE))

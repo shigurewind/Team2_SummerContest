@@ -131,6 +131,16 @@ void LoadModel( char *FileName, DX11_MODEL *Model )
 		}
 	}
 
+	//•Ç°”»’è—p
+
+	Model->VertexArrayCPU = new VERTEX_3D[model.VertexNum];
+	memcpy(Model->VertexArrayCPU, model.VertexArray, sizeof(VERTEX_3D) * model.VertexNum);
+	Model->VertexNumCPU = model.VertexNum;
+
+	Model->IndexArrayCPU = new unsigned short[model.IndexNum];
+	memcpy(Model->IndexArrayCPU, model.IndexArray, sizeof(unsigned short) * model.IndexNum);
+	Model->IndexNumCPU = model.IndexNum;
+
 	delete[] model.VertexArray;
 	delete[] model.IndexArray;
 	delete[] model.SubsetArray;
@@ -154,9 +164,19 @@ void UnloadModel( DX11_MODEL *Model )
 		}
 	}
 
-	if( Model->VertexBuffer )		Model->VertexBuffer->Release();
-	if( Model->IndexBuffer )		Model->IndexBuffer->Release();
-	if( Model->SubsetArray )		delete[] Model->SubsetArray;
+	//•Ç°”»’è—p
+	if (Model->VertexBuffer)		Model->VertexBuffer->Release();
+	if (Model->IndexBuffer)		Model->IndexBuffer->Release();
+	if (Model->SubsetArray)		delete[] Model->SubsetArray;
+
+	if (Model->VertexArrayCPU) {
+		delete[] Model->VertexArrayCPU;
+		Model->VertexArrayCPU = NULL;
+	}
+	if (Model->IndexArrayCPU) {
+		delete[] Model->IndexArrayCPU;
+		Model->IndexArrayCPU = NULL;
+	}
 }
 
 

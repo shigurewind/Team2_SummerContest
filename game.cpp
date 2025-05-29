@@ -17,6 +17,7 @@
 #include "enemy.h"
 #include "meshfield.h"
 #include "meshwall.h"
+#include "wallandfloor.h"
 #include "shadow.h"
 #include "tree.h"
 #include "bullet.h"
@@ -85,6 +86,8 @@ HRESULT InitGame(void)
 	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_DOWN), XMFLOAT3(0.0f, 0.0f, 0.0f),
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.25f), 16, 2, 80.0f, 80.0f);
 
+	// 壁と床
+	InitWallAndFloor();
 	// 木を生やす
 	InitTree();
 
@@ -122,6 +125,9 @@ void UninitGame(void)
 
 	// 壁の終了処理
 	UninitMeshWall();
+
+	//壁と床終了処理
+	UninitWallAndFloor();
 
 	// 地面の終了処理
 	UninitMeshField();
@@ -173,6 +179,9 @@ void UpdateGame(void)
 	// 壁処理の更新
 	UpdateMeshWall();
 
+	// 壁床処理の更新
+	UpdateWallAndFloor();
+
 	// 木の更新処理
 	UpdateTree();
 
@@ -200,6 +209,8 @@ void DrawGame0(void)
 	// 3Dの物を描画する処理
 	// 地面の描画処理
 	DrawMeshField();
+
+	DrawWallAndFloor();
 
 	// 影の描画処理
 	DrawShadow();

@@ -38,6 +38,13 @@ struct DX11_MODEL
 
 	DX11_SUBSET		*SubsetArray;
 	unsigned short	SubsetNum;
+
+//ï«è∞îªíËóp
+	VERTEX_3D* VertexArrayCPU;
+	unsigned short* IndexArrayCPU;
+	unsigned int VertexNumCPU;
+	unsigned int IndexNumCPU;
+
 };
 
 

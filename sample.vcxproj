@@ -161,6 +161,7 @@
     <ClInclude Include="sprite.h" />
     <ClInclude Include="title.h" />
     <ClInclude Include="tree.h" />
+    <ClInclude Include="wallandfloor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bullet.cpp" />
@@ -186,6 +187,7 @@
     <ClCompile Include="sprite.cpp" />
     <ClCompile Include="title.cpp" />
     <ClCompile Include="tree.cpp" />
+    <ClCompile Include="wallandfloor.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
