@@ -26,4 +26,5 @@ enum ItemID
 	//打ち方を決めるパーツ
 
 	//消耗品
+	ITEM_APPLE,
 };
