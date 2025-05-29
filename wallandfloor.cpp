@@ -12,13 +12,14 @@
 #include "debugproc.h"
 #include "wallandfloor.h"
 #include "shadow.h"
+#include "collision.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
 //0526floor
 #define	MODEL_WALLANDFLOOR_01			"data/MODEL/rockroom.obj"		// 読み込むモデル名
-#define	MODEL_WALLANDFLOOR_02			"data/MODEL/ModularFloor.obj"		// 読み込むモデル名
+#define	MODEL_WALLANDFLOOR_02			"data/MODEL/flor.obj"		// 読み込むモデル名
 
 #define	VALUE_MOVE			(5.0f)						// 移動量
 #define	VALUE_ROTATE		(XM_PI * 0.02f)				// 回転量
@@ -189,7 +190,7 @@ void DrawWallAndFloor(void)
 	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld;
 
 	// カリング無効
-	SetCullingMode(CULL_MODE_NONE);
+	SetCullingMode(CULL_MODE_BACK);
 
 	for (int i = 0; i < MAX_WALLANDFLOOR; i++)
 	{
@@ -230,4 +231,49 @@ void DrawWallAndFloor(void)
 WALLANDFLOOR* GetWallAndFloor()
 {
 	return &g_WallAndFloor[0];
+}
+BOOL RayHitWallAndFloor(XMFLOAT3 pos, XMFLOAT3* HitPosition, XMFLOAT3* Normal)
+{
+	XMFLOAT3 start = pos;
+	XMFLOAT3 end = pos;
+	start.y += 100.0f;
+	end.y -= 1000.0f;
+
+	BOOL hit = FALSE;
+	float closestDist = FLT_MAX;
+
+	for (int i = 0; i < MAX_WALLANDFLOOR; i++)
+	{
+		if (!g_WallAndFloor[i].use) continue;
+
+		DX11_MODEL* model = &g_WallAndFloor[i].model;
+		XMMATRIX world = XMLoadFloat4x4(&g_WallAndFloor[i].mtxWorld);
+
+		for (UINT j = 0; j < model->IndexNumCPU; j += 3)
+		{
+			int i0 = model->IndexArrayCPU[j];
+			int i1 = model->IndexArrayCPU[j + 1];
+			int i2 = model->IndexArrayCPU[j + 2];
+
+			XMFLOAT3 p0, p1, p2;
+			XMStoreFloat3(&p0, XMVector3TransformCoord(XMLoadFloat3(&model->VertexArrayCPU[i0].Position), world));
+			XMStoreFloat3(&p1, XMVector3TransformCoord(XMLoadFloat3(&model->VertexArrayCPU[i1].Position), world));
+			XMStoreFloat3(&p2, XMVector3TransformCoord(XMLoadFloat3(&model->VertexArrayCPU[i2].Position), world));
+
+			XMFLOAT3 tempHit, tempNormal;
+			if (RayCast(p0, p1, p2, start, end, &tempHit, &tempNormal))
+			{
+				float dist = XMVectorGetX(XMVector3Length(XMLoadFloat3(&tempHit) - XMLoadFloat3(&start)));
+				if (dist < closestDist)
+				{
+					closestDist = dist;
+					*HitPosition = tempHit;
+					*Normal = tempNormal;
+					hit = TRUE;
+				}
+			}
+		}
+	}
+
+	return hit;
 }

@@ -93,7 +93,7 @@ HRESULT InitPlayer(void)
 	g_Player.load = TRUE;
 	LoadModel(MODEL_PLAYER, &g_Player.model);
 
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y+50.0f, -50.0f);
+	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y+100.0f, -50.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -154,6 +154,7 @@ void UpdatePlayer(void)
 {
 	CAMERA *cam = GetCamera();
 
+	XMFLOAT3 nextPos = g_Player.pos;
 
 	if (g_Player.alive)
 	{
@@ -161,21 +162,21 @@ void UpdatePlayer(void)
 
 		// 移動処理
 		if (GetKeyboardPress(DIK_W)) {
-			g_Player.pos.x += sinf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z += cosf(cam->rot.y) * VALUE_MOVE;
+			nextPos.x += sinf(cam->rot.y) * VALUE_MOVE;
+			nextPos.z += cosf(cam->rot.y) * VALUE_MOVE;
 		}
 		if (GetKeyboardPress(DIK_S)) {
-			g_Player.pos.x -= sinf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z -= cosf(cam->rot.y) * VALUE_MOVE;
+			nextPos.x -= sinf(cam->rot.y) * VALUE_MOVE;
+			nextPos.z -= cosf(cam->rot.y) * VALUE_MOVE;
 		}
 		if (GetKeyboardPress(DIK_A)) {
-			g_Player.pos.x -= cosf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z += sinf(cam->rot.y) * VALUE_MOVE;
+			nextPos.x -= cosf(cam->rot.y) * VALUE_MOVE;
+			nextPos.z += sinf(cam->rot.y) * VALUE_MOVE;
 		}
 		if (GetKeyboardPress(DIK_D)) {
 
-			g_Player.pos.x += cosf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z -= sinf(cam->rot.y) * VALUE_MOVE;
+			nextPos.x += cosf(cam->rot.y) * VALUE_MOVE;
+			nextPos.z -= sinf(cam->rot.y) * VALUE_MOVE;
 		}
 		//正しい向き方向処理
 		//g_Player.rot.y = cam->rot.y + 3.14f;
@@ -196,7 +197,7 @@ void UpdatePlayer(void)
 		}
 
 		//地面
-		g_Player.pos.y += g_Player.verticalSpeed;
+		nextPos.y += g_Player.verticalSpeed;
 		if (g_Player.pos.y < 0)
 		{
 			g_Player.pos.y = 0;
@@ -208,7 +209,7 @@ void UpdatePlayer(void)
 		if ( IsMouseLeftTriggered())
 		{
 			
-			XMFLOAT3 pos = cam->pos;  // 
+			XMFLOAT3 pos = cam->pos; 
 
 			XMFLOAT3 direction;
 			direction = cam->rot;
@@ -243,19 +244,12 @@ void UpdatePlayer(void)
 	//壁床判定
 	bool isHit = false;
 
-	bool isOnGround = false;
-	float maxGroundY = -FLT_MAX;
+
 
 	WALLANDFLOOR* walls = GetWallAndFloor();
 	XMFLOAT3 from = g_Player.pos;
-	XMFLOAT3 to = from;
+	XMFLOAT3 to = nextPos;
 
-	float moveDistance = 2.0f;
-	float buffer = 8.0f;
-	moveDistance += buffer;
-
-	to.x -= sinf(g_Player.rot.y) * moveDistance;
-	to.z -= cosf(g_Player.rot.y) * moveDistance;
 
 	for (int i = 0; i < MAX_WALLANDFLOOR; i++)
 	{
@@ -304,58 +298,27 @@ void UpdatePlayer(void)
 						break;
 					}
 				}
-				//floorhit
-				{
-					XMFLOAT3 fromGround = g_Player.pos;
-					XMFLOAT3 toGround = g_Player.pos;
-					fromGround.y += 10.0f;
-					toGround.y -= 1000.0f;
-
-					XMFLOAT3 hit, normal;
-					if (RayCast(p0, p1, p2, fromGround, toGround, &hit, &normal))
-					{
-						isOnGround = true;
-						if (hit.y > maxGroundY)
-							maxGroundY = hit.y;
-					}
-				}
 			}
 		}
 
 
 
 	}
-	if (isOnGround)
-	{
-		const float tolerance = 1.0f;
-		float targetY = maxGroundY + PLAYER_OFFSET_Y;
-		float diff = g_Player.pos.y - targetY;
 
-		if (diff < -tolerance || diff > tolerance)
-		{
-			g_Player.pos.y += (targetY - g_Player.pos.y) * 0.2f;
-		}
-		else
-		{
-			g_Player.pos.y = targetY;
-		}
-	}
-	else
+	if (!isHit)
 	{
-		g_Player.pos.y = PLAYER_OFFSET_Y;
+		g_Player.pos = nextPos;
 	}
-
 	// レイキャストして足元の高さを求める
 	XMFLOAT3 HitPosition;		// 交点
 	XMFLOAT3 Normal;			// ぶつかったポリゴンの法線ベクトル（向き）
-	BOOL ans = RayHitField(g_Player.pos, &HitPosition, &Normal);
+	BOOL ans = RayHitWallAndFloor(g_Player.pos, &HitPosition, &Normal);
 	if (ans)
 	{
 		g_Player.pos.y = HitPosition.y + PLAYER_OFFSET_Y;
 	}
 	else
 	{
-		g_Player.pos.y = PLAYER_OFFSET_Y;
 		Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	}
 	
@@ -365,6 +328,10 @@ void UpdatePlayer(void)
 	//{
 	//	SetBullet(g_Player.pos, g_Player.rot);
 	//}
+
+
+
+
 
 
 	// 影もプレイヤーの位置に合わせる

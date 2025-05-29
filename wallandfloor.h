@@ -43,3 +43,4 @@ void DrawWallAndFloor(void);
 
 WALLANDFLOOR* GetWallAndFloor(void);
 
+BOOL RayHitWallAndFloor(XMFLOAT3 pos, XMFLOAT3* HitPosition, XMFLOAT3* Normal);
