@@ -322,6 +322,8 @@ void GhostMovement(int i)
 
 void SkeletonMovement(int i)
 {
+	ChasingPlayer(i);
+
 	if (g_Enemy[i].use == FALSE || g_Enemy[i].tblMax <= 0)
 		return;
 
