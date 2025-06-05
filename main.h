@@ -19,6 +19,8 @@
 
 #include <DirectXMath.h>
 
+#include <fbxsdk.h>
+
 
 // –{—ˆ‚Íƒwƒbƒ_‚É‘‚©‚È‚¢•û‚ª—Ç‚¢
 using namespace DirectX;

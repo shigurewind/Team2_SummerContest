@@ -19,6 +19,8 @@
 #include "result.h"
 #include "debugproc.h"
 
+
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -57,6 +59,7 @@ int g_Mode = MODE_TITLE;					// 起動時の画面を設定
 //=============================================================================
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+
 	UNREFERENCED_PARAMETER(hPrevInstance);	// 無くても良いけど、警告が出る（未使用宣言）
 	UNREFERENCED_PARAMETER(lpCmdLine);		// 無くても良いけど、警告が出る（未使用宣言）
 
