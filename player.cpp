@@ -30,8 +30,6 @@
 
 #define PLAYER_PARTS_MAX	(2)								// プレイヤーのパーツの数
 
-#define RELOAD_AMOUNT		(5)
-//リロードされる弾数
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -79,8 +77,9 @@ static INTERPOLATION_DATA* g_MoveTblAdr[] =
 
 
 
-
-
+int Min(int a, int b) {
+	return (a < b) ? a : b;
+}
 
 //=============================================================================
 // 初期化処理
@@ -99,8 +98,8 @@ HRESULT InitPlayer(void)
 	g_Player.alive = TRUE;			// TRUE:生きてる
 	g_Player.size = PLAYER_SIZE;	// 当たり判定の大きさ
 
-	g_Player.ammo = 10;				//弾数
-	g_Player.maxAmmo = 20;			//最大弾数
+	g_Player.ammo = 5;				//リロードできる弾数
+	g_Player.maxammo = 20;			//持ってる弾数
 
 	// ここでプレイヤー用の影を作成している
 	XMFLOAT3 pos = g_Player.pos;
@@ -215,9 +214,15 @@ void UpdatePlayer(void)
 		// Rキーでリロード処理
 		if (GetKeyboardTrigger(DIK_R))
 		{
-			g_Player.ammo += RELOAD_AMOUNT;
-			if (g_Player.ammo > g_Player.maxAmmo)
-				g_Player.ammo = g_Player.maxAmmo;
+			// 弾が不足していて、かつ手持ちに弾がある場合のみリロード
+			if (g_Player.ammo < 5 && g_Player.maxammo > 0)
+			{
+
+				int need = 5 - g_Player.ammo;
+				int reload = Min(need, g_Player.maxammo);
+				g_Player.ammo += reload;
+				g_Player.maxammo -= reload;
+			}
 		}
 
 	}
