@@ -15,6 +15,7 @@
 #include "debugproc.h"
 #include "enemy.h"
 #include "player.h"
+#include "bullet.h"
 #include "shadow.h"
 #include "collision.h"
 
@@ -39,6 +40,7 @@
 
 
 
+
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -48,8 +50,8 @@
 // グローバル変数
 //*****************************************************************************
 static ENEMY			g_Enemy[MAX_ENEMY];				// エネミー
-
 int g_Enemy_load = 0;
+
 
 static INTERPOLATION_DATA g_MoveTbl0[] = {	// pos, rot, scl, frame
 	{ XMFLOAT3(0.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 5.0f },
@@ -70,6 +72,7 @@ static INTERPOLATION_DATA* g_MoveTblAdr[] =
 //=============================================================================
 HRESULT InitEnemy(void)
 {
+
 	for (int i = 0; i < MAX_ENEMY; i++)
 	{
 		LoadModel(MODEL_ENEMY, &g_Enemy[i].model);
@@ -95,6 +98,9 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].tblNo = 0;			// 再生する行動データテーブルNoをセット
 		g_Enemy[i].tblMax = 0;			// 再生する行動データテーブルのレコード数をセット
 	
+		g_Enemy[i].fireCooldown = 5.0f;
+		g_Enemy[i].fireTimer = 0.0f;
+
 
 		g_Enemy[i].use = TRUE;			// TRUE:生きてる
 	}
@@ -109,6 +115,11 @@ HRESULT InitEnemy(void)
 	g_Enemy[1].time = 0.0f;		// 線形補間用のタイマーをクリア
 	g_Enemy[1].tblNo = 0;		// 再生するアニメデータの先頭アドレスをセット
 	g_Enemy[1].tblMax = sizeof(g_MoveTbl0) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
+	
+	g_Enemy[2].type = SPIDER;
+
+
+	
 	return S_OK;
 }
 
@@ -147,6 +158,10 @@ void UpdateEnemy(void)
 
 		case SKELETON:
 			SkeletonMovement(i);
+			break;
+
+		case SPIDER:
+			SpiderMovement(i);
 			break;
 
 		default:
@@ -193,6 +208,8 @@ void DrawEnemy(void)
 	// カリング無効
 	SetCullingMode(CULL_MODE_NONE);
 
+
+
 	for (int i = 0; i < MAX_ENEMY; i++)
 	{
 		if (g_Enemy[i].use == FALSE) continue;
@@ -217,9 +234,9 @@ void DrawEnemy(void)
 
 		XMStoreFloat4x4(&g_Enemy[i].mtxWorld, mtxWorld);
 
-
-		// モデル描画
-		DrawModel(&g_Enemy[i].model);
+			// モデル描画
+			DrawModel(&g_Enemy[i].model);
+		
 	}
 
 	// カリング設定を戻す
@@ -233,6 +250,7 @@ ENEMY *GetEnemy()
 {
 	return &g_Enemy[0];
 }
+
 
 //=============================================================================
 // エネミーの動き
@@ -360,4 +378,40 @@ void SkeletonMovement(int i)
 	XMFLOAT3 pos = g_Enemy[i].pos;
 	pos.y -= (ENEMY_OFFSET_Y - 0.1f);
 	SetPositionShadow(g_Enemy[i].shadowIdx, pos);
+}
+
+void SpiderMovement(int i)
+{
+	ChasingPlayer(i);
+
+	PLAYER* player = GetPlayer();
+
+	// エネミーからプレイヤーまでのベクトル
+	XMFLOAT3 dir;
+	dir.x = player->pos.x - g_Enemy[i].pos.x;
+	dir.y = player->pos.y - g_Enemy[i].pos.y;
+	dir.z = player->pos.z - g_Enemy[i].pos.z;
+
+	if (g_Enemy[i].fireTimer > 0.0f)
+	{
+		g_Enemy[i].fireTimer -= 1.0f / 60.0f;  // 60fps
+	}
+
+	// プレイヤーの座標までの計算
+	XMFLOAT3 toPlayer = {dir.x, dir.y, dir.z};
+
+	float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
+	float range = 100.0f; // 発射範囲
+
+	if (distSq < range * range)
+	{
+		// 発射するとき
+		if (g_Enemy[i].fireTimer <= 0.0f)
+		{
+			SetBullet(g_Enemy[i].pos, g_Enemy[i].rot);
+
+			// Reset timer
+			g_Enemy[i].fireTimer = g_Enemy[i].fireCooldown;
+		}
+	}
 }

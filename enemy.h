@@ -46,6 +46,10 @@ struct ENEMY
 	int					tblMax;				// そのテーブルのデータ数
 
 	int					moveCounter;		// 向き変わるタイマー
+
+	//エネミーが発射するとき
+	float				fireCooldown;		//
+	float				fireTimer;			//
 };
 
 enum ENEMY_TYPE
@@ -72,4 +76,6 @@ void ChangeEnemyDirection(int i);
 void ChasingPlayer(int i);
 void GhostMovement(int i);
 void SkeletonMovement(int i);
+void SpiderMovement(int i);
+
 
