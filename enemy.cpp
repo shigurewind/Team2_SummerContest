@@ -138,6 +138,7 @@ void UpdateEnemy(void)
 	// エネミーを動かく場合は、影も合わせて動かす事を忘れないようにね！
 	for (int i = 0; i < MAX_ENEMY; i++)
 	{
+
 		switch (g_Enemy[i].type)
 		{
 		case GHOST:
