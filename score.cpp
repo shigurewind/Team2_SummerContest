@@ -8,13 +8,14 @@
 #include "renderer.h"
 #include "score.h"
 #include "sprite.h"
+#include "player.h"
 
 //*****************************************************************************
 // ƒ}ƒNƒ’è‹`
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// ƒLƒƒƒ‰ƒTƒCƒY
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(1)		// ƒeƒNƒXƒ`ƒƒ‚Ì”
+#define TEXTURE_MAX					(3)		// ƒeƒNƒXƒ`ƒƒ‚Ì”
 
 
 //*****************************************************************************
@@ -30,6 +31,8 @@ static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// ƒeƒNƒXƒ`ƒ
 
 static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/number16x32.png",
+	"data/TEXTURE/HP00.png",
+	"data/TEXTURE/HP01.png",
 };
 
 
@@ -179,6 +182,38 @@ void DrawScore(void)
 		// ŽŸ‚ÌŒ…‚Ö
 		number /= 10;
 	}
+
+	//HP
+	{
+		PLAYER* player = GetPlayer();
+
+		//ƒP[ƒW‚ÌHPƒo[
+		// ƒeƒNƒXƒ`ƒƒÝ’è
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
+		//ƒQ[ƒW‚ÌˆÊ’u‚âƒeƒNƒXƒ`ƒƒ[À•W‚ð”½‰f
+		float pw = 280;		// ƒQ[ƒW‚Ì•\Ž¦•
+		//pw = pw * ((float)player->HP / HP_MAX);
+
+
+		// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ðÝ’è
+		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, 1.0f, 1.0f);
+
+		// ƒ|ƒŠƒSƒ“•`‰æ
+		GetDeviceContext()->Draw(4, 0);
+
+
+		//ã‚ÌHP‚ÌUI
+		// ƒeƒNƒXƒ`ƒƒÝ’è
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
+
+		// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ðÝ’è
+		SetSprite(g_VertexBuffer, 130.0f, 30.0f, 400, 180, 0.0f, 0.0f, 1.0f, 1.0f);
+
+		// ƒ|ƒŠƒSƒ“•`‰æ
+		GetDeviceContext()->Draw(4, 0);
+
+	}
+
 }
 
 
