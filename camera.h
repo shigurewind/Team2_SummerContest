@@ -52,6 +52,12 @@ void SetCamera(void);
 
 CAMERA* GetCamera(void);
 
+// eŒû‚ÌˆÊ’uE‰ñ“]æ“¾ŠÖ” 
+XMFLOAT3 GetGunMuzzlePosition(void);
+XMFLOAT3 GetGunMuzzleRotation(void);
+
+extern bool isFirstPersonMode;
+
 void SetViewPort(int type);
 int GetViewPortType(void);
 

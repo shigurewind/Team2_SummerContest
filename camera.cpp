@@ -39,7 +39,7 @@ static CAMERA			g_Camera;		// カメラデータ
 static int				g_ViewPortType = TYPE_FULL_SCREEN;
 
 
-bool isFirstPersonMode = false; // 最初はマオス自由操作状態
+bool isFirstPersonMode = false; // 最初はマウス自由操作状態
 bool tabKeyWasPressed = false; // 前フレームのTabキー状態
 
 //=============================================================================
@@ -172,6 +172,41 @@ CAMERA* GetCamera(void)
 	return &g_Camera;
 }
 
+//===============================
+// 銃口の位置と回転取得関数 
+XMFLOAT3 GetGunMuzzlePosition()
+{
+	CAMERA* cam = GetCamera();
+	XMVECTOR camPos = XMLoadFloat3(&cam->pos);
+	XMVECTOR camDir = XMVector3Normalize(XMLoadFloat3(&cam->at) - camPos);
+
+	// ?? 修正：正しい右ベクトルの計算（up × camDir）→ 右手系
+	XMVECTOR right = XMVector3Normalize(XMVector3Cross(XMLoadFloat3(&cam->up), camDir)); // ←ここ修正！
+	XMVECTOR down = XMVectorScale(XMLoadFloat3(&cam->up), -1.0f);
+
+	// 右下にオフセットを加え、少し前へ
+	XMVECTOR muzzleOffset =
+		XMVectorAdd(
+			XMVectorAdd(XMVectorScale(right, 10.0f), XMVectorScale(down, 5.0f)),
+			XMVectorScale(camDir, 10.0f)
+		);
+
+	XMVECTOR muzzlePos = camPos + muzzleOffset;
+
+	XMFLOAT3 result;
+	XMStoreFloat3(&result, muzzlePos);
+	return result;
+}
+
+XMFLOAT3 GetGunMuzzleRotation()
+{
+	XMFLOAT3 rot = GetCamera()->rot;
+
+	// Y軸を反転（真後ろを向かせる）
+	rot.y += XM_PI; // ← これを追加！
+
+	return rot;
+}
 //=============================================================================
 // ビューポートの設定
 //=============================================================================

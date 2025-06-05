@@ -30,8 +30,8 @@
 
 #define PLAYER_PARTS_MAX	(2)								// プレイヤーのパーツの数
 
-#define RELOAD_AMOUNT		(5)								//リロードされる弾数
-
+#define RELOAD_AMOUNT		(5)
+//リロードされる弾数
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -204,20 +204,14 @@ void UpdatePlayer(void)
 		}
 
 
-		//なんちゃってBullet発射
-		if ( IsMouseLeftTriggered() && g_Player.ammo > 0)
+		// 弾発射処理（共通関数使用） 
+		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
 		{
-			
-			XMFLOAT3 pos = cam->pos;  // 
-
-			XMFLOAT3 direction;
-			direction = cam->rot;
-			direction.y += 3.14f;
-			// 
-			SetBullet(pos, direction);
-			g_Player.ammo--;  //弾を消費
+			XMFLOAT3 pos = isFirstPersonMode ? GetGunMuzzlePosition() : g_Player.pos;  
+			XMFLOAT3 rot = isFirstPersonMode ? GetGunMuzzleRotation() : g_Player.rot;  
+			SetBullet(pos, rot);                                                       
+			g_Player.ammo--;
 		}
-
 		// Rキーでリロード処理
 		if (GetKeyboardTrigger(DIK_R))
 		{

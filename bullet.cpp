@@ -20,7 +20,8 @@
 
 #define	BULLET_SPEED		(10.0f)			// 弾の移動スピード
 
-
+#define BULLET_MODEL		"data/MODEL/sphere.obj" //弾のモデル
+#define BULLET_SIZE		    (0.5f)
 //*****************************************************************************
 // 構造体定義
 //*****************************************************************************
@@ -40,10 +41,10 @@ static ID3D11ShaderResourceView		*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチ
 static BULLET						g_Bullet[MAX_BULLET];	// 弾ワーク
 static int							g_TexNo;				// テクスチャ番号
 
-static char *g_TextureName[] =
-{
-	"data/TEXTURE/bullet00.png",
-};
+//static char *g_TextureName[] =
+//{
+//	"data/TEXTURE/bullet00.png",
+//};
 
 //=============================================================================
 // 初期化処理
@@ -53,17 +54,12 @@ HRESULT InitBullet(void)
 	MakeVertexBullet();
 
 	// テクスチャ生成
-	for (int i = 0; i < TEXTURE_MAX; i++)
+	for (int i = 0; i < MAX_BULLET; i++)
 	{
-		g_Texture[i] = NULL;
-		D3DX11CreateShaderResourceViewFromFile(GetDevice(),
-			g_TextureName[i],
-			NULL,
-			NULL,
-			&g_Texture[i],
-			NULL);
+		g_Bullet[i].use = false;
+		LoadModel(BULLET_MODEL, &g_Bullet[i].model); // 3Dモデル読み込み //変更箇所
+		g_Bullet[i].size = BULLET_SIZE;
 	}
-
 	g_TexNo = 0;
 
 	// 弾ワークの初期化
@@ -91,19 +87,9 @@ HRESULT InitBullet(void)
 //=============================================================================
 void UninitBullet(void)
 {
-	for (int nCntTex = 0; nCntTex < TEXTURE_MAX; nCntTex++)
+	for (int i = 0; i < MAX_BULLET; i++)
 	{
-		if (g_Texture[nCntTex] != NULL)
-		{// テクスチャの解放
-			g_Texture[nCntTex]->Release();
-			g_Texture[nCntTex] = NULL;
-		}
-	}
-
-	if (g_VertexBuffer != NULL)
-	{// 頂点バッファの解放
-		g_VertexBuffer->Release();
-		g_VertexBuffer = NULL;
+		UnloadModel(&g_Bullet[i].model);
 	}
 }
 
@@ -117,9 +103,19 @@ void UpdateBullet(void)
 	{
 		if (g_Bullet[i].use)
 		{
-			// 弾の移動処理
-			g_Bullet[i].pos.x -= sinf(g_Bullet[i].rot.y) * g_Bullet[i].spd;
-			g_Bullet[i].pos.z -= cosf(g_Bullet[i].rot.y) * g_Bullet[i].spd;
+			//弾の移動処理
+			float yaw = g_Bullet[i].rot.y;
+			float pitch = g_Bullet[i].rot.x;
+
+			XMFLOAT3 dir = {
+				-sinf(yaw) * cosf(pitch),
+				sinf(pitch),
+				-cosf(yaw) * cosf(pitch)
+			};
+
+			g_Bullet[i].pos.x += dir.x * g_Bullet[i].spd;
+			g_Bullet[i].pos.y += dir.y * g_Bullet[i].spd;
+			g_Bullet[i].pos.z += dir.z * g_Bullet[i].spd;
 
 			// 影の位置設定
 			SetPositionShadow(g_Bullet[i].shadowIdx, XMFLOAT3(g_Bullet[i].pos.x, 0.1f, g_Bullet[i].pos.z));
@@ -143,62 +139,36 @@ void UpdateBullet(void)
 //=============================================================================
 // 描画処理
 //=============================================================================
+
 void DrawBullet(void)
 {
-	// ライティングを無効
-	SetLightEnable(FALSE);
-
-	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld;
-
-	// 頂点バッファ設定
-	UINT stride = sizeof(VERTEX_3D);
-	UINT offset = 0;
-	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
-
-	// プリミティブトポロジ設定
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
 	for (int i = 0; i < MAX_BULLET; i++)
 	{
 		if (g_Bullet[i].use)
 		{
-			// ワールドマトリックスの初期化
+			XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld;
 			mtxWorld = XMMatrixIdentity();
 
-			// スケールを反映
-			mtxScl = XMMatrixScaling(g_Bullet[i].scl.x, g_Bullet[i].scl.y, g_Bullet[i].scl.z);
+			mtxScl = XMMatrixScaling(g_Bullet[i].size, g_Bullet[i].size, g_Bullet[i].size);
 			mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
-			// 回転を反映
-			mtxRot = XMMatrixRotationRollPitchYaw(g_Bullet[i].rot.x, g_Bullet[i].rot.y + XM_PI, g_Bullet[i].rot.z);
+			mtxRot = XMMatrixRotationRollPitchYaw(
+				g_Bullet[i].rot.x,
+				g_Bullet[i].rot.y,
+				g_Bullet[i].rot.z);
 			mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
 
-			// 移動を反映
-			mtxTranslate = XMMatrixTranslation(g_Bullet[i].pos.x, g_Bullet[i].pos.y, g_Bullet[i].pos.z);
+			mtxTranslate = XMMatrixTranslation(
+				g_Bullet[i].pos.x,
+				g_Bullet[i].pos.y,
+				g_Bullet[i].pos.z);
 			mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
-			// ワールドマトリックスの設定
 			SetWorldMatrix(&mtxWorld);
-
-			XMStoreFloat4x4(&g_Bullet[i].mtxWorld, mtxWorld);
-
-
-			// マテリアル設定
-			SetMaterial(g_Bullet[i].material);
-
-			// テクスチャ設定
-			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_TexNo]);
-
-			// ポリゴンの描画
-			GetDeviceContext()->Draw(4, 0);
+			DrawModel(&g_Bullet[i].model); // 3Dモデル描画 //変更箇所
 		}
 	}
-
-	// ライティングを有効に
-	SetLightEnable(TRUE);
-
 }
-
 //=============================================================================
 // 頂点情報の作成
 //=============================================================================
