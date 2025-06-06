@@ -1,6 +1,13 @@
 #pragma once
-#include "model.h"
+#include <vector>
+#include <d3d11.h>
+#include <DirectXMath.h>
 
+using namespace DirectX;
+
+//*****************************************************************************
+// 
+//*****************************************************************************
 class BaseEnemy {
 public:
 	BaseEnemy();
@@ -13,14 +20,22 @@ public:
 	bool IsUsed() const { return use; }
 	void SetUsed(bool b) { use = b; }
 
+	void SetPosition(const XMFLOAT3& p);
+	XMFLOAT3 GetPosition() const;
+
+	void SetScale(const XMFLOAT3& s);
+	XMFLOAT3 GetScale() const;
+
 protected:
 	XMFLOAT3 pos;
 	XMFLOAT3 scl;
 	XMFLOAT4X4 mtxWorld;
 	bool use;
-
 };
 
+//*****************************************************************************
+// 
+//*****************************************************************************
 class ScarecrowEnemy : public BaseEnemy {
 public:
 	ScarecrowEnemy();
@@ -31,8 +46,16 @@ public:
 	void Draw() override;
 
 private:
-	int texID;  // ??ID
+	ID3D11ShaderResourceView* texture;
+	struct MATERIAL* material;
+	float width, height;
 };
+
+//*****************************************************************************
+// 
+//*****************************************************************************
+std::vector<BaseEnemy*>& GetEnemies();
+HRESULT MakeVertexEnemy();
 void InitEnemy();
 void UpdateEnemy();
 void DrawEnemy();

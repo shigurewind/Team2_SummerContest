@@ -259,6 +259,9 @@ void DrawGame(void)
 	//SetCameraAT(pos);
 	SetCamera();
 
+
+	std::vector<BaseEnemy*>& enemies = GetEnemies();
+
 	switch(g_ViewPortType_Game)
 	{
 	case TYPE_FULL_SCREEN:
@@ -272,9 +275,15 @@ void DrawGame(void)
 		DrawGame0();
 
 		// エネミー視点
-		pos = GetEnemy()->pos;
-		pos.y = 0.0f;
-		SetCameraAT(pos);
+		for (auto enemy : enemies)
+		{
+			if (enemy->IsUsed()) {
+				pos = enemy->GetPosition();
+				pos.y = 0.0f;
+				SetCameraAT(pos);
+				break; 
+			}
+		}
 		SetCamera();
 		SetViewPort(TYPE_RIGHT_HALF_SCREEN);
 		DrawGame0();
@@ -286,9 +295,15 @@ void DrawGame(void)
 		DrawGame0();
 
 		// エネミー視点
-		pos = GetEnemy()->pos;
-		pos.y = 0.0f;
-		SetCameraAT(pos);
+		for (auto enemy : enemies)
+		{
+			if (enemy->IsUsed()) {
+				pos = enemy->GetPosition();
+				pos.y = 0.0f;
+				SetCameraAT(pos);
+				break;
+			}
+		}
 		SetCamera();
 		SetViewPort(TYPE_DOWN_HALF_SCREEN);
 		DrawGame0();
@@ -304,25 +319,18 @@ void DrawGame(void)
 //=============================================================================
 void CheckHit(void)
 {
-	ENEMY *enemy = GetEnemy();		// エネミーのポインターを初期化
+	std::vector<BaseEnemy*>& enemies = GetEnemies();		// エネミーのポインターを初期化
 	PLAYER *player = GetPlayer();	// プレイヤーのポインターを初期化
 	BULLET *bullet = GetBullet();	// 弾のポインターを初期化
 
 	// 敵とプレイヤーキャラ
-	for (int i = 0; i < MAX_ENEMY; i++)
+	for (auto enemy : enemies)
 	{
-		//敵の有効フラグをチェックする
-		if (enemy[i].use == FALSE)
-			continue;
+		if (!enemy->IsUsed()) continue;
 
-		//BCの当たり判定
-		if (CollisionBC(player->pos, enemy[i].pos, player->size, enemy[i].size))
+		if (CollisionBC(player->pos, enemy->GetPosition(), player->size, 5.0f)) 
 		{
-			// 敵キャラクターは倒される
-			enemy[i].use = FALSE;
-			ReleaseShadow(enemy[i].shadowIdx);
-
-			// スコアを足す
+			enemy->SetUsed(false);
 			AddScore(100);
 		}
 	}
@@ -336,24 +344,16 @@ void CheckHit(void)
 			continue;
 
 		// 敵と当たってるか調べる
-		for (int j = 0; j < MAX_ENEMY; j++)
+		for (auto enemy : enemies)
 		{
-			//敵の有効フラグをチェックする
-			if (enemy[j].use == FALSE)
-				continue;
+			if (!enemy->IsUsed()) continue;
 
-			//BCの当たり判定
-			if (CollisionBC(bullet[i].pos, enemy[j].pos, bullet[i].fWidth, enemy[j].size))
+			if (CollisionBC(bullet[i].pos, enemy->GetPosition(), bullet[i].fWidth, 5.0f))
 			{
-				// 当たったから未使用に戻す
-				bullet[i].use = FALSE;
-				ReleaseShadow(bullet[i].shadowIdx);
+				bullet[i].use = false;
+				ReleaseShadow(bullet[i].shadowIdx); 
 
-				// 敵キャラクターは倒される
-				enemy[j].use = FALSE;
-				ReleaseShadow(enemy[j].shadowIdx);
-
-				// スコアを足す
+				enemy->SetUsed(false);
 				AddScore(10);
 			}
 		}
@@ -362,15 +362,13 @@ void CheckHit(void)
 
 
 	// エネミーが全部死亡したら状態遷移
-	int enemy_count = 0;
-	for (int i = 0; i < MAX_ENEMY; i++)
+	int alive = 0;
+	for (auto enemy : enemies)
 	{
-		if (enemy[i].use == FALSE) continue;
-		enemy_count++;
+		if (enemy->IsUsed()) alive++;
 	}
 
-	// エネミーが０匹？
-	if (enemy_count == 0)
+	if (alive == 0)
 	{
 		SetFade(FADE_OUT, MODE_RESULT);
 	}
