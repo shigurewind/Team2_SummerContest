@@ -90,6 +90,10 @@ HRESULT InitPlayer(void)
 	g_Player.load = TRUE;
 	LoadModel(MODEL_PLAYER, &g_Player.model);
 
+	//FBXTEST
+	//LoadFBXModel("data/MODEL/model.fbx", &g_Player.model);
+
+
 	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y+50.0f, -50.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);

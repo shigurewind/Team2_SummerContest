@@ -9,6 +9,9 @@
 #include "model.h"
 #include "camera.h"
 
+#include <vector>
+#include <iostream>
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -619,6 +622,97 @@ void SetModelDiffuse(DX11_MODEL *Model, int mno, XMFLOAT4 diffuse)
 	Model->SubsetArray[mno].Material.Material.Diffuse = diffuse;
 }
 
+
+// FBXモデルの読み込み
+void LoadFBXModel(char* FileName, DX11_MODEL* dxModel)
+{
+	FbxManager* fbxManager = FbxManager::Create();
+	FbxIOSettings* ios = FbxIOSettings::Create(fbxManager, IOSROOT);
+	fbxManager->SetIOSettings(ios);
+
+	FbxImporter* importer = FbxImporter::Create(fbxManager, "");
+	FbxScene* scene = FbxScene::Create(fbxManager, "scene");
+
+	if (!importer->Initialize(FileName, -1, fbxManager->GetIOSettings())) {
+		std::cout << "FBX Import failed" << std::endl;
+		return;
+	}
+	importer->Import(scene);
+	importer->Destroy();
+
+	FbxNode* root = scene->GetRootNode();
+	if (!root) return;
+
+	std::vector<VERTEX_3D> vertices;
+	std::vector<UINT> indices;
+
+	for (int i = 0; i < root->GetChildCount(); ++i) {
+		FbxNode* node = root->GetChild(i);
+		FbxMesh* mesh = node->GetMesh();
+		if (!mesh) continue;
+
+		FbxVector4* ctrlPoints = mesh->GetControlPoints();
+		int polyCount = mesh->GetPolygonCount();
+
+		for (int i = 0; i < polyCount; ++i) {
+			for (int j = 0; j < 3; ++j) {
+				int ctrlIdx = mesh->GetPolygonVertex(i, j);
+				FbxVector4 pos = ctrlPoints[ctrlIdx];
+
+				VERTEX_3D v;
+				v.Position = XMFLOAT3((float)pos[0], (float)pos[1], (float)pos[2]);
+				v.Normal = XMFLOAT3(0, 1, 0);
+				v.Diffuse = XMFLOAT4(1, 1, 1, 1);
+				v.TexCoord = XMFLOAT2(0, 0);
+
+				vertices.push_back(v);
+				indices.push_back((UINT)indices.size());
+			}
+		}
+		break; // ?加?第一个子?点
+	}
+
+	// ?建 VertexBuffer
+	{
+		D3D11_BUFFER_DESC bd = {};
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(VERTEX_3D) * (UINT)vertices.size();
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+		D3D11_SUBRESOURCE_DATA sd = {};
+		sd.pSysMem = vertices.data();
+
+		GetDevice()->CreateBuffer(&bd, &sd, &dxModel->VertexBuffer);
+	}
+
+	// ?建 IndexBuffer
+	{
+		D3D11_BUFFER_DESC bd = {};
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(UINT) * (UINT)indices.size();
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+		D3D11_SUBRESOURCE_DATA sd = {};
+		sd.pSysMem = indices.data();
+
+		GetDevice()->CreateBuffer(&bd, &sd, &dxModel->IndexBuffer);
+	}
+
+	dxModel->SubsetNum = 1;
+	dxModel->SubsetArray = new DX11_SUBSET[1];
+	dxModel->SubsetArray[0].StartIndex = 0;
+	dxModel->SubsetArray[0].IndexNum = (UINT)indices.size();
+
+	dxModel->SubsetArray[0].Material.Material.Diffuse = XMFLOAT4(1, 1, 1, 1);
+	dxModel->SubsetArray[0].Material.Material.Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1);
+	dxModel->SubsetArray[0].Material.Material.Specular = XMFLOAT4(1, 1, 1, 1);
+	dxModel->SubsetArray[0].Material.Material.Emission = XMFLOAT4(0, 0, 0, 1);
+	dxModel->SubsetArray[0].Material.Material.Shininess = 8.0f;
+	dxModel->SubsetArray[0].Material.Material.noTexSampling = 1;
+	dxModel->SubsetArray[0].Material.Texture = nullptr;
+
+	fbxManager->Destroy();
+}
 
 
 

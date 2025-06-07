@@ -137,6 +137,40 @@ void PrintNode(FbxNode* node, int hierarchy)
 	}
 }
 
+//FBXノードの処理
+void ProcessNode(FbxNode* node) {
+	FbxMesh* mesh = node->GetMesh();
+	if (mesh) {
+		ProcessMesh(mesh);
+	}
+	int childCount = node->GetChildCount();
+	for (int i = 0; i < childCount; ++i) {
+		ProcessNode(node->GetChild(i));
+	}
+}
+
+//FBXメッシュの処理
+void ProcessMesh(FbxMesh* mesh) {
+	int vertexCount = mesh->GetControlPointsCount();
+	FbxVector4* ctrlPoints = mesh->GetControlPoints();
+
+	// 頂点位置
+	for (int i = 0; i < vertexCount; ++i) {
+		float x = (float)ctrlPoints[i][0];
+		float y = (float)ctrlPoints[i][1];
+		float z = (float)ctrlPoints[i][2];
+		
+	}
+
+	// 頂点インデックス
+	for (int i = 0; i < mesh->GetPolygonCount(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int ctrlPointIndex = mesh->GetPolygonVertex(i, j);
+			//index arrayに入れる
+		}
+	}
+}
+
 
 int InitFBXModelTest() 
 {
@@ -151,6 +185,9 @@ int InitFBXModelTest()
 	{
 		return 0;
 	}
+	FbxIOSettings* iosetting = FbxIOSettings::Create(fbx_manager, IOSROOT);
+	fbx_manager->SetIOSettings(iosetting);
+
 
 	// FBXのマネージャーとインポーターの生成
 	fbx_scene = FbxScene::Create(fbx_manager, "");
@@ -168,7 +205,7 @@ int InitFBXModelTest()
 		return 0;
 	}
 
-	fbx_importer->Initialize("hand.fbx");
+	fbx_importer->Initialize("data\MODEL\model.fbx");
 	//fbx_importer->Initialize("unitychan.fbx");
 	fbx_importer->Import(fbx_scene);
 
@@ -188,3 +225,105 @@ int InitFBXModelTest()
 
 	return 0;
 }
+
+//-------------------------------------------------------------------------
+
+static FBXTESTMODEL g_FBXTestModel;	// FBXモデルのデータ
+
+HRESULT InitFBXTestModel(void)
+{
+	g_FBXTestModel.load = TRUE;
+	LoadFBXModel("data/MODEL/model.fbx", &g_FBXTestModel.model);
+
+	//FBXTEST
+	//LoadFBXModel("data/MODEL/model.fbx", &g_FBXTestModel.model);
+
+
+	g_FBXTestModel.pos = XMFLOAT3(-10.0f,  10.0f, -50.0f);
+	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	g_FBXTestModel.scl = XMFLOAT3(10.0f, 10.0f, 10.0f);
+
+	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
+
+	g_FBXTestModel.alive = TRUE;			// TRUE:生きてる
+	
+
+	return S_OK;
+}
+
+void UninitFBXTestModel(void)
+{
+	// モデルの解放処理
+	if (g_FBXTestModel.load == TRUE)
+	{
+		UnloadModel(&g_FBXTestModel.model);
+		g_FBXTestModel.load = FALSE;
+	}
+
+}
+
+void UpdateFBXTestModel(void)
+{
+
+}
+
+void DrawFBXTestModel(void)
+{
+	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld, quatMatrix;
+
+	// カリング無効
+	SetCullingMode(CULL_MODE_NONE);
+
+	// ワールドマトリックスの初期化
+	mtxWorld = XMMatrixIdentity();
+
+	// スケールを反映
+	mtxScl = XMMatrixScaling(g_FBXTestModel.scl.x, g_FBXTestModel.scl.y, g_FBXTestModel.scl.z);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
+
+	// 回転を反映
+	mtxRot = XMMatrixRotationRollPitchYaw(g_FBXTestModel.rot.x, g_FBXTestModel.rot.y + XM_PI, g_FBXTestModel.rot.z);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
+
+	// クォータニオンを反映
+	quatMatrix = XMMatrixRotationQuaternion(XMLoadFloat4(&g_FBXTestModel.Quaternion));
+	mtxWorld = XMMatrixMultiply(mtxWorld, quatMatrix);
+
+	// 移動を反映
+	mtxTranslate = XMMatrixTranslation(g_FBXTestModel.pos.x, g_FBXTestModel.pos.y, g_FBXTestModel.pos.z);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
+
+	// ワールドマトリックスの設定
+	SetWorldMatrix(&mtxWorld);
+
+	XMStoreFloat4x4(&g_FBXTestModel.mtxWorld, mtxWorld);
+
+
+	// 縁取りの設定
+	SetFuchi(1);
+
+	// モデル描画
+	DrawModel(&g_FBXTestModel.model);
+
+
+
+	SetFuchi(0);
+
+	// カリング設定を戻す
+	SetCullingMode(CULL_MODE_BACK);
+}
+
+
+//=============================================================================
+// プレイヤー情報を取得
+//=============================================================================
+FBXTESTMODEL* GetFBXTestModel(void)
+{
+	return &g_FBXTestModel;
+}
+
+
+
+
+
+

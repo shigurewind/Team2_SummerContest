@@ -25,6 +25,8 @@
 #include "collision.h"
 #include "debugproc.h"
 
+#include "FBXmodel.h"
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -97,6 +99,8 @@ HRESULT InitGame(void)
 	// パーティクルの初期化
 	InitParticle();
 
+	InitFBXTestModel();
+
 	// BGM再生
 	PlaySound(SOUND_LABEL_BGM_sample001);
 
@@ -134,6 +138,8 @@ void UninitGame(void)
 
 	// 影の終了処理
 	UninitShadow();
+
+	UninitFBXTestModel();
 
 }
 
@@ -190,6 +196,8 @@ void UpdateGame(void)
 
 	// スコアの更新処理
 	UpdateScore();
+
+	UpdateFBXTestModel();
 }
 
 //=============================================================================
@@ -222,6 +230,8 @@ void DrawGame0(void)
 	// パーティクルの描画処理
 	DrawParticle();
 
+	DrawFBXTestModel();
+
 
 	// 2Dの物を描画する処理
 	// Z比較なし
@@ -232,6 +242,8 @@ void DrawGame0(void)
 
 	// スコアの描画処理
 	DrawScore();
+
+	
 
 
 	// ライティングを有効に
