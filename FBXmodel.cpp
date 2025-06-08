@@ -241,7 +241,7 @@ HRESULT InitFBXTestModel(void)
 
 	g_FBXTestModel.pos = XMFLOAT3(-10.0f,  10.0f, -50.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_FBXTestModel.scl = XMFLOAT3(10.0f, 10.0f, 10.0f);
+	g_FBXTestModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
 

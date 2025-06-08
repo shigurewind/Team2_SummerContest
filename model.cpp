@@ -12,6 +12,8 @@
 #include <vector>
 #include <iostream>
 
+
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -654,25 +656,85 @@ void LoadFBXModel(char* FileName, DX11_MODEL* dxModel)
 		FbxVector4* ctrlPoints = mesh->GetControlPoints();
 		int polyCount = mesh->GetPolygonCount();
 
+		
+		FbxAMatrix transform = node->EvaluateGlobalTransform();
 		for (int i = 0; i < polyCount; ++i) {
 			for (int j = 0; j < 3; ++j) {
+				VERTEX_3D v;
+
 				int ctrlIdx = mesh->GetPolygonVertex(i, j);
 				FbxVector4 pos = ctrlPoints[ctrlIdx];
+				FbxVector4 transformedPos = transform.MultT(pos);
 
-				VERTEX_3D v;
-				v.Position = XMFLOAT3((float)pos[0], (float)pos[1], (float)pos[2]);
-				v.Normal = XMFLOAT3(0, 1, 0);
+				v.Position = XMFLOAT3(
+					static_cast<float>(transformedPos[0]),
+					static_cast<float>(transformedPos[1]),
+					static_cast<float>(transformedPos[2])
+				);
+
+				FbxVector4 normal;
+				if (mesh->GetPolygonVertexNormal(i, j, normal)) {
+					normal = transform.MultT(normal);
+					normal.Normalize();
+					v.Normal = XMFLOAT3(
+						static_cast<float>(normal[0]),
+						static_cast<float>(normal[1]),
+						static_cast<float>(normal[2])
+					);
+				}
+
 				v.Diffuse = XMFLOAT4(1, 1, 1, 1);
-				v.TexCoord = XMFLOAT2(0, 0);
+
+				FbxStringList uvSetNames;
+				mesh->GetUVSetNames(uvSetNames);
+				if (uvSetNames.GetCount() > 0) {
+					FbxVector2 uv;
+					bool unmapped;
+					mesh->GetPolygonVertexUV(i, j, uvSetNames[0], uv, unmapped);
+					v.TexCoord = XMFLOAT2((float)uv[0], (float)uv[1]);
+				}
 
 				vertices.push_back(v);
 				indices.push_back((UINT)indices.size());
 			}
 		}
-		break; // ?加?第一个子?点
+
+		dxModel->SubsetNum = 1;
+		dxModel->SubsetArray = new DX11_SUBSET[1];
+		dxModel->SubsetArray[0].StartIndex = 0;
+		dxModel->SubsetArray[0].IndexNum = (UINT)indices.size();
+
+		dxModel->SubsetArray[0].Material.Material.Diffuse = XMFLOAT4(1, 1, 1, 1);
+		dxModel->SubsetArray[0].Material.Material.Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1);
+		dxModel->SubsetArray[0].Material.Material.Specular = XMFLOAT4(1, 1, 1, 1);
+		dxModel->SubsetArray[0].Material.Material.Emission = XMFLOAT4(0, 0, 0, 1);
+		dxModel->SubsetArray[0].Material.Material.Shininess = 8.0f;
+		dxModel->SubsetArray[0].Material.Material.noTexSampling = 1;
+		dxModel->SubsetArray[0].Material.Texture = nullptr;
+
+		//テクスチャを読み込む
+		FbxSurfaceMaterial* material = node->GetMaterial(0);
+		if (material) {
+			FbxProperty prop = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+			if (prop.IsValid()) {
+				FbxDouble3 color = prop.Get<FbxDouble3>();
+				dxModel->SubsetArray[0].Material.Material.Diffuse = XMFLOAT4((float)color[0], (float)color[1], (float)color[2], 1.0f);
+
+				FbxFileTexture* texture = prop.GetSrcObject<FbxFileTexture>(0);
+				if (texture) {
+					const char* filepath = texture->GetFileName();
+					D3DX11CreateShaderResourceViewFromFile(
+						GetDevice(), filepath, NULL, NULL,
+						&dxModel->SubsetArray[0].Material.Texture, NULL);
+					dxModel->SubsetArray[0].Material.Material.noTexSampling = 0;
+				}
+			}
+		}
+
+		break; 
 	}
 
-	// ?建 VertexBuffer
+	//VertexBuffer
 	{
 		D3D11_BUFFER_DESC bd = {};
 		bd.Usage = D3D11_USAGE_DEFAULT;
@@ -685,7 +747,7 @@ void LoadFBXModel(char* FileName, DX11_MODEL* dxModel)
 		GetDevice()->CreateBuffer(&bd, &sd, &dxModel->VertexBuffer);
 	}
 
-	// ?建 IndexBuffer
+	//IndexBuffer
 	{
 		D3D11_BUFFER_DESC bd = {};
 		bd.Usage = D3D11_USAGE_DEFAULT;
@@ -698,19 +760,7 @@ void LoadFBXModel(char* FileName, DX11_MODEL* dxModel)
 		GetDevice()->CreateBuffer(&bd, &sd, &dxModel->IndexBuffer);
 	}
 
-	dxModel->SubsetNum = 1;
-	dxModel->SubsetArray = new DX11_SUBSET[1];
-	dxModel->SubsetArray[0].StartIndex = 0;
-	dxModel->SubsetArray[0].IndexNum = (UINT)indices.size();
-
-	dxModel->SubsetArray[0].Material.Material.Diffuse = XMFLOAT4(1, 1, 1, 1);
-	dxModel->SubsetArray[0].Material.Material.Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1);
-	dxModel->SubsetArray[0].Material.Material.Specular = XMFLOAT4(1, 1, 1, 1);
-	dxModel->SubsetArray[0].Material.Material.Emission = XMFLOAT4(0, 0, 0, 1);
-	dxModel->SubsetArray[0].Material.Material.Shininess = 8.0f;
-	dxModel->SubsetArray[0].Material.Material.noTexSampling = 1;
-	dxModel->SubsetArray[0].Material.Texture = nullptr;
-
+	
 	fbxManager->Destroy();
 }
 
