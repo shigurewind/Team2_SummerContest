@@ -200,6 +200,36 @@ void DrawModel( DX11_MODEL *Model )
 
 }
 
+void DrawFBXModel(DX11_MODEL* Model)
+{
+	// 頂点バッファ設定
+	UINT stride = sizeof(VERTEX_3D);
+	UINT offset = 0;
+	GetDeviceContext()->IASetVertexBuffers(0, 1, &Model->VertexBuffer, &stride, &offset);
+
+	// インデックスバッファ設定
+	GetDeviceContext()->IASetIndexBuffer(Model->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// プリミティブトポロジ設定
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	for (unsigned short i = 0; i < Model->SubsetNum; i++)
+	{
+		// マテリアル設定
+		SetMaterial(Model->SubsetArray[i].Material.Material);
+
+		// テクスチャ設定
+		if (Model->SubsetArray[i].Material.Material.noTexSampling == 0)
+		{
+			GetDeviceContext()->PSSetShaderResources(0, 1, &Model->SubsetArray[i].Material.Texture);
+		}
+
+		// ポリゴン描画
+		GetDeviceContext()->DrawIndexed(Model->SubsetArray[i].IndexNum, Model->SubsetArray[i].StartIndex, 0);
+	}
+}
+
+
 
 
 
@@ -635,6 +665,17 @@ void LoadFBXModel(char* FileName, DX11_MODEL* dxModel)
 	FbxImporter* importer = FbxImporter::Create(fbxManager, "");
 	FbxScene* scene = FbxScene::Create(fbxManager, "scene");
 
+	FbxAxisSystem sceneAxisSystem = scene->GetGlobalSettings().GetAxisSystem();
+	FbxAxisSystem dxAxisSystem(FbxAxisSystem::eDirectX);
+	if (sceneAxisSystem != dxAxisSystem) {
+		dxAxisSystem.ConvertScene(scene); //座標系をDirectXに変換
+	}
+
+	FbxSystemUnit sceneUnit = scene->GetGlobalSettings().GetSystemUnit();
+	if (sceneUnit != FbxSystemUnit::m) {
+		FbxSystemUnit::m.ConvertScene(scene);
+	}
+
 	if (!importer->Initialize(FileName, -1, fbxManager->GetIOSettings())) {
 		std::cout << "FBX Import failed" << std::endl;
 		return;
@@ -654,22 +695,27 @@ void LoadFBXModel(char* FileName, DX11_MODEL* dxModel)
 		if (!mesh) continue;
 
 		FbxVector4* ctrlPoints = mesh->GetControlPoints();
-		int polyCount = mesh->GetPolygonCount();
 
 		
 		FbxAMatrix transform = node->EvaluateGlobalTransform();
+		FbxStringList uvSetNames;
+		mesh->GetUVSetNames(uvSetNames);
+		const char* uvSet = (uvSetNames.GetCount() > 0) ? uvSetNames[0] : "";
+		int polyCount = mesh->GetPolygonCount();
+
 		for (int i = 0; i < polyCount; ++i) {
+			int polySize = mesh->GetPolygonSize(i);
+			if (polySize != 3) continue; // skip non-triangle
 			for (int j = 0; j < 3; ++j) {
 				VERTEX_3D v;
 
 				int ctrlIdx = mesh->GetPolygonVertex(i, j);
-				FbxVector4 pos = ctrlPoints[ctrlIdx];
-				FbxVector4 transformedPos = transform.MultT(pos);
-
+				FbxVector4 pos = mesh->GetControlPointAt(ctrlIdx);
+				FbxVector4 worldPos = transform.MultT(pos);
 				v.Position = XMFLOAT3(
-					static_cast<float>(transformedPos[0]),
-					static_cast<float>(transformedPos[1]),
-					static_cast<float>(transformedPos[2])
+					static_cast<float>(worldPos[0]),
+					static_cast<float>(worldPos[1]),
+					static_cast<float>(worldPos[2])
 				);
 
 				FbxVector4 normal;
@@ -685,18 +731,29 @@ void LoadFBXModel(char* FileName, DX11_MODEL* dxModel)
 
 				v.Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-				FbxStringList uvSetNames;
-				mesh->GetUVSetNames(uvSetNames);
-				if (uvSetNames.GetCount() > 0) {
-					FbxVector2 uv;
-					bool unmapped;
-					mesh->GetPolygonVertexUV(i, j, uvSetNames[0], uv, unmapped);
-					v.TexCoord = XMFLOAT2((float)uv[0], (float)uv[1]);
+				FbxVector2 uv;
+				bool unmapped;
+				if (mesh->GetPolygonVertexUV(i, j, uvSet, uv, unmapped)) {
+					v.TexCoord = XMFLOAT2(
+						static_cast<float>(uv[0]),
+						static_cast<float>(uv[1])
+					);
+
+					// UVは逆にした、この下の使う
+					//v.TexCoord = XMFLOAT2(
+					//	static_cast<float>(uv[0]),
+					//	1.0f - static_cast<float>(uv[1])  // Flip V axis
+					//);
 				}
 
 				vertices.push_back(v);
 				indices.push_back((UINT)indices.size());
 			}
+		}
+
+		if (indices.size() % 3 != 0)
+		{
+			return;
 		}
 
 		dxModel->SubsetNum = 1;

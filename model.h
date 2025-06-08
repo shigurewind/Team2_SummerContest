@@ -55,6 +55,7 @@ void GetModelDiffuse(DX11_MODEL *Model, XMFLOAT4 *diffuse);
 // モデルの指定マテリアルのディフューズをセットする。
 void SetModelDiffuse(DX11_MODEL *Model, int mno, XMFLOAT4 diffuse);
 
+void DrawFBXModel(DX11_MODEL* Model);
 void LoadFBXModel (char* FileName, DX11_MODEL* Model);
 
 

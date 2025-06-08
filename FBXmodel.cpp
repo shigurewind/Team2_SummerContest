@@ -240,8 +240,8 @@ HRESULT InitFBXTestModel(void)
 
 
 	g_FBXTestModel.pos = XMFLOAT3(-10.0f,  10.0f, -50.0f);
-	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_FBXTestModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	g_FBXTestModel.rot = XMFLOAT3(XM_PI / 2, 0.0f, 0.0f);
+	g_FBXTestModel.scl = XMFLOAT3(0.5f, 0.5f, 0.5f);
 
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
 
@@ -264,11 +264,18 @@ void UninitFBXTestModel(void)
 
 void UpdateFBXTestModel(void)
 {
-
+	g_FBXTestModel.rot.y += 0.01f;	// 回転させてみる
+	g_FBXTestModel.rot.x += 0.01f;
+	//g_FBXTestModel.pos.x +=  0.1f;	// X軸方向に移動
 }
 
 void DrawFBXTestModel(void)
 {
+	/*UINT stride = sizeof(VERTEX_3D);
+	UINT offset = 0;
+	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);*/
+
 	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld, quatMatrix;
 
 	// カリング無効
@@ -303,8 +310,7 @@ void DrawFBXTestModel(void)
 	SetFuchi(1);
 
 	// モデル描画
-	DrawModel(&g_FBXTestModel.model);
-
+	DrawFBXModel(&g_FBXTestModel.model);
 
 
 	SetFuchi(0);
