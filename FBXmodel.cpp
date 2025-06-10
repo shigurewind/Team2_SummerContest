@@ -159,7 +159,7 @@ void ProcessMesh(FbxMesh* mesh) {
 		float x = (float)ctrlPoints[i][0];
 		float y = (float)ctrlPoints[i][1];
 		float z = (float)ctrlPoints[i][2];
-		
+
 	}
 
 	// 頂点インデックス
@@ -172,7 +172,7 @@ void ProcessMesh(FbxMesh* mesh) {
 }
 
 
-int InitFBXModelTest() 
+int InitFBXModelTest()
 {
 	FbxManager* fbx_manager = nullptr;
 	FbxIOSettings* fbx_iosetting = nullptr;
@@ -233,20 +233,20 @@ static FBXTESTMODEL g_FBXTestModel;	// FBXモデルのデータ
 HRESULT InitFBXTestModel(void)
 {
 	g_FBXTestModel.load = TRUE;
-	LoadFBXModel("data/MODEL/model.fbx", &g_FBXTestModel.model);
+	LoadFBXModel("data/MODEL/flor.fbx", &g_FBXTestModel.model);
 
 	//FBXTEST
 	//LoadFBXModel("data/MODEL/model.fbx", &g_FBXTestModel.model);
 
 
-	g_FBXTestModel.pos = XMFLOAT3(-10.0f,  10.0f, -50.0f);
-	g_FBXTestModel.rot = XMFLOAT3(XM_PI / 2, 0.0f, 0.0f);
+	g_FBXTestModel.pos = XMFLOAT3(-10.0f, 50.0f, -50.0f);
+	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_FBXTestModel.scl = XMFLOAT3(0.5f, 0.5f, 0.5f);
 
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
 
 	g_FBXTestModel.alive = TRUE;			// TRUE:生きてる
-	
+
 
 	return S_OK;
 }
@@ -264,7 +264,7 @@ void UninitFBXTestModel(void)
 
 void UpdateFBXTestModel(void)
 {
-	g_FBXTestModel.rot.y += 0.01f;	// 回転させてみる
+	//g_FBXTestModel.rot.y += 0.01f;	// 回転させてみる
 	g_FBXTestModel.rot.x += 0.01f;
 	//g_FBXTestModel.pos.x +=  0.1f;	// X軸方向に移動
 }
@@ -307,7 +307,7 @@ void DrawFBXTestModel(void)
 
 
 	// 縁取りの設定
-	SetFuchi(1);
+	SetFuchi(0);
 
 	// モデル描画
 	DrawFBXModel(&g_FBXTestModel.model);
