@@ -9,6 +9,14 @@
 #include "main.h"
 #include "renderer.h"
 
+#include <unordered_map>
+
+#include "assimp/cimport.h"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
+#include "assimp/matrix4x4.h"
+#pragma comment (lib, "assimp-vc143-mt.lib")
+
 //*********************************************************
 // ç\ë¢ëÃ
 //*********************************************************
@@ -58,4 +66,20 @@ void SetModelDiffuse(DX11_MODEL *Model, int mno, XMFLOAT4 diffuse);
 void DrawFBXModel(DX11_MODEL* Model);
 void LoadFBXModel (char* FileName, DX11_MODEL* Model);
 
+
+struct AMODEL
+{
+	const aiScene* AiScene = nullptr;
+
+	ID3D11Buffer** VertexBuffer;
+	ID3D11Buffer** IndexBuffer;
+
+	std::unordered_map<std::string, ID3D11ShaderResourceView*> Texture;
+};
+
+
+AMODEL* ModelLoad(const char* FileName);
+void ModelRelease(AMODEL* model);
+
+void ModelDraw(AMODEL* model);
 

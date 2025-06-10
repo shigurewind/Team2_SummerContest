@@ -3,13 +3,6 @@
 #include <fbxsdk.h>
 #include "model.h"
 
-void Destroy(FbxManager** manager, FbxIOSettings** iosetting, FbxScene** scene, FbxImporter** importer);
-const char* GetNodeAttributeName(FbxNodeAttribute::EType attribute);
-void PrintNode(FbxNode* node, int hierarchy);
-
-
-void ProcessNode(FbxNode* node);
-void ProcessMesh(FbxMesh* mesh);
 
 
 //*****************************************************************************
@@ -25,7 +18,7 @@ struct FBXTESTMODEL
 	float				spd;				// 移動スピード
 
 	BOOL				load;
-	DX11_MODEL			model;				// モデル情報
+	AMODEL*				model;				// FBXモデル情報
 
 	int					shadowIdx;			// 影のインデックス番号
 
