@@ -20,6 +20,8 @@ struct FBXTESTMODEL
 	BOOL				load;
 	AMODEL*				model;				// FBXモデル情報
 
+	SHADER*				shader;				//使うShader
+
 	int					shadowIdx;			// 影のインデックス番号
 
 	BOOL				alive;

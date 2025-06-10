@@ -957,6 +957,8 @@ void ModelRelease(AMODEL* model)
 
 void ModelDraw(AMODEL* model)
 {
+
+
 	
 
 	// プリミティブトポロジ設定

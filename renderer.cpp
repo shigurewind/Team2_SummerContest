@@ -814,3 +814,26 @@ void DebugTextOut(char* text, int x, int y)
 	}
 #endif
 }
+
+ID3D11VertexShader* GetDefaultVertexShader()
+{
+	return g_VertexShader;
+}
+
+ID3D11PixelShader* GetDefaultPixelShader()
+{
+	return g_PixelShader;
+}
+
+ID3D11InputLayout* GetDefaultInputLayout()
+{
+	return g_VertexLayout;
+}
+
+void SetDefaultShader()
+{
+	ID3D11DeviceContext* ctx = GetDeviceContext();
+	ctx->IASetInputLayout(GetDefaultInputLayout());
+	ctx->VSSetShader(GetDefaultVertexShader(), nullptr, 0);
+	ctx->PSSetShader(GetDefaultPixelShader(), nullptr, 0);
+}
