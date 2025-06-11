@@ -1,6 +1,13 @@
 #pragma once
-#include "model.h"
+#include <vector>
+#include <d3d11.h>
+#include <DirectXMath.h>
 
+using namespace DirectX;
+
+//*****************************************************************************
+// 
+//*****************************************************************************
 class BaseEnemy {
 public:
 	BaseEnemy();
@@ -13,59 +20,43 @@ public:
 	bool IsUsed() const { return use; }
 	void SetUsed(bool b) { use = b; }
 
+	void SetPosition(const XMFLOAT3& p);
+	XMFLOAT3 GetPosition() const;
+
+	void SetScale(const XMFLOAT3& s);
+	XMFLOAT3 GetScale() const;
+
 protected:
 	XMFLOAT3 pos;
 	XMFLOAT3 scl;
 	XMFLOAT4X4 mtxWorld;
 	bool use;
-
 };
 
+//*****************************************************************************
+// 
+//*****************************************************************************
 class ScarecrowEnemy : public BaseEnemy {
 public:
 	ScarecrowEnemy();
 	~ScarecrowEnemy();
 
-	BOOL				use;
-	BOOL				load;
-	DX11_MODEL			model;				// モデル情報
-	XMFLOAT4			diffuse[MODEL_MAX_MATERIAL];	// モデルの色
-
-	float				spd;				// 移動スピード
-	float				size;				// 当たり判定の大きさ
-	int					shadowIdx;			// 影のインデックス番号
-
-	float				time;				// 線形補間用
-	int					tblNo;				// 行動データのテーブル番号
-	int					tblMax;				// そのテーブルのデータ数
-
-	int					moveCounter;		// 向き変わるタイマー
-
-	//エネミーが発射するとき
-	float				fireCooldown;		//
-	float				fireTimer;			//
-};
+	void Init() override;
+	void Update() override;
+	void Draw() override;
 
 private:
-	int texID;  // ??ID
+	ID3D11ShaderResourceView* texture;
+	struct MATERIAL* material;
+	float width, height;
 };
 
-
-
 //*****************************************************************************
-// プロトタイプ宣言
+// 
 //*****************************************************************************
-HRESULT InitEnemy(void);
-void UninitEnemy(void);
-void UpdateEnemy(void);
-void DrawEnemy(void);
-
-ENEMY *GetEnemy(void);
-
-void ChangeEnemyDirection(int i);
-void ChasingPlayer(int i);
-void GhostMovement(int i);
-void SkeletonMovement(int i);
-void SpiderMovement(int i);
-
-
+std::vector<BaseEnemy*>& GetEnemies();
+HRESULT MakeVertexEnemy();
+void InitEnemy();
+void UpdateEnemy();
+void DrawEnemy();
+void UninitEnemy();
