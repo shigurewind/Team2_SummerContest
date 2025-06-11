@@ -1,294 +1,207 @@
-﻿#include "enemy.h"
-#include "player.h"
-#include "bullet.h"
-#include "shadow.h"
-#include "collision.h"
-
-
-//*****************************************************************************
-// マクロ定義
-//*****************************************************************************
-
-#define	VALUE_MOVE			(5.0f)						// 移動量
-#define	VALUE_ROTATE		(XM_PI * 0.02f)				// 回転量
-
-
-//エネミーの動き範囲
-#define ENEMY_AREA_MIN_X	(-80.0f)
-#define ENEMY_AREA_MAX_X	(80.0f)
-#define ENEMY_AREA_MIN_Z	(-80.0f)
-#define ENEMY_AREA_MAX_Z	(80.0f)
-#define ENEMY_AREA_MIN_Y	(7.0f)
-#define ENEMY_AREA_MAX_Y	(80.0f)
-
-#define MOVECOUNTER			(300)		// 向き変わるタイマー
-
-
-
-
-//*****************************************************************************
-// プロトタイプ宣言
-//*****************************************************************************
-
-
-//*****************************************************************************
-// グローバル変数
-//*****************************************************************************
-static ENEMY			g_Enemy[MAX_ENEMY];				// エネミー
-int g_Enemy_load = 0;
-
-
-static INTERPOLATION_DATA g_MoveTbl0[] = {	// pos, rot, scl, frame
-	{ XMFLOAT3(0.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 5.0f },
-	{ XMFLOAT3(-200.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 5.0f },
-	{ XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 200.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 5.0f },
-
-};
-
-static INTERPOLATION_DATA* g_MoveTblAdr[] =
-{
-	g_MoveTbl0,
-
-};
-
-
+﻿//=============================================================================
+//
+// 
+// 
+//
 //=============================================================================
-// 初期化処理
-//=============================================================================
-HRESULT InitEnemy(void)
-{
-
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		LoadModel(MODEL_ENEMY, &g_Enemy[i].model);
-		g_Enemy[i].load = TRUE;
-
-		g_Enemy[i].pos = XMFLOAT3(-50.0f + i * 30.0f, 7.0f, 20.0f);
-		g_Enemy[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		g_Enemy[i].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-
-		g_Enemy[i].spd  = 0.0f;			// 移動スピードクリア
-		g_Enemy[i].size = ENEMY_SIZE;	// 当たり判定の大きさ
-		g_Enemy[i].type = NONE;	// 当たり判定の大きさ
-
-		// モデルのディフューズを保存しておく。色変え対応の為。
-		GetModelDiffuse(&g_Enemy[i].model, &g_Enemy[i].diffuse[0]);
-
-		XMFLOAT3 pos = g_Enemy[i].pos;
-		pos.y -= (ENEMY_OFFSET_Y - 0.1f);
-		g_Enemy[i].shadowIdx = CreateShadow(pos, ENEMY_SHADOW_SIZE, ENEMY_SHADOW_SIZE);
-		
-
-		g_Enemy[i].time = 0.0f;			// 線形補間用のタイマーをクリア
-		g_Enemy[i].tblNo = 0;			// 再生する行動データテーブルNoをセット
-		g_Enemy[i].tblMax = 0;			// 再生する行動データテーブルのレコード数をセット
-	
-		g_Enemy[i].fireCooldown = 5.0f;
-		g_Enemy[i].fireTimer = 0.0f;
+#pragma once
+#include "enemy.h"
+#include "debugproc.h"
+#include "camera.h"
+#include "main.h"
+#include "renderer.h"
 
 
-		g_Enemy[i].use = TRUE;			// TRUE:生きてる
-	}
 
+//*****************************************************************************
+//
+//*****************************************************************************
+
+std::vector<BaseEnemy*> g_enemies;
+ID3D11Buffer* g_VertexBufferEnemy = nullptr;
+
+//*****************************************************************************
+// 
+//*****************************************************************************
+BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
+    XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+}
 BaseEnemy::~BaseEnemy() {}
 
-//----------------------------
-
-	g_Enemy[1].type = SKELETON;
-	// 1番だけ線形補間で動かしてみる
-	g_Enemy[1].time = 0.0f;		// 線形補間用のタイマーをクリア
-	g_Enemy[1].tblNo = 0;		// 再生するアニメデータの先頭アドレスをセット
-	g_Enemy[1].tblMax = sizeof(g_MoveTbl0) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
-	
-	g_Enemy[2].type = SPIDER;
-
-
-	
-	return S_OK;
+ScarecrowEnemy::ScarecrowEnemy() :
+    texture(nullptr), width(60.0f), height(90.0f)
+{
+    material = new MATERIAL{};
+    XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+}
+ScarecrowEnemy::~ScarecrowEnemy() {
+    if (texture) {
+        texture->Release();
+        texture = nullptr;
+    }
+    delete material;
+    material = nullptr;
 }
 
-//=============================================================================
-// 終了処理
-//=============================================================================
-void UninitEnemy(void)
-{
+void ScarecrowEnemy::Init() {
+    D3DX11CreateShaderResourceViewFromFile(
+        GetDevice(),
+        "data/TEXTURE/enemy001.png",
+        NULL, NULL, &texture, NULL);
+
+    *material = {};
+    material->Diffuse = XMFLOAT4(1, 1, 1, 1);
+
+    pos = XMFLOAT3(0.0f, 0.0f, 20.0f);
+    scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+    use = true;
 }
 
-ScarecrowEnemy::~ScarecrowEnemy() {}
+void ScarecrowEnemy::Update() {
 
-void ScarecrowEnemy::Init()
-{
-
-	// エネミーを動かく場合は、影も合わせて動かす事を忘れないようにね！
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-
-		switch (g_Enemy[i].type)
-		{
-		case GHOST:
-			GhostMovement(i);
-			break;
-
-		case SKELETON:
-			SkeletonMovement(i);
-			break;
-
-		case SPIDER:
-			SpiderMovement(i);
-			break;
-
-		default:
-			break;
-		}
-	}
-
-void ScarecrowEnemy::Update()
-{
-	// 不动，无需逻辑
 }
 
-	if (GetKeyboardTrigger(DIK_L))
-	{
-		// モデルの色を元に戻している
-		for (int j = 0; j < g_Enemy[0].model.SubsetNum; j++)
-		{
-			SetModelDiffuse(&g_Enemy[0].model, j, g_Enemy[0].diffuse[j]);
-		}
-	}
+void ScarecrowEnemy::Draw() {
+    if (!use || !texture || !g_VertexBufferEnemy) return;
+
+    UINT stride = sizeof(VERTEX_3D);
+    UINT offset = 0;
+    GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferEnemy, &stride, &offset);
+    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+    CAMERA* cam = GetCamera();
+    XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
+
+    XMMATRIX mtxWorld = XMMatrixIdentity();
+    mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
+    mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
+    mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
+
+    mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
+    mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
+    mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
+
+    mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
+    mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
+    mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
+
+    XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
+    XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+    mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
+    mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
+
+    //？？？
+    SetAlphaTestEnable(TRUE);
+    SetBlendState(BLEND_MODE_ALPHABLEND);
+    SetWorldMatrix(&mtxWorld);
+    SetMaterial(*material);
+    GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+    GetDeviceContext()->Draw(4, 0);
+
+    SetAlphaTestEnable(FALSE);
+}
+//*****************************************************************************
+// 
+//*****************************************************************************
+void InitEnemy() {
+    MakeVertexEnemy();
+    g_enemies.clear();
+    for (int i = 0; i < 5; ++i) {
+        ScarecrowEnemy* e = new ScarecrowEnemy();
+        e->Init();
+        e->SetUsed(true);
+        XMFLOAT3 pos = XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f);
+        e->SetPosition(pos);
+        g_enemies.push_back(e);
+    }
+}
+
+void UpdateEnemy() {
+    for (auto enemy : g_enemies) {
+        if (enemy->IsUsed()) enemy->Update();
+    }
+}
+
+void DrawEnemy() {
+    for (auto enemy : g_enemies) {
+        if (enemy->IsUsed()) enemy->Draw();
+    }
+
+
+#ifdef _DEBUG
+    for (auto enemy : g_enemies)
+    {
+        if (enemy->IsUsed())
+        {
+            XMFLOAT3 pos = enemy->GetPosition();
+            PrintDebugProc("Enemy Pos: X:%.2f Y:%.2f Z:%.2f\n", pos.x, pos.y, pos.z);
+            break;
+        }
+    }
 #endif
-
 }
 
+void UninitEnemy() {
+    for (auto enemy : g_enemies) {
+        delete enemy;
+    }
+    g_enemies.clear();
 
-
-//=============================================================================
-// 描画処理
-//=============================================================================
-void DrawEnemy(void)
-{
-	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld;
-
-	// カリング無効
-	SetCullingMode(CULL_MODE_NONE);
-
-
-
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		if (g_Enemy[i].use == FALSE) continue;
-
-		// ワールドマトリックスの初期化
-		mtxWorld = XMMatrixIdentity();
-
-		// スケールを反映
-		mtxScl = XMMatrixScaling(g_Enemy[i].scl.x, g_Enemy[i].scl.y, g_Enemy[i].scl.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
-
-		// 回転を反映
-		mtxRot = XMMatrixRotationRollPitchYaw(g_Enemy[i].rot.x, g_Enemy[i].rot.y + XM_PI, g_Enemy[i].rot.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
-
-		// 移動を反映
-		mtxTranslate = XMMatrixTranslation(g_Enemy[i].pos.x, g_Enemy[i].pos.y, g_Enemy[i].pos.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
-
-		// ワールドマトリックスの設定
-		SetWorldMatrix(&mtxWorld);
-
-		XMStoreFloat4x4(&g_Enemy[i].mtxWorld, mtxWorld);
-
-			// モデル描画
-			DrawModel(&g_Enemy[i].model);
-		
-	}
-
-	// カリング設定を戻す
-	SetCullingMode(CULL_MODE_BACK);
+    if (g_VertexBufferEnemy) {
+        g_VertexBufferEnemy->Release();
+        g_VertexBufferEnemy = nullptr;
+    }
 }
 
-	SetWorldMatrix(&this->mtxWorld);
-	DrawSprite3D(texID);
+std::vector<BaseEnemy*>& GetEnemies() {
+    return g_enemies;
 }
 
+HRESULT MakeVertexEnemy() {
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-//=============================================================================
-// エネミーの動き
-//=============================================================================
+    HRESULT hr = GetDevice()->CreateBuffer(&bd, nullptr, &g_VertexBufferEnemy);
+    if (FAILED(hr)) return hr;
 
-void ChangeEnemyDirection(int i) {
-	float theta = (rand() % 360) * XM_PI / 180.0f;
-	float phi = ((rand() % 90) + 45) * XM_PI / 180.0f;
+    D3D11_MAPPED_SUBRESOURCE msr;
+    GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    VERTEX_3D* v = (VERTEX_3D*)msr.pData;
 
-	XMFLOAT3 dir;
-	dir.x = sinf(phi) * cosf(theta);
-	dir.y = cosf(phi);
-	dir.z = sinf(phi) * sinf(theta);
+    float w = 60.0f, h = 90.0f;
+    v[0].Position = XMFLOAT3(-w / 2, h, 0);
+    v[1].Position = XMFLOAT3(w / 2, h, 0);
+    v[2].Position = XMFLOAT3(-w / 2, 0, 0);
+    v[3].Position = XMFLOAT3(w / 2, 0, 0);
 
+    for (int i = 0; i < 4; ++i) {
+        v[i].Normal = XMFLOAT3(0, 0, -1);
+        v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
+    }
 
+    v[0].TexCoord = XMFLOAT2(0, 0);
+    v[1].TexCoord = XMFLOAT2(1, 0);
+    v[2].TexCoord = XMFLOAT2(0, 1);
+    v[3].TexCoord = XMFLOAT2(1, 1);
 
-static BaseEnemy* g_enemy = nullptr;
-
-void InitEnemy()
-{
-	g_enemy = new ScarecrowEnemy();
-	g_enemy->Init();
+    GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
+    return S_OK;
+}
+void BaseEnemy::SetPosition(const XMFLOAT3& p) {
+    pos = p;
 }
 
-void UpdateEnemy()
-{
-	if (g_enemy && g_enemy->IsUsed()) g_enemy->Update();
+XMFLOAT3 BaseEnemy::GetPosition() const {
+    return pos;
 }
 
-void DrawEnemy()
-{
-	if (g_enemy && g_enemy->IsUsed()) g_enemy->Draw();
+void BaseEnemy::SetScale(const XMFLOAT3& s) {
+    scl = s;
 }
 
-void UninitEnemy()
-{
-	if (g_enemy)
-	{
-		delete g_enemy;
-		g_enemy = nullptr;
-	}
-
-	XMFLOAT3 pos = g_Enemy[i].pos;
-	pos.y -= (ENEMY_OFFSET_Y - 0.1f);
-	SetPositionShadow(g_Enemy[i].shadowIdx, pos);
-}
-
-void SpiderMovement(int i)
-{
-	ChasingPlayer(i);
-
-	PLAYER* player = GetPlayer();
-
-	// エネミーからプレイヤーまでのベクトル
-	XMFLOAT3 dir;
-	dir.x = player->pos.x - g_Enemy[i].pos.x;
-	dir.y = player->pos.y - g_Enemy[i].pos.y;
-	dir.z = player->pos.z - g_Enemy[i].pos.z;
-
-	if (g_Enemy[i].fireTimer > 0.0f)
-	{
-		g_Enemy[i].fireTimer -= 1.0f / 60.0f;  // 60fps
-	}
-
-	// プレイヤーの座標までの計算
-	XMFLOAT3 toPlayer = {dir.x, dir.y, dir.z};
-
-	float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
-	float range = 100.0f; // 発射範囲
-
-	if (distSq < range * range)
-	{
-		// 発射するとき
-		if (g_Enemy[i].fireTimer <= 0.0f)
-		{
-			SetBullet(g_Enemy[i].pos, g_Enemy[i].rot);
-
-			// Reset timer
-			g_Enemy[i].fireTimer = g_Enemy[i].fireCooldown;
-		}
-	}
+XMFLOAT3 BaseEnemy::GetScale() const {
+    return scl;
 }
