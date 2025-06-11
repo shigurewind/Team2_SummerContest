@@ -4,259 +4,195 @@
 // Author : 
 //
 //=============================================================================
+#include "debugproc.h"
+
 #include "main.h"
 #include "renderer.h"
 #include "shadow.h"
 #include "bullet.h"
+#include "camera.h"
+#include "player.h"
+#include <math.h>
+#include <vector>
 
-
-//*****************************************************************************
-// マクロ定義
-//*****************************************************************************
-#define TEXTURE_MAX			(1)				// テクスチャの数
-
-#define	BULLET_WIDTH		(10.0f)			// 頂点サイズ
-#define	BULLET_HEIGHT		(10.0f)			// 頂点サイズ
-
-#define	BULLET_SPEED		(10.0f)			// 弾の移動スピード
-
-#define BULLET_MODEL		"data/MODEL/sphere.obj" //弾のモデル
-#define BULLET_SIZE		    (0.5f)
-//*****************************************************************************
-// 構造体定義
-//*****************************************************************************
-
-
-//*****************************************************************************
-// プロトタイプ宣言
-//*****************************************************************************
-HRESULT MakeVertexBullet(void);
-
-//*****************************************************************************
-// グローバル変数
-//*****************************************************************************
-static ID3D11Buffer					*g_VertexBuffer = NULL;	// 頂点バッファ
-static ID3D11ShaderResourceView		*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
-
-static BULLET						g_Bullet[MAX_BULLET];	// 弾ワーク
-static int							g_TexNo;				// テクスチャ番号
-
-//static char *g_TextureName[] =
-//{
-//	"data/TEXTURE/bullet00.png",
-//};
 
 //=============================================================================
-// 初期化処理
+// 弾の基本データ構造（属性など） //追加箇所
+//=============================================================================
+//                                  種類　　　　速さ  DMG  scl  lifetime    　　モデル　　　　　　　　RGB
+BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+BulletData bulletData_Fire   = { BULLET_FIRE,     5.0f, 20, 1.0f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+
+// 武器インスタンス 
+Weapon g_Revolver;
+Weapon g_Shotgun;
+
+// 弾のインスタンス配列
+BULLET g_Bullet[MAX_BULLET];
+
+//=============================================================================
+// 初期化
 //=============================================================================
 HRESULT InitBullet(void)
 {
-	MakeVertexBullet();
+    for (int i = 0; i < MAX_BULLET; i++)
+    {
+        g_Bullet[i].use = FALSE;
+    }
 
-	// テクスチャ生成
-	for (int i = 0; i < MAX_BULLET; i++)
-	{
-		g_Bullet[i].use = false;
-		LoadModel(BULLET_MODEL, &g_Bullet[i].model); // 3Dモデル読み込み //変更箇所
-		g_Bullet[i].size = BULLET_SIZE;
-	}
-	g_TexNo = 0;
+    // 武器ごとの弾をセット //追加箇所
+    g_Revolver.weaponType = WEAPON_REVOLVER;
+    g_Revolver.bulletData = &bulletData_Normal;
 
-	// 弾ワークの初期化
-	for (int nCntBullet = 0; nCntBullet < MAX_BULLET; nCntBullet++)
-	{
-		ZeroMemory(&g_Bullet[nCntBullet].material, sizeof(g_Bullet[nCntBullet].material));
-		g_Bullet[nCntBullet].material.Diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
+    g_Shotgun.weaponType = WEAPON_SHOTGUN;
+    g_Shotgun.bulletData = &bulletData_Normal;
 
-		g_Bullet[nCntBullet].pos = { 0.0f, 0.0f, 0.0f };
-		g_Bullet[nCntBullet].rot = { 0.0f, 0.0f, 0.0f };
-		g_Bullet[nCntBullet].scl = { 1.0f, 1.0f, 1.0f };
-		g_Bullet[nCntBullet].spd = BULLET_SPEED;
-		g_Bullet[nCntBullet].fWidth = BULLET_WIDTH;
-		g_Bullet[nCntBullet].fHeight = BULLET_HEIGHT;
-		g_Bullet[nCntBullet].use = FALSE;
-
-	}
-
-
-	return S_OK;
+    return S_OK;
 }
 
-//=============================================================================
-// 終了処理
-//=============================================================================
-void UninitBullet(void)
+
+//=====================================================
+//
+//=====================================================
+void UninitBullet()
 {
-	for (int i = 0; i < MAX_BULLET; i++)
-	{
-		UnloadModel(&g_Bullet[i].model);
-	}
+    for (int i = 0; i < MAX_BULLET; i++)
+    {
+        UnloadModel(&g_Bullet[i].model);
+    }
 }
 
 //=============================================================================
-// 更新処理
+// 弾の発射（共通）
+//=============================================================================
+int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data)
+{
+    for (int i = 0; i < MAX_BULLET; i++)
+    {
+        if (!g_Bullet[i].use)
+        {
+            g_Bullet[i].use = TRUE;
+            g_Bullet[i].pos = pos;
+            g_Bullet[i].rot = rot;
+            g_Bullet[i].spd = data.speed;
+            g_Bullet[i].size = data.size;
+            LoadModel(const_cast<char*>(data.modelPath), &g_Bullet[i].model);
+            g_Bullet[i].fWidth = 1.0f;
+            g_Bullet[i].fHeight = 1.0f;
+            g_Bullet[i].lifetime = data.lifetime;
+
+            //g_Bullet[i].color = data.color;
+
+            XMVECTOR dir = XMVectorSet(
+                sinf(rot.y) * cosf(rot.x),
+                sinf(rot.x),
+                cosf(rot.y) * cosf(rot.x),
+                0.0f
+            );
+            dir = XMVector3Normalize(dir);
+            dir = XMVectorScale(dir, data.speed);
+            XMStoreFloat3(&g_Bullet[i].vel, dir);
+            break;
+        }
+    }
+    return 0;
+}
+
+//=============================================================================
+// リボルバー弾の発射関数（分かりやすさのため） //追加箇所
+//=============================================================================
+void SetRevolverBullet(XMFLOAT3 pos, XMFLOAT3 rot)
+{
+    SetBullet(pos, rot, *GetRevolver()->bulletData);
+
+}
+
+//=============================================================================
+// ショットガン弾の発射関数（複数同時発射） //追加箇所
+//=============================================================================
+void SetShotgunBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data)
+{
+    for (int i = 0; i < 8; ++i)
+    {
+        // 弾ごとにランダムな角度のばらけを与える（前方円錐状）
+        XMFLOAT3 randRot = rot;
+        randRot.x += XMConvertToRadians((float)(rand() % 11 - 5));   // -5?5度の縦方向ばらけ
+        randRot.y += XMConvertToRadians((float)(rand() % 21 - 10));  // -10?10度の横方向ばらけ
+
+        SetBullet(pos, randRot, data);
+    }
+}
+
+//=============================================================================
+// 弾の更新
 //=============================================================================
 void UpdateBullet(void)
 {
+    for (int i = 0; i < MAX_BULLET; i++)
+    {
+        if (g_Bullet[i].use)
+        {
+            g_Bullet[i].pos.x += g_Bullet[i].vel.x;
+            g_Bullet[i].pos.y += g_Bullet[i].vel.y;
+            g_Bullet[i].pos.z += g_Bullet[i].vel.z;
 
-	for (int i = 0; i < MAX_BULLET; i++)
-	{
-		if (g_Bullet[i].use)
-		{
-			//弾の移動処理
-			float yaw = g_Bullet[i].rot.y;
-			float pitch = g_Bullet[i].rot.x;
-
-			XMFLOAT3 dir = {
-				-sinf(yaw) * cosf(pitch),
-				sinf(pitch),
-				-cosf(yaw) * cosf(pitch)
-			};
-
-			g_Bullet[i].pos.x += dir.x * g_Bullet[i].spd;
-			g_Bullet[i].pos.y += dir.y * g_Bullet[i].spd;
-			g_Bullet[i].pos.z += dir.z * g_Bullet[i].spd;
-
-			// 影の位置設定
-			SetPositionShadow(g_Bullet[i].shadowIdx, XMFLOAT3(g_Bullet[i].pos.x, 0.1f, g_Bullet[i].pos.z));
-
-
-			// フィールドの外に出たら弾を消す処理
-			if (g_Bullet[i].pos.x < MAP_LEFT
-				|| g_Bullet[i].pos.x > MAP_RIGHT
-				|| g_Bullet[i].pos.z < MAP_DOWN
-				|| g_Bullet[i].pos.z > MAP_TOP)
-			{
-				g_Bullet[i].use = FALSE;
-				ReleaseShadow(g_Bullet[i].shadowIdx);
-			}
-
-		}
-	}
+            g_Bullet[i].lifetime -= 1.0f;
+            if (g_Bullet[i].lifetime <= 0)
+            {
+                g_Bullet[i].use = FALSE;
+            }
+        }
+    }
 
 }
 
 //=============================================================================
-// 描画処理
+// 弾の描画
 //=============================================================================
 
 void DrawBullet(void)
 {
-	for (int i = 0; i < MAX_BULLET; i++)
-	{
-		if (g_Bullet[i].use)
-		{
-			XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld;
-			mtxWorld = XMMatrixIdentity();
+    SetCullingMode(CULL_MODE_NONE);
+    for (int i = 0; i < MAX_BULLET; i++)
+    {
+        if (g_Bullet[i].use)
+        {
+            XMMATRIX mtxScl = XMMatrixScaling(g_Bullet[i].size, g_Bullet[i].size, g_Bullet[i].size);
+            XMMATRIX mtxRot = XMMatrixRotationRollPitchYaw(g_Bullet[i].rot.x, g_Bullet[i].rot.y, g_Bullet[i].rot.z);
+            XMMATRIX mtxTrans = XMMatrixTranslation(g_Bullet[i].pos.x, g_Bullet[i].pos.y, g_Bullet[i].pos.z);
 
-			mtxScl = XMMatrixScaling(g_Bullet[i].size, g_Bullet[i].size, g_Bullet[i].size);
-			mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
+            XMMATRIX mtxWorld = mtxScl * mtxRot * mtxTrans;
+            SetWorldMatrix(&mtxWorld);
 
-			mtxRot = XMMatrixRotationRollPitchYaw(
-				g_Bullet[i].rot.x,
-				g_Bullet[i].rot.y,
-				g_Bullet[i].rot.z);
-			mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
+            //MATERIAL material = {};
+            //material.Diffuse = XMFLOAT4(g_Bullet[i].color.x, g_Bullet[i].color.y, g_Bullet[i].color.z, 1.0f);
+            //material.Ambient = material.Diffuse; 
+            //material.noTexSampling = 1;
+            //SetMaterial(material); 
 
-			mtxTranslate = XMMatrixTranslation(
-				g_Bullet[i].pos.x,
-				g_Bullet[i].pos.y,
-				g_Bullet[i].pos.z);
-			mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
+            DrawModel(&g_Bullet[i].model);
 
-			SetWorldMatrix(&mtxWorld);
-			DrawModel(&g_Bullet[i].model); // 3Dモデル描画 //変更箇所
-		}
-	}
-}
-//=============================================================================
-// 頂点情報の作成
-//=============================================================================
-HRESULT MakeVertexBullet(void)
-{
-	// 頂点バッファ生成
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DYNAMIC;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
-
-	// 頂点バッファに値をセットする
-	D3D11_MAPPED_SUBRESOURCE msr;
-	GetDeviceContext()->Map(g_VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-
-	VERTEX_3D* vertex = (VERTEX_3D*)msr.pData;
-
-	float fWidth = BULLET_WIDTH;
-	float fHeight = BULLET_HEIGHT;
-
-	// 頂点座標の設定
-	vertex[0].Position = { -fWidth / 2.0f, 0.0f,  fHeight / 2.0f };
-	vertex[1].Position = {  fWidth / 2.0f, 0.0f,  fHeight / 2.0f };
-	vertex[2].Position = { -fWidth / 2.0f, 0.0f, -fHeight / 2.0f };
-	vertex[3].Position = {  fWidth / 2.0f, 0.0f, -fHeight / 2.0f };
-
-	// 法線の設定
-	vertex[0].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	vertex[1].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	vertex[2].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	vertex[3].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-
-	// 拡散光の設定
-	vertex[0].Diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-	vertex[1].Diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-	vertex[2].Diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-	vertex[3].Diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-	// テクスチャ座標の設定
-	vertex[0].TexCoord = { 0.0f, 0.0f };
-	vertex[1].TexCoord = { 1.0f, 0.0f };
-	vertex[2].TexCoord = { 0.0f, 1.0f };
-	vertex[3].TexCoord = { 1.0f, 1.0f };
-
-	GetDeviceContext()->Unmap(g_VertexBuffer, 0);
-
-	return S_OK;
-}
-
-//=============================================================================
-// 弾のパラメータをセット
-//=============================================================================
-int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot)
-{
-	int nIdxBullet = -1;
-
-	for (int nCntBullet = 0; nCntBullet < MAX_BULLET; nCntBullet++)
-	{
-		if (!g_Bullet[nCntBullet].use)
-		{
-			g_Bullet[nCntBullet].pos = pos;
-			g_Bullet[nCntBullet].rot = rot;
-			g_Bullet[nCntBullet].scl = { 1.0f, 1.0f, 1.0f };
-			g_Bullet[nCntBullet].use = TRUE;
-
-			// 影の設定
-			g_Bullet[nCntBullet].shadowIdx = CreateShadow(g_Bullet[nCntBullet].pos, 0.5f, 0.5f);
-
-			nIdxBullet = nCntBullet;
-
-		//	PlaySound(SOUND_LABEL_SE_shot000);
-
-			break;
-		}
-	}
-
-	return nIdxBullet;
+        }
+    }
 }
 
 //=============================================================================
 // 弾の取得
 //=============================================================================
-BULLET *GetBullet(void)
+BULLET* GetBullet(void)
 {
-	return &(g_Bullet[0]);
+    return g_Bullet;
 }
 
+//=============================================================================
+// 武器の取得 //追加箇所
+//=============================================================================
+Weapon* GetRevolver()
+{
+    return &g_Revolver;
+}
+
+Weapon* GetShotgun()
+{
+    return &g_Shotgun;
+}

@@ -200,12 +200,8 @@ XMFLOAT3 GetGunMuzzlePosition()
 
 XMFLOAT3 GetGunMuzzleRotation()
 {
-	XMFLOAT3 rot = GetCamera()->rot;
 
-	// Y軸を反転（真後ろを向かせる）
-	rot.y += XM_PI; // ← これを追加！
-
-	return rot;
+	return GetCamera()->rot;
 }
 //=============================================================================
 // ビューポートの設定

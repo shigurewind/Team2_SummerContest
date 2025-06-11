@@ -202,13 +202,13 @@ void UpdatePlayer(void)
 			g_Player.isGround = TRUE;
 		}
 
-
 		// 弾発射処理（共通関数使用） 
 		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
 		{
 			XMFLOAT3 pos = isFirstPersonMode ? GetGunMuzzlePosition() : g_Player.pos;  
 			XMFLOAT3 rot = isFirstPersonMode ? GetGunMuzzleRotation() : g_Player.rot;  
-			SetBullet(pos, rot);                                                       
+			/*SetRevolverBullet(pos, rot);*/
+			SetShotgunBullet(pos, rot, *GetShotgun()->bulletData);
 			g_Player.ammo--;
 		}
 		// Rキーでリロード処理

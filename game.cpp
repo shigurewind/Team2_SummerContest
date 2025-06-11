@@ -13,13 +13,13 @@
 #include "sound.h"
 #include "fade.h"
 
+#include "bullet.h"
 #include "player.h"
 #include "enemy.h"
 #include "meshfield.h"
 #include "meshwall.h"
 #include "shadow.h"
 #include "tree.h"
-#include "bullet.h"
 #include "score.h"
 #include "particle.h"
 #include "collision.h"
@@ -347,7 +347,7 @@ void CheckHit(void)
 			{
 				// 当たったから未使用に戻す
 				bullet[i].use = FALSE;
-				ReleaseShadow(bullet[i].shadowIdx);
+				
 
 				// 敵キャラクターは倒される
 				enemy[j].use = FALSE;
