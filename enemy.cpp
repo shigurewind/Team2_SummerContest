@@ -1,19 +1,4 @@
-﻿//=============================================================================
-//
-// エネミーモデル処理 [enemy.cpp]
-// Author : 
-//
-//=============================================================================
-#include <cstdlib>  // rand()
-#include <ctime>    // time()
-#include <cmath>    // cos, sin
-
-#include "main.h"
-#include "renderer.h"
-#include "model.h"
-#include "input.h"
-#include "debugproc.h"
-#include "enemy.h"
+﻿#include "enemy.h"
 #include "player.h"
 #include "bullet.h"
 #include "shadow.h"
@@ -105,10 +90,9 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].use = TRUE;			// TRUE:生きてる
 	}
 
+BaseEnemy::~BaseEnemy() {}
 
-	g_Enemy[0].type = GHOST;
-	ChangeEnemyDirection(0);
-	g_Enemy[0].spd = 0.2f;
+//----------------------------
 
 	g_Enemy[1].type = SKELETON;
 	// 1番だけ線形補間で動かしてみる
@@ -128,22 +112,11 @@ HRESULT InitEnemy(void)
 //=============================================================================
 void UninitEnemy(void)
 {
-
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		if (g_Enemy[i].load)
-		{
-			UnloadModel(&g_Enemy[i].model);
-			g_Enemy[i].load = FALSE;
-		}
-	}
-
 }
 
-//=============================================================================
-// 更新処理
-//=============================================================================
-void UpdateEnemy(void)
+ScarecrowEnemy::~ScarecrowEnemy() {}
+
+void ScarecrowEnemy::Init()
 {
 
 	// エネミーを動かく場合は、影も合わせて動かす事を忘れないようにね！
@@ -169,20 +142,10 @@ void UpdateEnemy(void)
 		}
 	}
 
-
-
-
-
-#ifdef _DEBUG
-
-	if (GetKeyboardTrigger(DIK_P))
-	{
-		// モデルの色を変更できるよ！半透明にもできるよ。
-		for (int j = 0; j < g_Enemy[0].model.SubsetNum; j++)
-		{
-			SetModelDiffuse(&g_Enemy[0].model, j, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.5f));
-		}
-	}
+void ScarecrowEnemy::Update()
+{
+	// 不动，无需逻辑
+}
 
 	if (GetKeyboardTrigger(DIK_L))
 	{
@@ -243,12 +206,8 @@ void DrawEnemy(void)
 	SetCullingMode(CULL_MODE_BACK);
 }
 
-//=============================================================================
-// エネミーの取得
-//=============================================================================
-ENEMY *GetEnemy()
-{
-	return &g_Enemy[0];
+	SetWorldMatrix(&this->mtxWorld);
+	DrawSprite3D(texID);
 }
 
 
@@ -265,114 +224,32 @@ void ChangeEnemyDirection(int i) {
 	dir.y = cosf(phi);
 	dir.z = sinf(phi) * sinf(theta);
 
-	XMVECTOR v = XMLoadFloat3(&dir);
-	v = XMVector3Normalize(v);
-	XMStoreFloat3(&g_Enemy[i].dir, v);
 
-	g_Enemy[i].moveCounter = MOVECOUNTER + rand() % 60;
+
+static BaseEnemy* g_enemy = nullptr;
+
+void InitEnemy()
+{
+	g_enemy = new ScarecrowEnemy();
+	g_enemy->Init();
 }
 
-void ChasingPlayer(int i)
+void UpdateEnemy()
 {
-	PLAYER* player = GetPlayer();	// プレイヤーのポインターを初期化
-
-	//BCの当たり判定
-	//追いかけらえる範囲
-	if (CollisionBC(player->pos, g_Enemy[i].pos, player->size + 40.0f, g_Enemy[i].size + 40.0f))
-	{
-		PLAYER* player = GetPlayer();
-
-		// エネミーからプレイヤーまでのベクトル
-		XMFLOAT3 dir;
-		dir.x = player->pos.x - g_Enemy[i].pos.x;
-		dir.y = player->pos.y - g_Enemy[i].pos.y;
-		dir.z = player->pos.z - g_Enemy[i].pos.z;
-
-		// ベクトル正規化
-		XMVECTOR v = XMLoadFloat3(&dir);
-		v = XMVector3Normalize(v);
-		XMStoreFloat3(&dir, v);
-
-		// スピードの応用
-		float speed = g_Enemy[i].spd;
-
-		g_Enemy[i].pos.x += dir.x * speed;
-		g_Enemy[i].pos.y += dir.y * speed;
-		g_Enemy[i].pos.z += dir.z * speed;
-
-	}
-
+	if (g_enemy && g_enemy->IsUsed()) g_enemy->Update();
 }
 
-void GhostMovement(int i)
+void DrawEnemy()
 {
-	ChasingPlayer(i);
-
-	if (g_Enemy[i].use == TRUE)
-	{
-		float nextX = g_Enemy[i].pos.x + g_Enemy[i].dir.x * g_Enemy[i].spd;
-		float nextZ = g_Enemy[i].pos.z + g_Enemy[i].dir.z * g_Enemy[i].spd;
-		float nextY = g_Enemy[i].pos.y + g_Enemy[i].dir.y * g_Enemy[i].spd;
-
-		if (nextX < ENEMY_AREA_MIN_X || nextX > ENEMY_AREA_MAX_X ||
-			nextZ < ENEMY_AREA_MIN_Z || nextZ > ENEMY_AREA_MAX_Z ||
-			nextY < ENEMY_AREA_MIN_Y || nextY > ENEMY_AREA_MAX_Y)
-		{
-			ChangeEnemyDirection(i);
-		}
-		else
-		{
-			g_Enemy[i].pos.x = nextX;
-			g_Enemy[i].pos.z = nextZ;
-			g_Enemy[i].pos.y = nextY;
-		}
-
-		g_Enemy[i].moveCounter--;
-		if (g_Enemy[i].moveCounter <= 0)
-		{
-			ChangeEnemyDirection(i);
-		}
-
-		XMFLOAT3 pos = g_Enemy[i].pos;
-		pos.y -= (ENEMY_OFFSET_Y - 0.1f);
-		SetPositionShadow(g_Enemy[i].shadowIdx, pos);
-	}
+	if (g_enemy && g_enemy->IsUsed()) g_enemy->Draw();
 }
 
-void SkeletonMovement(int i)
+void UninitEnemy()
 {
-	ChasingPlayer(i);
-
-	if (g_Enemy[i].use == FALSE || g_Enemy[i].tblMax <= 0)
-		return;
-
-	int nowNo = (int)g_Enemy[i].time;
-	int maxNo = g_Enemy[i].tblMax;
-	int nextNo = (nowNo + 1) % maxNo;
-	INTERPOLATION_DATA* tbl = g_MoveTblAdr[g_Enemy[i].tblNo];
-
-	XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);
-	XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);
-	XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);
-
-	XMVECTOR Pos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;
-	XMVECTOR Rot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;
-	XMVECTOR Scl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;
-
-	float nowTime = g_Enemy[i].time - nowNo;
-
-	Pos *= nowTime;
-	Rot *= nowTime;
-	Scl *= nowTime;
-
-	XMStoreFloat3(&g_Enemy[i].pos, nowPos + Pos);
-	XMStoreFloat3(&g_Enemy[i].rot, nowRot + Rot);
-	XMStoreFloat3(&g_Enemy[i].scl, nowScl + Scl);
-
-	g_Enemy[i].time += 1.0f / tbl[nowNo].frame;
-	if ((int)g_Enemy[i].time >= maxNo)
+	if (g_enemy)
 	{
-		g_Enemy[i].time -= maxNo;
+		delete g_enemy;
+		g_enemy = nullptr;
 	}
 
 	XMFLOAT3 pos = g_Enemy[i].pos;
