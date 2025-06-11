@@ -121,3 +121,10 @@ void SetShaderCamera(XMFLOAT3 pos);
 
 void SetClearColor(float* color4);
 
+
+ID3D11VertexShader* GetDefaultVertexShader();
+ID3D11PixelShader* GetDefaultPixelShader();
+ID3D11InputLayout* GetDefaultInputLayout();
+
+void SetDefaultShader();
+

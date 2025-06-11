@@ -19,6 +19,15 @@
 
 #include <DirectXMath.h>
 
+#include <fbxsdk.h>
+
+#include "DirectXTex.h"
+
+#if _DEBUG
+#pragma comment(lib, "DirectXTex_Debug.lib")
+#else
+#pragma comment(lib, "DirectXTex_Release.lib")
+#endif
 
 // –{—ˆ‚Íƒwƒbƒ_‚É‘‚©‚È‚¢•û‚ª—Ç‚¢
 using namespace DirectX;

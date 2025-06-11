@@ -192,7 +192,8 @@ void PixelShaderPolygon( in  float4 inPosition		: SV_POSITION,
 
 		color = outColor;
 		color.a = inDiffuse.a * Material.Diffuse.a;
-	}
+        
+    }
 
 	//ÉtÉHÉO
 	if (Fog.Enable == 1)

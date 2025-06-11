@@ -9,6 +9,13 @@
 #include "model.h"
 #include "camera.h"
 
+#include <vector>
+#include <iostream>
+
+#include "texture.h"
+
+
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -194,6 +201,36 @@ void DrawModel( DX11_MODEL *Model )
 
 
 }
+
+void DrawFBXModel(DX11_MODEL* Model)
+{
+	// 頂点バッファ設定
+	UINT stride = sizeof(VERTEX_3D);
+	UINT offset = 0;
+	GetDeviceContext()->IASetVertexBuffers(0, 1, &Model->VertexBuffer, &stride, &offset);
+
+	// インデックスバッファ設定
+	GetDeviceContext()->IASetIndexBuffer(Model->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// プリミティブトポロジ設定
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	for (unsigned short i = 0; i < Model->SubsetNum; i++)
+	{
+		// マテリアル設定
+		SetMaterial(Model->SubsetArray[i].Material.Material);
+
+		// テクスチャ設定
+		if (Model->SubsetArray[i].Material.Material.noTexSampling == 0)
+		{
+			GetDeviceContext()->PSSetShaderResources(0, 1, &Model->SubsetArray[i].Material.Texture);
+		}
+
+		// ポリゴン描画
+		GetDeviceContext()->DrawIndexed(Model->SubsetArray[i].IndexNum, Model->SubsetArray[i].StartIndex, 0);
+	}
+}
+
 
 
 
@@ -619,6 +656,339 @@ void SetModelDiffuse(DX11_MODEL *Model, int mno, XMFLOAT4 diffuse)
 	Model->SubsetArray[mno].Material.Material.Diffuse = diffuse;
 }
 
+
+// FBXモデルの読み込み
+void LoadFBXModel(char* FileName, DX11_MODEL* dxModel)
+{
+	FbxManager* fbxManager = FbxManager::Create();
+	FbxIOSettings* ios = FbxIOSettings::Create(fbxManager, IOSROOT);
+	fbxManager->SetIOSettings(ios);
+
+	FbxImporter* importer = FbxImporter::Create(fbxManager, "");
+	FbxScene* scene = FbxScene::Create(fbxManager, "scene");
+
+	FbxAxisSystem sceneAxisSystem = scene->GetGlobalSettings().GetAxisSystem();
+	FbxAxisSystem dxAxisSystem(FbxAxisSystem::eDirectX);
+	if (sceneAxisSystem != dxAxisSystem) {
+		dxAxisSystem.ConvertScene(scene); //座標系をDirectXに変換
+	}
+
+	FbxSystemUnit sceneUnit = scene->GetGlobalSettings().GetSystemUnit();
+	if (sceneUnit != FbxSystemUnit::m) {
+		FbxSystemUnit::m.ConvertScene(scene);
+	}
+
+	if (!importer->Initialize(FileName, -1, fbxManager->GetIOSettings())) {
+		std::cout << "FBX Import failed" << std::endl;
+		return;
+	}
+	importer->Import(scene);
+	importer->Destroy();
+
+	FbxNode* root = scene->GetRootNode();
+	if (!root) return;
+
+	std::vector<VERTEX_3D> vertices;
+	std::vector<UINT> indices;
+
+	for (int i = 0; i < root->GetChildCount(); ++i) {
+		FbxNode* node = root->GetChild(i);
+		FbxMesh* mesh = node->GetMesh();
+		if (!mesh) continue;
+
+		FbxVector4* ctrlPoints = mesh->GetControlPoints();
+
+		
+		FbxAMatrix transform = node->EvaluateGlobalTransform();
+		FbxStringList uvSetNames;
+		mesh->GetUVSetNames(uvSetNames);
+		const char* uvSet = (uvSetNames.GetCount() > 0) ? uvSetNames[0] : "";
+		int polyCount = mesh->GetPolygonCount();
+
+		for (int i = 0; i < polyCount; ++i) {
+			int polySize = mesh->GetPolygonSize(i);
+			if (polySize != 3) continue; // skip non-triangle
+			for (int j = 0; j < 3; ++j) {
+				VERTEX_3D v;
+
+				int ctrlIdx = mesh->GetPolygonVertex(i, j);
+				FbxVector4 pos = mesh->GetControlPointAt(ctrlIdx);
+				FbxVector4 worldPos = transform.MultT(pos);
+				v.Position = XMFLOAT3(
+					static_cast<float>(worldPos[0]),
+					static_cast<float>(worldPos[1]),
+					static_cast<float>(worldPos[2])
+				);
+
+				FbxVector4 normal;
+				if (mesh->GetPolygonVertexNormal(i, j, normal)) {
+					normal = transform.MultT(normal);
+					normal.Normalize();
+					v.Normal = XMFLOAT3(
+						static_cast<float>(normal[0]),
+						static_cast<float>(normal[1]),
+						static_cast<float>(normal[2])
+					);
+				}
+
+				v.Diffuse = XMFLOAT4(1, 1, 1, 1);
+
+				FbxVector2 uv;
+				bool unmapped;
+				if (mesh->GetPolygonVertexUV(i, j, uvSet, uv, unmapped)) {
+					/*v.TexCoord = XMFLOAT2(
+						static_cast<float>(uv[0]),
+						static_cast<float>(uv[1])
+					);*/
+
+					// UVは逆にした、この下の使う
+					v.TexCoord = XMFLOAT2(
+						static_cast<float>(uv[0]),
+						1.0f - static_cast<float>(uv[1])  // Flip V axis
+					);
+				}
+
+				vertices.push_back(v);
+				indices.push_back((UINT)indices.size());
+			}
+		}
+
+		if (indices.size() % 3 != 0)
+		{
+			return;
+		}
+
+		dxModel->SubsetNum = 1;
+		dxModel->SubsetArray = new DX11_SUBSET[1];
+		dxModel->SubsetArray[0].StartIndex = 0;
+		dxModel->SubsetArray[0].IndexNum = (UINT)indices.size();
+
+		dxModel->SubsetArray[0].Material.Material.Diffuse = XMFLOAT4(1, 1, 1, 1);
+		dxModel->SubsetArray[0].Material.Material.Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1);
+		dxModel->SubsetArray[0].Material.Material.Specular = XMFLOAT4(1, 1, 1, 1);
+		dxModel->SubsetArray[0].Material.Material.Emission = XMFLOAT4(0, 0, 0, 1);
+		dxModel->SubsetArray[0].Material.Material.Shininess = 8.0f;
+		dxModel->SubsetArray[0].Material.Material.noTexSampling = 1;
+		dxModel->SubsetArray[0].Material.Texture = nullptr;
+
+		//テクスチャを読み込む
+		FbxSurfaceMaterial* material = node->GetMaterial(0);
+		if (material) {
+			FbxProperty prop = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+			if (prop.IsValid()) {
+				FbxDouble3 color = prop.Get<FbxDouble3>();
+				dxModel->SubsetArray[0].Material.Material.Diffuse = XMFLOAT4((float)color[0], (float)color[1], (float)color[2], 1.0f);
+
+				FbxFileTexture* texture = prop.GetSrcObject<FbxFileTexture>(0);
+				if (texture) {
+					const char* filepath = texture->GetFileName();
+					D3DX11CreateShaderResourceViewFromFile(
+						GetDevice(), filepath, NULL, NULL,
+						&dxModel->SubsetArray[0].Material.Texture, NULL);
+					dxModel->SubsetArray[0].Material.Material.noTexSampling = 0;
+				}
+			}
+		}
+
+		break; 
+	}
+
+	//VertexBuffer
+	{
+		D3D11_BUFFER_DESC bd = {};
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(VERTEX_3D) * (UINT)vertices.size();
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+		D3D11_SUBRESOURCE_DATA sd = {};
+		sd.pSysMem = vertices.data();
+
+		GetDevice()->CreateBuffer(&bd, &sd, &dxModel->VertexBuffer);
+	}
+
+	//IndexBuffer
+	{
+		D3D11_BUFFER_DESC bd = {};
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(UINT) * (UINT)indices.size();
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+		D3D11_SUBRESOURCE_DATA sd = {};
+		sd.pSysMem = indices.data();
+
+		GetDevice()->CreateBuffer(&bd, &sd, &dxModel->IndexBuffer);
+	}
+
+	
+	fbxManager->Destroy();
+}
+
+
+// Assimpを使ったモデル読み込み
+AMODEL* ModelLoad(const char* FileName)
+{
+	AMODEL* model = new AMODEL;
+
+
+	const std::string modelPath(FileName);
+
+	model->AiScene = aiImportFile(FileName, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded);
+	assert(model->AiScene);
+
+	model->VertexBuffer = new ID3D11Buffer * [model->AiScene->mNumMeshes];//頂点データポインター
+	model->IndexBuffer = new ID3D11Buffer * [model->AiScene->mNumMeshes];//インデックスデータポインター
+
+
+	for (unsigned int m = 0; m < model->AiScene->mNumMeshes; m++)
+	{
+		aiMesh* mesh = model->AiScene->mMeshes[m];
+
+		// 頂点バッファ生成
+		{
+			VERTEX_3D* vertex = new VERTEX_3D[mesh->mNumVertices];//頂点数分の配列領域作成
+
+			for (unsigned int v = 0; v < mesh->mNumVertices; v++)
+			{
+				vertex[v].Position = XMFLOAT3(mesh->mVertices[v].x, -mesh->mVertices[v].z, mesh->mVertices[v].y);
+				vertex[v].TexCoord = XMFLOAT2(mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y);
+				vertex[v].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+				vertex[v].Normal = XMFLOAT3(mesh->mNormals[v].x, -mesh->mNormals[v].z, mesh->mNormals[v].y);
+			}
+
+			D3D11_BUFFER_DESC bd;
+			ZeroMemory(&bd, sizeof(bd));
+			bd.Usage = D3D11_USAGE_DYNAMIC;
+			bd.ByteWidth = sizeof(VERTEX_3D) * mesh->mNumVertices;
+			bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+			D3D11_SUBRESOURCE_DATA sd;
+			ZeroMemory(&sd, sizeof(sd));
+			sd.pSysMem = vertex;
+
+			GetDevice()->CreateBuffer(&bd, &sd, &model->VertexBuffer[m]);
+
+			delete[] vertex;
+		}
+
+
+		// インデックスバッファ生成
+		{
+			unsigned int* index = new unsigned int[mesh->mNumFaces * 3];//ポリゴン数数*3
+
+			for (unsigned int f = 0; f < mesh->mNumFaces; f++)
+			{
+				const aiFace* face = &mesh->mFaces[f];
+
+				assert(face->mNumIndices == 3);
+
+				index[f * 3 + 0] = face->mIndices[0];
+				index[f * 3 + 1] = face->mIndices[1];
+				index[f * 3 + 2] = face->mIndices[2];
+			}
+
+			D3D11_BUFFER_DESC bd;
+			ZeroMemory(&bd, sizeof(bd));
+			bd.Usage = D3D11_USAGE_DEFAULT;
+			bd.ByteWidth = sizeof(unsigned int) * mesh->mNumFaces * 3;
+			bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+			bd.CPUAccessFlags = 0;
+
+			D3D11_SUBRESOURCE_DATA sd;
+			ZeroMemory(&sd, sizeof(sd));
+			sd.pSysMem = index;
+
+			GetDevice()->CreateBuffer(&bd, &sd, &model->IndexBuffer[m]);
+
+			delete[] index;
+		}
+
+	}
+
+
+
+	//テクスチャ読み込み
+	for (int i = 0; i < model->AiScene->mNumTextures; i++)
+	{
+		aiTexture* aitexture = model->AiScene->mTextures[i];
+
+		ID3D11ShaderResourceView* texture;
+		TexMetadata metadata;
+		ScratchImage image;
+		LoadFromWICMemory(aitexture->pcData, aitexture->mWidth, WIC_FLAGS_NONE, &metadata, image);
+		CreateShaderResourceView(GetDevice(), image.GetImages(), image.GetImageCount(), metadata, &texture);
+		assert(texture);
+
+		model->Texture[aitexture->mFilename.data] = texture;
+	}
+
+
+
+	return model;
+}
+
+
+
+
+void ModelRelease(AMODEL* model)
+{
+	for (unsigned int m = 0; m < model->AiScene->mNumMeshes; m++)
+	{
+		model->VertexBuffer[m]->Release();
+		model->IndexBuffer[m]->Release();
+	}
+
+	delete[] model->VertexBuffer;
+	delete[] model->IndexBuffer;
+
+
+	for (std::pair<const std::string, ID3D11ShaderResourceView*> pair : model->Texture)
+	{
+		pair.second->Release();
+	}
+
+
+	aiReleaseImport(model->AiScene);
+
+
+	delete model;
+}
+
+
+void ModelDraw(AMODEL* model)
+{
+
+
+	
+
+	// プリミティブトポロジ設定
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+	for (unsigned int m = 0; m < model->AiScene->mNumMeshes; m++)
+	{
+		aiMesh* mesh = model->AiScene->mMeshes[m];
+
+		// テクスチャ設定
+		aiString texture;
+		aiMaterial* aimaterial = model->AiScene->mMaterials[mesh->mMaterialIndex];
+		aimaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texture);
+
+		if (texture != aiString(""))
+			GetDeviceContext()->PSSetShaderResources(0, 1, &model->Texture[texture.data]);
+
+		// 頂点バッファ設定
+		UINT stride = sizeof(VERTEX_3D);
+		UINT offset = 0;
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &model->VertexBuffer[m], &stride, &offset);
+
+		// インデックスバッファ設定
+		GetDeviceContext()->IASetIndexBuffer(model->IndexBuffer[m], DXGI_FORMAT_R32_UINT, 0);
+
+		// ポリゴン描画
+		GetDeviceContext()->DrawIndexed(mesh->mNumFaces * 3, 0, 0);
+	}
+}
 
 
 
