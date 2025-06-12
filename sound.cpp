@@ -30,27 +30,26 @@ BYTE *g_apDataAudio[SOUND_LABEL_MAX] = {};					// オーディオデータ
 DWORD g_aSizeAudio[SOUND_LABEL_MAX] = {};					// オーディオデータサイズ
 
 // 各音素材のパラメータ
-enum
+SOUNDPARAM g_aParam[SOUND_LABEL_MAX] =
 {
 	//BGM
-	SOUND_LABEL_BGM_sample000,	// タイトルのBGM
-	SOUND_LABEL_BGM_sample001,	// in-gameのBGM
-	SOUND_LABEL_BGM_sample002,	// ゲームオーバーのBGM
+	{ (char*)"data/BGM/bgm_title.wav", -1 },		// タイトルのBGM
+	{ (char*)"data/BGM/bgm.wav", -1 },				// in-gameのBGM
+	{ (char*)"data/BGM/bgm_gameOver.wav", -1 },		// ゲームオーバーのBGM
 	//プレイヤー
-	SOUND_LABEL_SE_bomb000,		// 弾発射音
-	SOUND_LABEL_SE_defend000,	// 弾発射音
-	SOUND_LABEL_SE_defend001,	// 弾発射音
-	SOUND_LABEL_SE_hit000,		// 弾発射音
-	SOUND_LABEL_SE_laser000,	// 武器組み立て時の音
-	SOUND_LABEL_SE_lockon000,	// 武器組み立て時の音
-	SOUND_LABEL_SE_shot000,		// 
-	SOUND_LABEL_SE_shot001,		// ヒット音
+	{ (char*)"data/SE/maou_se_battle_gun01.wav", 0 },// 弾発射音
+	{ (char*)"data/SE/maou_se_battle_gun02.wav", 0 },// 弾発射音
+	{ (char*)"data/SE/maou_se_battle_gun03.wav", 0 },// 弾発射音
+	{ (char*)"data/SE/maou_se_battle_gun05.wav", 0 },// 弾発射音
+	{ (char*)"data/SE/maou_se_system22.wav", 0 },	// 武器組み立て時の音
+	{ (char*)"data/SE/maou_se_system44.wav", 0 },	// 武器組み立て時の音
+	{ (char*)"data/SE/shot000.wav", 0 },			// 弾発射音
+	{ (char*)"data/SE/hit000.wav", 0 },				// ヒット音
 	//エネミー
-	SOUND_LABEL_SE_spiderEnemyMoving,	//クモのタイプのエネミーの動きの音
-	SOUND_LABEL_SE_spiderEnemyBite,		//クモのタイプのエネミーの噛む音
-	SOUND_LABEL_SE_spiderEnemySpit		//クモのタイプのエネミーの発射の音
-	,
-	SOUND_LABEL_MAX,
+	{ (char*)"data/SE/spider_monster_movin.wav", 0 },//クモのタイプのエネミーの動きの音
+	{ (char*)"data/SE/spider_monster_bite.wav", 0 }, //クモのタイプのエネミーの噛む音
+	{ (char*)"data/SE/spider_monster_spitt.wav", 0 },//クモのタイプのエネミーの発射の音
+
 };
 
 //=============================================================================
