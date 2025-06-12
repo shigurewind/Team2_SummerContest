@@ -45,7 +45,7 @@ void CheckHit(void);
 //*****************************************************************************
 static int	g_ViewPortType_Game = TYPE_FULL_SCREEN;
 
-BOOL	g_bPause = TRUE;	// ポーズON/OFF
+BOOL	g_bPause = FALSE;	// ポーズON/OFF
 
 
 //=============================================================================
@@ -164,7 +164,7 @@ void UpdateGame(void)
 
 #endif
 
-	if(g_bPause == FALSE)
+	if(g_bPause == TRUE)
 		return;
 
 	// 地面処理の更新
