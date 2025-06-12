@@ -125,103 +125,68 @@ SamplerState g_SamplerState : register(s0);
 // ピクセルシェーダ
 //=============================================================================
 void PixelShaderPolygon(in float4 inPosition : SV_POSITION,
-						 in float4 inNormal : NORMAL0,
-						 in float2 inTexCoord : TEXCOORD0,
-						 in float4 inDiffuse : COLOR0,
-						 in float4 inWorldPos : POSITION0,
-
-						 out float4 outDiffuse : SV_Target)
+                         in float4 inNormal : NORMAL0,
+                         in float2 inTexCoord : TEXCOORD0,
+                         in float4 inDiffuse : COLOR0,
+                         in float4 inWorldPos : POSITION0,
+                         out float4 outDiffuse : SV_Target)
 {
     float4 color;
-
     if (Material.noTexSampling == 0)
     {
         color = g_Texture.Sample(g_SamplerState, inTexCoord);
-
         color *= inDiffuse;
     }
     else
     {
         color = inDiffuse;
     }
-	
+    
     if (Light.Enable == 0)
     {
         color = color * Material.Diffuse;
     }
     else
     {
-        float4 tempColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-        float4 outColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
+        //Material.Diffuseを使わず（Bugあり）
+        float3 finalColor = color.rgb * 0.7f; // 環境の光
+        
+        
         for (int i = 0; i < 5; i++)
         {
-            float3 lightDir;
-            float light;
-
             if (Light.Flags[i].y == 1)
             {
-                if (Light.Flags[i].x == 1)
+                if (Light.Flags[i].x == 1) // 平行光源
                 {
-                    lightDir = normalize(Light.Direction[i].xyz);
-                    light = max(dot(lightDir, inNormal.xyz), 0.0f);
-
-                    light = 0.5 - 0.5 * light;
-                    tempColor = color * Material.Diffuse * light * Light.Diffuse[i];
+                    // 強さ
+                    float3 lightDir = normalize(-Light.Direction[i].xyz); //方向
+                    float lightIntensity = max(0.0f, dot(lightDir, normalize(inNormal.xyz)));
+                    
+                    
+                    float3 diffuse = color.rgb * Light.Diffuse[i].rgb * lightIntensity;
+                    finalColor += diffuse;
                 }
-                else if (Light.Flags[i].x == 2)
+                else if (Light.Flags[i].x == 2) // 点光源
                 {
-                    lightDir = normalize(Light.Position[i].xyz - inWorldPos.xyz);
-                    light = dot(lightDir, inNormal.xyz);
-
-                    tempColor = color * Material.Diffuse * light * Light.Diffuse[i];
-
-                    float distance = length(inWorldPos - Light.Position[i]);
-
-                    float att = saturate((Light.Attenuation[i].x - distance) / Light.Attenuation[i].x);
-                    tempColor *= att;
+                    float3 lightDir = normalize(Light.Position[i].xyz - inWorldPos.xyz);
+                    float lightIntensity = max(0.0f, dot(lightDir, normalize(inNormal.xyz)));
+                    
+                    // 減衰距離
+                    float distance = length(Light.Position[i].xyz - inWorldPos.xyz);
+                    float attenuation = saturate((Light.Attenuation[i].x - distance) / Light.Attenuation[i].x);
+                    
+                    float3 diffuse = color.rgb * Light.Diffuse[i].rgb * lightIntensity * attenuation;
+                    finalColor += diffuse;
                 }
-                else
-                {
-                    tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-                }
-
-                tempColor.a = color.a;
-                
-                outColor += tempColor;
             }
         }
-
-        color = outColor;
-        color.a = inDiffuse.a * Material.Diffuse.a;
         
+        
+        finalColor = min(finalColor, 1.0f);
+        
+        
+        color = float4(finalColor, color.a);
     }
-
     
-
-	//フォグ
-    if (Fog.Enable == 1)
-    {
-        float z = inPosition.z * inPosition.w;
-        float f = (Fog.Distance.y - z) / (Fog.Distance.y - Fog.Distance.x);
-        f = saturate(f);
-        outDiffuse = f * color + (1 - f) * Fog.FogColor;
-        outDiffuse.a = color.a;
-    }
-    else
-    {
-        outDiffuse = color;
-    }
-
-	//縁取り
-    if (fuchi == 1)
-    {
-        float angle = dot(normalize(inWorldPos.xyz - Camera.xyz), normalize(inNormal));
-		//if ((angle < 0.5f)&&(angle > -0.5f))
-        if (angle > -0.3f)
-        {
-            outDiffuse.rb = 1.0f;
-            outDiffuse.g = 0.0f;
-        }
-    }
+    outDiffuse = color;
 }
