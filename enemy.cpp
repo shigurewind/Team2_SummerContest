@@ -14,6 +14,8 @@
 #include "renderer.h"
 #include "sprite.h"
 #include "input.h"
+#include "collision.h"
+
 
 
 
@@ -123,6 +125,7 @@ void ScarecrowEnemy::Update() {
         time -= tblMax;
     }
 
+
     PLAYER* player = GetPlayer();
 
     // エネミーからプレイヤーまでのベクトル
@@ -130,6 +133,7 @@ void ScarecrowEnemy::Update() {
     dir.x = player->pos.x - pos.x;
     dir.y = player->pos.y - pos.y;
     dir.z = player->pos.z - pos.z;
+
 
     if (fireTimer > 0.0f)
     {
@@ -142,19 +146,34 @@ void ScarecrowEnemy::Update() {
     float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
     float range = 100.0f; // 発射範囲
 
-    if (distSq < range * range)
-    {
-        // 発射するとき
-        if (fireTimer <= 0.0f)
-        {
-            SetBullet(pos, XMFLOAT3(0,0,0));
+    
+    float angleY = atan2f(pos.x - player->pos.x, pos.z - player->pos.z);
+    XMFLOAT3 bulletRot = { 0.0f, angleY, 0.0f };
+    XMFLOAT3 bulletPos = pos;
+    bulletPos.y += 10.0f; 
 
-            // Reset timer
-            fireTimer = fireCooldown;
+    //攻撃行う範囲
+    if (CollisionBC(pos, player->pos, 200.0f, 0.0f)) {
+
+        if (distSq < range * range)
+        {
+            // 発射するとき
+            if (fireTimer <= 0.0f)
+            {
+                SetBullet(bulletPos, bulletRot);
+
+                // Reset timer
+                fireTimer = fireCooldown;
+            }
         }
     }
 
+#ifdef _DEBUG
 
+    float dist = sqrtf(distSq);
+    PrintDebugProc("Enemy to Player Distance: %f\n", dist);
+
+#endif
 }
 
 void ScarecrowEnemy::Draw() {
@@ -263,7 +282,7 @@ void DrawEnemy() {
         if (enemy->IsUsed())
         {
             XMFLOAT3 pos = enemy->GetPosition();
-            PrintDebugProc("Enemy Pos: X:%.2f Y:%.2f Z:%.2f\n", pos.x, pos.y, pos.z);
+            PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n", pos.x, pos.y, pos.z);
             break;
         }
     }
