@@ -21,6 +21,8 @@
 std::vector<BaseEnemy*> g_enemies;
 ID3D11Buffer* g_VertexBufferEnemy = nullptr;
 
+#define ENEMY_MAX (1)
+
 
 #define ENEMY_OFFSET_Y 0.0f
 
@@ -48,7 +50,6 @@ ScarecrowEnemy::ScarecrowEnemy() :
 {
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
-
 }
 ScarecrowEnemy::~ScarecrowEnemy() {
     if (texture) {
@@ -64,6 +65,7 @@ void ScarecrowEnemy::Init() {
         GetDevice(),
         "data/TEXTURE/enemy001.png",
         NULL, NULL, &texture, NULL);
+
 
     *material = {};
     material->Diffuse = XMFLOAT4(1, 1, 1, 1);
@@ -116,6 +118,7 @@ void ScarecrowEnemy::Update() {
     if ((int)time >= tblMax) {
         time -= tblMax;
     }
+    PrintDebugProc("Updating Scarecrow, Frame: %d\n", currentFrame);
 
 }
 
@@ -148,28 +151,45 @@ void ScarecrowEnemy::Draw() {
     mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
     mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
-    ////�H�H�H
-    //SetAlphaTestEnable(TRUE);
-    //SetBlendState(BLEND_MODE_ALPHABLEND);
-    //SetWorldMatrix(&mtxWorld);
-    //SetMaterial(*material);
-    //GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
 
-    //float px = pos.x;	// プレイヤーの表示位置X
-    //float py = pos.y;	// プレイヤーの表示位置Y
-    //float pw = width;	// プレイヤーの表示幅
-    //float ph = height;	// プレイヤーの表示高さ
-    //py += 50.0f;		// 足元に表示
+    D3D11_MAPPED_SUBRESOURCE msr;
+    GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    VERTEX_3D* v = (VERTEX_3D*)msr.pData;
 
-    //float tw = 1.0f;	// テクスチャの幅
-    //float th = 1.0f;	// テクスチャの高さ
-    //float tx = 0.0f;	// テクスチャの左上X座標
-    //float ty = 0.0f;	// テクスチャの左上Y座標
+    float w = width, h = height;
+    v[0].Position = XMFLOAT3(-w / 2, h, 0);
+    v[1].Position = XMFLOAT3(w / 2, h, 0);
+    v[2].Position = XMFLOAT3(-w / 2, 0, 0);
+    v[3].Position = XMFLOAT3(w / 2, 0, 0);
 
-    //// １枚のポリゴンの頂点とテクスチャ座標を設定
-    //SetSpriteColor(g_VertexBufferEnemy, px, py, pw, ph, tx, ty, tw, th,
-    //    XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+    for (int i = 0; i < 4; ++i) {
+        v[i].Normal = XMFLOAT3(0, 0, -1);
+        v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
+    }
 
+    float tw = 1.0f / 2; // 2フレーム
+    float th = 1.0f;
+    float tx = currentFrame * tw;
+    float ty = 0.0f;
+
+    v[0].TexCoord = XMFLOAT2(tx, ty);
+    v[1].TexCoord = XMFLOAT2(tx + tw, ty);
+    v[2].TexCoord = XMFLOAT2(tx, ty + th);
+    v[3].TexCoord = XMFLOAT2(tx + tw, ty + th);
+
+    GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
+
+    //�H�H�H
+    SetAlphaTestEnable(TRUE);
+    SetBlendState(BLEND_MODE_ALPHABLEND);
+    SetWorldMatrix(&mtxWorld);
+    SetMaterial(*material);
+    GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+
+
+
+
+    PrintDebugProc("Frame: %d\n", currentFrame);
 
 
     GetDeviceContext()->Draw(4, 0);
@@ -182,7 +202,7 @@ void ScarecrowEnemy::Draw() {
 void InitEnemy() {
     MakeVertexEnemy();
     g_enemies.clear();
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < ENEMY_MAX; ++i) {
         ScarecrowEnemy* e = new ScarecrowEnemy();
         e->Init();
         e->SetUsed(true);
