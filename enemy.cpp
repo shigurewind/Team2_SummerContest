@@ -90,7 +90,7 @@ void ScarecrowEnemy::Draw() {
     mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
     mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
-    //？？？
+    //�H�H�H
     SetAlphaTestEnable(TRUE);
     SetBlendState(BLEND_MODE_ALPHABLEND);
     SetWorldMatrix(&mtxWorld);

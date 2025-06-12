@@ -19,9 +19,7 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define	MODEL_PLAYER		"data/MODEL/cone.obj"			// 読み込むモデル名
-#define	MODEL_PLAYER_LEFT	"data/MODEL/torus.obj"			// 読み込むモデル名
-#define	MODEL_PLAYER_RIGHT	"data/MODEL/torus.obj"			// 読み込むモデル名
+//#define	MODEL_PLAYER		"data/MODEL/player.obj"			// 読み込むモデル名
 
 #define	VALUE_MOVE			(2.0f)							// 移動量
 #define	VALUE_ROTATE		(D3DX_PI * 0.02f)				// 回転量
@@ -89,11 +87,15 @@ static INTERPOLATION_DATA* g_MoveTblAdr[] =
 HRESULT InitPlayer(void)
 {
 	g_Player.load = TRUE;
-	LoadModel(MODEL_PLAYER, &g_Player.model);
+	//LoadModel(MODEL_PLAYER, &g_Player.model);
 
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y+50.0f, -50.0f);
+	//FBXTEST
+	LoadFBXModel("data/MODEL/dq.fbx", &g_Player.model);
+
+
+	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y, -50.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	g_Player.scl = XMFLOAT3(0.005f, 0.005f, 0.005f);
 
 	g_Player.spd = 0.0f;			// 移動スピードクリア
 
@@ -409,48 +411,9 @@ void DrawPlayer(void)
 	SetFuchi(1);
 
 	// モデル描画
-	DrawModel(&g_Player.model);
+	//DrawModel(&g_Player.model);
 
-
-
-	// 階層アニメーション
-	for (int i = 0; i < PLAYER_PARTS_MAX; i++)
-	{
-		// ワールドマトリックスの初期化
-		mtxWorld = XMMatrixIdentity();
-
-		// スケールを反映
-		mtxScl = XMMatrixScaling(g_Parts[i].scl.x, g_Parts[i].scl.y, g_Parts[i].scl.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
-
-		// 回転を反映
-		mtxRot = XMMatrixRotationRollPitchYaw(g_Parts[i].rot.x, g_Parts[i].rot.y, g_Parts[i].rot.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
-
-		// 移動を反映
-		mtxTranslate = XMMatrixTranslation(g_Parts[i].pos.x, g_Parts[i].pos.y, g_Parts[i].pos.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
-
-		if (g_Parts[i].parent != NULL)	// 子供だったら親と結合する
-		{
-			mtxWorld = XMMatrixMultiply(mtxWorld, XMLoadFloat4x4(&g_Parts[i].parent->mtxWorld));
-																			// ↑
-																			// g_Player.mtxWorldを指している
-		}
-
-		XMStoreFloat4x4(&g_Parts[i].mtxWorld, mtxWorld);
-
-		// 使われているなら処理する
-		if (g_Parts[i].use == FALSE) continue;
-
-		// ワールドマトリックスの設定
-		SetWorldMatrix(&mtxWorld);
-
-
-		// モデル描画
-		DrawModel(&g_Parts[i].model);
-
-	}
+	DrawFBXModel(&g_Player.model);
 
 	SetFuchi(0);
 
