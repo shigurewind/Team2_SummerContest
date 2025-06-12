@@ -51,7 +51,7 @@ BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
 BaseEnemy::~BaseEnemy() {}
 
 ScarecrowEnemy::ScarecrowEnemy() :
-    texture(nullptr), width(60.0f), height(90.0f)
+    texture(nullptr), width(100.0f), height(100.0f)
 {
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
