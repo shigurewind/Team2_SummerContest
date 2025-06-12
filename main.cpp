@@ -24,6 +24,8 @@
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 
+#include "debugUI.h"
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -336,33 +338,36 @@ void Update(void)
 	ImGui::NewFrame();
 	//ImGui::ShowDemoWindow(); // imgui_demo.cpp内のものを表示（サンプル表示）
 
+	//debugUI
+	ShowDebugUI();
+
 	//新しいImGuiを作る
 	//ImGui::SetWindowSize(ImVec2(300, 200));//次のImGuiサイズ
 
-	if (ImGui::Begin("Test"),NULL,ImGuiWindowFlags_NoResize) 
-	{
-		ImGui::Text(u8"これはテスト用の文書");
+	//if (ImGui::Begin("Test"),NULL,ImGuiWindowFlags_NoResize) 
+	//{
+	//	ImGui::Text(u8"これはテスト用の文書");
 
-		ImGui::Checkbox("TestBool", &testBool);
+	//	ImGui::Checkbox("TestBool", &testBool);
 
-		if (ImGui::Button(u8"こっち!",ImVec2(80,30)))
-		{
-			testBool = true;
-		}
+	//	if (ImGui::Button(u8"こっち!",ImVec2(80,30)))
+	//	{
+	//		testBool = true;
+	//	}
 
-		ImGui::SliderInt("TestInt", &testInt, 0, 20 );
+	//	ImGui::SliderInt("TestInt", &testInt, 0, 20 );
 
-		ImGui::SliderFloat("TestFloat", &testFloat, 0, 10.0f);
+	//	ImGui::SliderFloat("TestFloat", &testFloat, 0, 10.0f);
 
-		//ImGui::SetCursorPos(ImVec2(400, 100));
-		if (ImGui::Button("Click me2!", ImVec2(80, 30)))
-		{
-			
-		}
+	//	//ImGui::SetCursorPos(ImVec2(400, 100));
+	//	if (ImGui::Button("Click me2!", ImVec2(80, 30)))
+	//	{
+	//		
+	//	}
 
-		ImGui::InputInt("InputInt", &testInt, 1, 10);	// 数値入力欄
+	//	ImGui::InputInt("InputInt", &testInt, 1, 10);	// 数値入力欄
 
-	}ImGui::End();
+	//}ImGui::End();
 
 
 	// 入力の更新処理

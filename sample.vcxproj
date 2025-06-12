@@ -148,6 +148,7 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="debugproc.h" />
+    <ClInclude Include="debugUI.h" />
     <ClInclude Include="Dependenceis\FBX\include\fbxsdk.h" />
     <ClInclude Include="Dependenceis\FBX\include\fbxsdk\core\arch\fbxalloc.h" />
     <ClInclude Include="Dependenceis\FBX\include\fbxsdk\core\arch\fbxarch.h" />
@@ -466,6 +467,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="debugproc.cpp" />
+    <ClCompile Include="debugUI.cpp" />
     <ClCompile Include="enemy.cpp" />
     <ClCompile Include="fade.cpp" />
     <ClCompile Include="FBXmodel.cpp" />

@@ -119,7 +119,12 @@ void UpdateCamera(void)
 
 
 
-
+	}
+	else
+	{
+		g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y) * cosf(g_Camera.rot.x);
+		g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
+		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y) * cosf(g_Camera.rot.x);
 	}
 
 	// ƒJƒƒ‰‚ğ‰Šú‚É–ß‚·

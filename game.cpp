@@ -45,7 +45,7 @@ void CheckHit(void);
 //*****************************************************************************
 static int	g_ViewPortType_Game = TYPE_FULL_SCREEN;
 
-static BOOL	g_bPause = TRUE;	// ポーズON/OFF
+BOOL	g_bPause = TRUE;	// ポーズON/OFF
 
 
 //=============================================================================
