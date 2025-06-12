@@ -56,6 +56,9 @@ struct PLAYER
 	float			jumpPower;	//jumpのパワー
 
 
+	int ammo;       // リロードできる弾数  
+	int maxammo;    // 持ってる弾数
+
 };
 
 

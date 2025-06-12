@@ -5,42 +5,75 @@
 //
 //=============================================================================
 #pragma once
+#include "model.h"
+#include <DirectXMath.h>
 
+using namespace DirectX;
 
-//*****************************************************************************
-// マクロ定義
-//*****************************************************************************
-#define	MAX_BULLET		(256)	// 弾最大数
+#define MAX_BULLET (100)
 
-//*****************************************************************************
-// 構造体定義
-//*****************************************************************************
-typedef struct
-{
-	XMFLOAT4X4	mtxWorld;		// ワールドマトリックス
-	XMFLOAT3	pos;			// 位置
-	XMFLOAT3	rot;			// 角度
-	XMFLOAT3	scl;			// スケール
-	MATERIAL	material;		// マテリアル
-	float		spd;			// 移動量
-	float		fWidth;			// 幅
-	float		fHeight;		// 高さ
-	int			shadowIdx;		// 影ID
-	BOOL		use;			// 使用しているかどうか
+//=============================================================================
+// 弾種別 //追加箇所
+//=============================================================================
+enum BulletType {
+    BULLET_NORMAL,
+    BULLET_FIRE
+};
 
+// 弾データ構造（属性付き）
+struct BulletData {
+    BulletType type;
+    float speed;
+    int damage;
+    float size;
+    float lifetime;
+    const char* modelPath;
 
-} BULLET;
+    //XMFLOAT3 color;  //弾のRGB
+};
 
+// 武器種別 
+enum WeaponType {
+    WEAPON_REVOLVER,
+    WEAPON_SHOTGUN
+};
 
-//*****************************************************************************
-// プロトタイプ宣言
-//*****************************************************************************
+// 武器構造体 
+struct Weapon {
+    WeaponType weaponType;
+    BulletData* bulletData;
+};
+
+//=============================================================================
+// 弾構造体
+//=============================================================================
+struct BULLET {
+    bool use;
+    XMFLOAT3 pos;
+    XMFLOAT3 rot;
+    float spd;
+    float size;
+    float lifetime; 
+    DX11_MODEL model;
+    XMFLOAT3 vel; // ← 速度ベクトルを追加
+    float fWidth;
+    float fHeight;
+    XMMATRIX mtxWorld;
+
+    //XMFLOAT3 color;  // ← 弾の色を保持するための変数
+
+};
+
+//=============================================================================
+// 関数プロトタイプ宣言
+//=============================================================================
 HRESULT InitBullet(void);
-void UninitBullet(void);
+void UninitBullet();
 void UpdateBullet(void);
 void DrawBullet(void);
-
-int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot);
-
-BULLET *GetBullet(void);
-
+int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data);
+void SetRevolverBullet(XMFLOAT3 pos, XMFLOAT3 rot); //追加箇所
+void SetShotgunBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data);
+BULLET* GetBullet(void);
+Weapon* GetRevolver(void);
+Weapon* GetShotgun(void);
