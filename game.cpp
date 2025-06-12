@@ -354,11 +354,11 @@ void CheckHit(void)
 	////		if (enemy[j].use == FALSE)
 	////			continue;
 
-			//BCの当たり判定
-			if (CollisionBC(bullet[i].pos, enemy[j].pos, bullet[i].fWidth, enemy[j].size))
-			{
-				// 当たったから未使用に戻す
-				bullet[i].use = FALSE;
+			////BCの当たり判定
+			//if (CollisionBC(bullet[i].pos, enemy[j].pos, bullet[i].fWidth, enemy[j].size))
+			//{
+			//	// 当たったから未使用に戻す
+			//	bullet[i].use = FALSE;
 				
 
 	////			// 敵キャラクターは倒される

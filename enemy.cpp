@@ -19,6 +19,8 @@
 
 
 
+
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -153,20 +155,20 @@ void ScarecrowEnemy::Update() {
     bulletPos.y += 10.0f; 
 
     //攻撃行う範囲
-    if (CollisionBC(pos, player->pos, 200.0f, 0.0f)) {
+    //if (CollisionBC(pos, player->pos, 200.0f, 0.0f)) {
 
-        if (distSq < range * range)
-        {
-            // 発射するとき
-            if (fireTimer <= 0.0f)
-            {
-                SetBullet(bulletPos, bulletRot);
+    //    if (distSq < range * range)
+    //    {
+    //        // 発射するとき
+    //        if (fireTimer <= 0.0f)
+    //        {
+    //            SetBullet(bulletPos, bulletRot);
 
-                // Reset timer
-                fireTimer = fireCooldown;
-            }
-        }
-    }
+    //            // Reset timer
+    //            fireTimer = fireCooldown;
+    //        }
+    //    }
+    //}
 
 #ifdef _DEBUG
 
