@@ -16,6 +16,7 @@
 #include "game.h"
 #include "fade.h"
 #include "title.h"
+#include "tutorial.h"
 #include "result.h"
 #include "debugproc.h"
 
@@ -386,6 +387,10 @@ void Update(void)
 		UpdateTitle();
 		break;
 
+	case MODE_TUTORIAL:
+		UpdateTutorial();
+		break;
+
 	case MODE_GAME:			// ゲーム画面の更新
 		UpdateGame();
 		break;
@@ -432,6 +437,26 @@ void Draw(void)
 		// Z比較あり
 		SetDepthEnable(TRUE);
 		break;
+
+	case MODE_TUTORIAL:		// タイトル画面の描画
+		SetViewPort(TYPE_FULL_SCREEN);
+
+		// 2Dの物を描画する処理
+		// Z比較なし
+		SetDepthEnable(FALSE);
+
+		// ライティングを無効
+		SetLightEnable(FALSE);
+
+		DrawTutorial();
+
+		// ライティングを有効に
+		SetLightEnable(TRUE);
+
+		// Z比較あり
+		SetDepthEnable(TRUE);
+		break;
+
 
 	case MODE_GAME:			// ゲーム画面の描画
 		DrawGame();
@@ -527,6 +552,9 @@ void SetMode(int mode)
 	// タイトル画面の終了処理
 	UninitTitle();
 
+	// チュートリアル画面の終了処理
+	UninitTutorial();
+
 	// ゲーム画面の終了処理
 	UninitGame();
 
@@ -541,6 +569,11 @@ void SetMode(int mode)
 	case MODE_TITLE:
 		// タイトル画面の初期化
 		InitTitle();
+		break;
+
+	case MODE_TUTORIAL:
+		// チュートリアル画面の初期化
+		InitTutorial();
 		break;
 
 	case MODE_GAME:
