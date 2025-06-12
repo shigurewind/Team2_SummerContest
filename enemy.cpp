@@ -1,248 +1,355 @@
-//=============================================================================
+Ôªø//=============================================================================
 //
-// ÉGÉlÉ~Å[ÉÇÉfÉãèàóù [enemy.cpp]
-// Author : 
+// 
+// 
 //
 //=============================================================================
+#pragma once
+#include "enemy.h"
+#include "player.h"
+#include "bullet.h"
+#include "debugproc.h"
+#include "camera.h"
 #include "main.h"
 #include "renderer.h"
-#include "model.h"
+#include "sprite.h"
 #include "input.h"
-#include "debugproc.h"
-#include "enemy.h"
-#include "shadow.h"
+#include "collision.h"
 
-//*****************************************************************************
-// É}ÉNÉçíËã`
-//*****************************************************************************
-#define	MODEL_ENEMY			"data/MODEL/enemy.obj"		// ì«Ç›çûÇﬁÉÇÉfÉãñº
 
-#define	VALUE_MOVE			(5.0f)						// à⁄ìÆó 
-#define	VALUE_ROTATE		(XM_PI * 0.02f)				// âÒì]ó 
-
-#define ENEMY_SHADOW_SIZE	(0.4f)						// âeÇÃëÂÇ´Ç≥
-#define ENEMY_OFFSET_Y		(7.0f)						// ÉGÉlÉ~Å[ÇÃë´å≥ÇÇ†ÇÌÇπÇÈ
 
 
 //*****************************************************************************
-// ÉvÉçÉgÉ^ÉCÉvêÈåæ
+//
 //*****************************************************************************
 
+std::vector<BaseEnemy*> g_enemies;
+ID3D11Buffer* g_VertexBufferEnemy = nullptr;
 
-//*****************************************************************************
-// ÉOÉçÅ[ÉoÉãïœêî
-//*****************************************************************************
-static ENEMY			g_Enemy[MAX_ENEMY];				// ÉGÉlÉ~Å[
+#define ENEMY_MAX (1)
+static BOOL g_bAlphaTestEnemy;
 
-int g_Enemy_load = 0;
+#define ENEMY_OFFSET_Y 0.0f
 
+static INTERPOLATION_DATA g_MoveTbl0[] = {
+    { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 20.0f),    XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 20.0f), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 200.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+};
 
-static INTERPOLATION_DATA g_MoveTbl0[] = {	// pos, rot, scl, frame
-	{ XMFLOAT3(0.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 2 },
-	{ XMFLOAT3(-200.0f, ENEMY_OFFSET_Y,  20.0f), XMFLOAT3(0.0f, 6.28f, 0.0f), XMFLOAT3(3.0f, 3.0f, 3.0f), 60 * 1 },
-	{ XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 200.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 60 * 0.5f },
-
+INTERPOLATION_DATA* g_MoveTblAdr[] = {
+    g_MoveTbl0,
 };
 
 
-static INTERPOLATION_DATA* g_MoveTblAdr[] =
+//*****************************************************************************
+// 
+//*****************************************************************************
+BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
+    XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+}
+BaseEnemy::~BaseEnemy() {}
+
+ScarecrowEnemy::ScarecrowEnemy() :
+    texture(nullptr), width(100.0f), height(100.0f)
 {
-	g_MoveTbl0,
-
-};
-
-
-
-//=============================================================================
-// èâä˙âªèàóù
-//=============================================================================
-HRESULT InitEnemy(void)
-{
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		LoadModel(MODEL_ENEMY, &g_Enemy[i].model);
-		g_Enemy[i].load = TRUE;
-
-		g_Enemy[i].pos = XMFLOAT3(-50.0f + i * 30.0f, 7.0f, 20.0f);
-		g_Enemy[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		g_Enemy[i].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-
-		g_Enemy[i].spd  = 0.0f;			// à⁄ìÆÉXÉsÅ[ÉhÉNÉäÉA
-		g_Enemy[i].size = ENEMY_SIZE;	// ìñÇΩÇËîªíËÇÃëÂÇ´Ç≥
-
-		// ÉÇÉfÉãÇÃÉfÉBÉtÉÖÅ[ÉYÇï€ë∂ÇµÇƒÇ®Ç≠ÅBêFïœÇ¶ëŒâûÇÃà◊ÅB
-		GetModelDiffuse(&g_Enemy[i].model, &g_Enemy[i].diffuse[0]);
-
-		XMFLOAT3 pos = g_Enemy[i].pos;
-		pos.y -= (ENEMY_OFFSET_Y - 0.1f);
-		g_Enemy[i].shadowIdx = CreateShadow(pos, ENEMY_SHADOW_SIZE, ENEMY_SHADOW_SIZE);
-		
-		g_Enemy[i].time = 0.0f;			// ê¸å`ï‚ä‘ópÇÃÉ^ÉCÉ}Å[ÇÉNÉäÉA
-		g_Enemy[i].tblNo = 0;			// çƒê∂Ç∑ÇÈçsìÆÉfÅ[É^ÉeÅ[ÉuÉãNoÇÉZÉbÉg
-		g_Enemy[i].tblMax = 0;			// çƒê∂Ç∑ÇÈçsìÆÉfÅ[É^ÉeÅ[ÉuÉãÇÃÉåÉRÅ[ÉhêîÇÉZÉbÉg
-
-		g_Enemy[i].use = TRUE;			// TRUE:ê∂Ç´ÇƒÇÈ
-
-	}
-
-	// 0î‘ÇæÇØê¸å`ï‚ä‘Ç≈ìÆÇ©ÇµÇƒÇ›ÇÈ
-	g_Enemy[0].time = 0.0f;		// ê¸å`ï‚ä‘ópÇÃÉ^ÉCÉ}Å[ÇÉNÉäÉA
-	g_Enemy[0].tblNo = 0;		// çƒê∂Ç∑ÇÈÉAÉjÉÅÉfÅ[É^ÇÃêÊì™ÉAÉhÉåÉXÇÉZÉbÉg
-	g_Enemy[0].tblMax = sizeof(g_MoveTbl0) / sizeof(INTERPOLATION_DATA);	// çƒê∂Ç∑ÇÈÉAÉjÉÅÉfÅ[É^ÇÃÉåÉRÅ[ÉhêîÇÉZÉbÉg
-
-	return S_OK;
+    material = new MATERIAL{};
+    XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+}
+ScarecrowEnemy::~ScarecrowEnemy() {
+    if (texture) {
+        texture->Release();
+        texture = nullptr;
+    }
+    delete material;
+    material = nullptr;
 }
 
-//=============================================================================
-// èIóπèàóù
-//=============================================================================
-void UninitEnemy(void)
-{
+void ScarecrowEnemy::Init() {
+    D3DX11CreateShaderResourceViewFromFile(
+        GetDevice(),
+        "data/TEXTURE/enemy001.png",
+        NULL, NULL, &texture, NULL);
 
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		if (g_Enemy[i].load)
-		{
-			UnloadModel(&g_Enemy[i].model);
-			g_Enemy[i].load = FALSE;
-		}
-	}
+
+    *material = {};
+    material->Diffuse = XMFLOAT4(1, 1, 1, 1);
+
+    pos = XMFLOAT3(0.0f, 0.0f, 20.0f);
+    scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+    use = true;
+
+    currentFrame = 0;
+    frameCounter = 0;
+    frameInterval = 15;//change speed
+    maxFrames = 2;
+
+    tblNo = 0;
+    tblMax = _countof(g_MoveTbl0);
+    time = 0.0f;
+
 
 }
 
-//=============================================================================
-// çXêVèàóù
-//=============================================================================
-void UpdateEnemy(void)
-{
-	// ÉGÉlÉ~Å[ÇìÆÇ©Ç≠èÍçáÇÕÅAâeÇ‡çáÇÌÇπÇƒìÆÇ©Ç∑éñÇñYÇÍÇ»Ç¢ÇÊÇ§Ç…ÇÀÅI
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		if (g_Enemy[i].use == TRUE)		// Ç±ÇÃÉGÉlÉ~Å[Ç™égÇÌÇÍÇƒÇ¢ÇÈÅH
-		{								// Yes
+void ScarecrowEnemy::Update() {
+    if (!use) return;
 
-			// à⁄ìÆèàóù
-			if (g_Enemy[i].tblMax > 0)	// ê¸å`ï‚ä‘Çé¿çsÇ∑ÇÈÅH
-			{	// ê¸å`ï‚ä‘ÇÃèàóù
-				int nowNo = (int)g_Enemy[i].time;			// êÆêîï™Ç≈Ç†ÇÈÉeÅ[ÉuÉãî‘çÜÇéÊÇËèoÇµÇƒÇ¢ÇÈ
-				int maxNo = g_Enemy[i].tblMax;				// ìoò^ÉeÅ[ÉuÉãêîÇêîÇ¶ÇƒÇ¢ÇÈ
-				int nextNo = (nowNo + 1) % maxNo;			// à⁄ìÆêÊÉeÅ[ÉuÉãÇÃî‘çÜÇãÅÇﬂÇƒÇ¢ÇÈ
-				INTERPOLATION_DATA* tbl = g_MoveTblAdr[g_Enemy[i].tblNo];	// çsìÆÉeÅ[ÉuÉãÇÃÉAÉhÉåÉXÇéÊìæ
+    frameCounter++;
+    if (frameCounter >= frameInterval) {
+        frameCounter = 0;
+        currentFrame = (currentFrame + 1) % maxFrames;
+    }
 
-				XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);	// XMVECTORÇ÷ïœä∑
-				XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);	// XMVECTORÇ÷ïœä∑
-				XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);	// XMVECTORÇ÷ïœä∑
+    if (tblMax <= 0) return;
 
-				XMVECTOR Pos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;	// XYZà⁄ìÆó ÇåvéZÇµÇƒÇ¢ÇÈ
-				XMVECTOR Rot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;	// XYZâÒì]ó ÇåvéZÇµÇƒÇ¢ÇÈ
-				XMVECTOR Scl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;	// XYZägëÂó¶ÇåvéZÇµÇƒÇ¢ÇÈ
+    int nowNo = (int)time;
+    int nextNo = (nowNo + 1) % tblMax;
 
-				float nowTime = g_Enemy[i].time - nowNo;	// éûä‘ïîï™Ç≈Ç†ÇÈè≠êîÇéÊÇËèoÇµÇƒÇ¢ÇÈ
+    INTERPOLATION_DATA* tbl = g_MoveTblAdr[tblNo];
 
-				Pos *= nowTime;								// åªç›ÇÃà⁄ìÆó ÇåvéZÇµÇƒÇ¢ÇÈ
-				Rot *= nowTime;								// åªç›ÇÃâÒì]ó ÇåvéZÇµÇƒÇ¢ÇÈ
-				Scl *= nowTime;								// åªç›ÇÃägëÂó¶ÇåvéZÇµÇƒÇ¢ÇÈ
+    XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);
+    XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);
+    XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);
 
-				// åvéZÇµÇƒãÅÇﬂÇΩà⁄ìÆó Çåªç›ÇÃà⁄ìÆÉeÅ[ÉuÉãXYZÇ…ë´ÇµÇƒÇ¢ÇÈÅÅï\é¶ç¿ïWÇãÅÇﬂÇƒÇ¢ÇÈ
-				XMStoreFloat3(&g_Enemy[i].pos, nowPos + Pos);
+    XMVECTOR diffPos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;
+    XMVECTOR diffRot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;
+    XMVECTOR diffScl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;
 
-				// åvéZÇµÇƒãÅÇﬂÇΩâÒì]ó Çåªç›ÇÃà⁄ìÆÉeÅ[ÉuÉãÇ…ë´ÇµÇƒÇ¢ÇÈ
-				XMStoreFloat3(&g_Enemy[i].rot, nowRot + Rot);
+    float localTime = time - nowNo;
 
-				// åvéZÇµÇƒãÅÇﬂÇΩägëÂó¶Çåªç›ÇÃà⁄ìÆÉeÅ[ÉuÉãÇ…ë´ÇµÇƒÇ¢ÇÈ
-				XMStoreFloat3(&g_Enemy[i].scl, nowScl + Scl);
+    XMStoreFloat3(&pos, nowPos + diffPos * localTime);
+    XMStoreFloat3(&scl, nowScl + diffScl * localTime);
 
-				// frameÇégÇƒéûä‘åoâﬂèàóùÇÇ∑ÇÈ
-				g_Enemy[i].time += 1.0f / tbl[nowNo].frame;	// éûä‘ÇêiÇﬂÇƒÇ¢ÇÈ
-				if ((int)g_Enemy[i].time >= maxNo)			// ìoò^ÉeÅ[ÉuÉãç≈å„Ç‹Ç≈à⁄ìÆÇµÇΩÇ©ÅH
-				{
-					g_Enemy[i].time -= maxNo;				// ÇOî‘ñ⁄Ç…ÉäÉZÉbÉgÇµÇ¬Ç¬Ç‡è¨êîïîï™Çà¯Ç´åpÇ¢Ç≈Ç¢ÇÈ
-				}
-
-			}
+    time += 1.0f / tbl[nowNo].frame;
+    if ((int)time >= tblMax) {
+        time -= tblMax;
+    }
 
 
-			// âeÇ‡ÉvÉåÉCÉÑÅ[ÇÃà íuÇ…çáÇÌÇπÇÈ
-			XMFLOAT3 pos = g_Enemy[i].pos;
-			pos.y -= (ENEMY_OFFSET_Y - 0.1f);
-			SetPositionShadow(g_Enemy[i].shadowIdx, pos);
-		}
-	}
+    PLAYER* player = GetPlayer();
+
+    // „Ç®„Éç„Éü„Éº„Åã„Çâ„Éó„É¨„Ç§„É§„Éº„Åæ„Åß„ÅÆ„Éô„ÇØ„Éà„É´
+    XMFLOAT3 dir;
+    dir.x = player->pos.x - pos.x;
+    dir.y = player->pos.y - pos.y;
+    dir.z = player->pos.z - pos.z;
 
 
+    if (fireTimer > 0.0f)
+    {
+        fireTimer -= 1.0f / 60.0f;  // 60fps
+    }
 
+    // „Éó„É¨„Ç§„É§„Éº„ÅÆÂ∫ßÊ®ô„Åæ„Åß„ÅÆË®àÁÆó
+    XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
+
+    float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
+    float range = 100.0f; // Áô∫Â∞ÑÁØÑÂõ≤
+
+    
+    float angleY = atan2f(pos.x - player->pos.x, pos.z - player->pos.z);
+    XMFLOAT3 bulletRot = { 0.0f, angleY, 0.0f };
+    XMFLOAT3 bulletPos = pos;
+    bulletPos.y += 10.0f; 
+
+    //ÊîªÊíÉË°å„ÅÜÁØÑÂõ≤
+    if (CollisionBC(pos, player->pos, 200.0f, 0.0f)) {
+
+        if (distSq < range * range)
+        {
+            // Áô∫Â∞Ñ„Åô„Çã„Å®„Åç
+            if (fireTimer <= 0.0f)
+            {
+                SetBullet(bulletPos, bulletRot);
+
+                // Reset timer
+                fireTimer = fireCooldown;
+            }
+        }
+    }
 
 #ifdef _DEBUG
 
-	if (GetKeyboardTrigger(DIK_P))
-	{
-		// ÉÇÉfÉãÇÃêFÇïœçXÇ≈Ç´ÇÈÇÊÅIîºìßñæÇ…Ç‡Ç≈Ç´ÇÈÇÊÅB
-		for (int j = 0; j < g_Enemy[0].model.SubsetNum; j++)
-		{
-			SetModelDiffuse(&g_Enemy[0].model, j, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.5f));
-		}
-	}
+    float dist = sqrtf(distSq);
+    PrintDebugProc("Enemy to Player Distance: %f\n", dist);
 
-	if (GetKeyboardTrigger(DIK_L))
-	{
-		// ÉÇÉfÉãÇÃêFÇå≥Ç…ñﬂÇµÇƒÇ¢ÇÈ
-		for (int j = 0; j < g_Enemy[0].model.SubsetNum; j++)
-		{
-			SetModelDiffuse(&g_Enemy[0].model, j, g_Enemy[0].diffuse[j]);
-		}
-	}
 #endif
-
-
 }
 
-//=============================================================================
-// ï`âÊèàóù
-//=============================================================================
-void DrawEnemy(void)
-{
-	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld;
+void ScarecrowEnemy::Draw() {
 
-	// ÉJÉäÉìÉOñ≥å¯
-	SetCullingMode(CULL_MODE_NONE);
-
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		if (g_Enemy[i].use == FALSE) continue;
-
-		// ÉèÅ[ÉãÉhÉ}ÉgÉäÉbÉNÉXÇÃèâä˙âª
-		mtxWorld = XMMatrixIdentity();
-
-		// ÉXÉPÅ[ÉãÇîΩâf
-		mtxScl = XMMatrixScaling(g_Enemy[i].scl.x, g_Enemy[i].scl.y, g_Enemy[i].scl.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
-
-		// âÒì]ÇîΩâf
-		mtxRot = XMMatrixRotationRollPitchYaw(g_Enemy[i].rot.x, g_Enemy[i].rot.y + XM_PI, g_Enemy[i].rot.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
-
-		// à⁄ìÆÇîΩâf
-		mtxTranslate = XMMatrixTranslation(g_Enemy[i].pos.x, g_Enemy[i].pos.y, g_Enemy[i].pos.z);
-		mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
-
-		// ÉèÅ[ÉãÉhÉ}ÉgÉäÉbÉNÉXÇÃê›íË
-		SetWorldMatrix(&mtxWorld);
-
-		XMStoreFloat4x4(&g_Enemy[i].mtxWorld, mtxWorld);
+    if (!use || !texture || !g_VertexBufferEnemy) return;
 
 
-		// ÉÇÉfÉãï`âÊ
-		DrawModel(&g_Enemy[i].model);
-	}
+    SetLightEnable(FALSE);
 
-	// ÉJÉäÉìÉOê›íËÇñﬂÇ∑
-	SetCullingMode(CULL_MODE_BACK);
+    UINT stride = sizeof(VERTEX_3D);
+    UINT offset = 0;
+    GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferEnemy, &stride, &offset);
+    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+    CAMERA* cam = GetCamera();
+    XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
+
+    XMMATRIX mtxWorld = XMMatrixIdentity();
+    mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
+    mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
+    mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
+
+    mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
+    mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
+    mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
+
+    mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
+    mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
+    mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
+
+    XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
+    XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+    mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
+    mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
+
+
+    D3D11_MAPPED_SUBRESOURCE msr;
+    GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    VERTEX_3D* v = (VERTEX_3D*)msr.pData;
+
+    float w = width, h = height;
+    v[0].Position = XMFLOAT3(-w / 2, h, 0);
+    v[1].Position = XMFLOAT3(w / 2, h, 0);
+    v[2].Position = XMFLOAT3(-w / 2, 0, 0);
+    v[3].Position = XMFLOAT3(w / 2, 0, 0);
+
+    for (int i = 0; i < 4; ++i) {
+        v[i].Normal = XMFLOAT3(0, 0, -1);
+        v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
+    }
+
+    float tw = 1.0f / 2; // 2„Éï„É¨„Éº„É†
+    float th = 1.0f;
+    float tx = currentFrame * tw;
+    float ty = 0.0f;
+
+    v[0].TexCoord = XMFLOAT2(tx, ty);
+    v[1].TexCoord = XMFLOAT2(tx + tw, ty);
+    v[2].TexCoord = XMFLOAT2(tx, ty + th);
+    v[3].TexCoord = XMFLOAT2(tx + tw, ty + th);
+
+    GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
+
+    //ÔøΩHÔøΩHÔøΩH
+    SetAlphaTestEnable(FALSE);
+    SetBlendState(BLEND_MODE_ALPHABLEND);
+    SetWorldMatrix(&mtxWorld);
+    SetMaterial(*material);
+    GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+
+
+    GetDeviceContext()->Draw(4, 0);
+
+}
+//*****************************************************************************
+// 
+//*****************************************************************************
+void InitEnemy() {
+    MakeVertexEnemy();
+    g_enemies.clear();
+    for (int i = 0; i < ENEMY_MAX; ++i) {
+        ScarecrowEnemy* e = new ScarecrowEnemy();
+        e->Init();
+        e->SetUsed(true);
+        XMFLOAT3 pos = XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f);
+        e->SetPosition(pos);
+        g_enemies.push_back(e);
+    }
 }
 
-//=============================================================================
-// ÉGÉlÉ~Å[ÇÃéÊìæ
-//=============================================================================
-ENEMY *GetEnemy()
-{
-	return &g_Enemy[0];
+void UpdateEnemy() {
+    for (auto enemy : g_enemies) {
+        if (enemy->IsUsed()) enemy->Update();
+    }
+}
+
+void DrawEnemy() {
+    for (auto enemy : g_enemies) {
+        if (enemy->IsUsed()) enemy->Draw();
+    }
+
+
+#ifdef _DEBUG
+    for (auto enemy : g_enemies)
+    {
+        if (enemy->IsUsed())
+        {
+            XMFLOAT3 pos = enemy->GetPosition();
+            PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n", pos.x, pos.y, pos.z);
+            break;
+        }
+    }
+#endif
+}
+
+void UninitEnemy() {
+    for (auto enemy : g_enemies) {
+        delete enemy;
+    }
+    g_enemies.clear();
+
+    if (g_VertexBufferEnemy) {
+        g_VertexBufferEnemy->Release();
+        g_VertexBufferEnemy = nullptr;
+    }
+}
+
+std::vector<BaseEnemy*>& GetEnemies() {
+    return g_enemies;
+}
+
+HRESULT MakeVertexEnemy() {
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    HRESULT hr = GetDevice()->CreateBuffer(&bd, nullptr, &g_VertexBufferEnemy);
+    if (FAILED(hr)) return hr;
+
+    D3D11_MAPPED_SUBRESOURCE msr;
+    GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    VERTEX_3D* v = (VERTEX_3D*)msr.pData;
+
+    float w = 60.0f, h = 90.0f;
+    v[0].Position = XMFLOAT3(-w / 2, h, 0);
+    v[1].Position = XMFLOAT3(w / 2, h, 0);
+    v[2].Position = XMFLOAT3(-w / 2, 0, 0);
+    v[3].Position = XMFLOAT3(w / 2, 0, 0);
+
+    for (int i = 0; i < 4; ++i) {
+        v[i].Normal = XMFLOAT3(0, 0, -1);
+        v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
+    }
+
+    v[0].TexCoord = XMFLOAT2(0, 0);
+    v[1].TexCoord = XMFLOAT2(1, 0);
+    v[2].TexCoord = XMFLOAT2(0, 1);
+    v[3].TexCoord = XMFLOAT2(1, 1);
+
+    GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
+    return S_OK;
+}
+void BaseEnemy::SetPosition(const XMFLOAT3& p) {
+    pos = p;
+}
+
+XMFLOAT3 BaseEnemy::GetPosition() const {
+    return pos;
+}
+
+void BaseEnemy::SetScale(const XMFLOAT3& s) {
+    scl = s;
+}
+
+XMFLOAT3 BaseEnemy::GetScale() const {
+    return scl;
 }

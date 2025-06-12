@@ -1,52 +1,79 @@
-//=============================================================================
-//
-// エネミーモデル処理 [enemy.h]
-// Author : 
-//
-//=============================================================================
 #pragma once
+#include <vector>
+#include <d3d11.h>
+#include <DirectXMath.h>
 
-
-//*****************************************************************************
-// マクロ定義
-//*****************************************************************************
-#define MAX_ENEMY		(5)					// エネミーの数
-
-#define	ENEMY_SIZE		(5.0f)				// 当たり判定の大きさ
-
+using namespace DirectX;
 
 //*****************************************************************************
-// 構造体定義
+// 
 //*****************************************************************************
-struct ENEMY
-{
-	XMFLOAT4X4			mtxWorld;			// ワールドマトリックス
-	XMFLOAT3			pos;				// モデルの位置
-	XMFLOAT3			rot;				// モデルの向き(回転)
-	XMFLOAT3			scl;				// モデルの大きさ(スケール)
+class BaseEnemy {
+public:
+	BaseEnemy();
+	virtual ~BaseEnemy();
 
-	BOOL				use;
-	BOOL				load;
-	DX11_MODEL			model;				// モデル情報
-	XMFLOAT4			diffuse[MODEL_MAX_MATERIAL];	// モデルの色
+	virtual void Init() = 0;
+	virtual void Update() = 0;
+	virtual void Draw() = 0;
 
-	float				spd;				// 移動スピード
-	float				size;				// 当たり判定の大きさ
-	int					shadowIdx;			// 影のインデックス番号
+	bool IsUsed() const { return use; }
+	void SetUsed(bool b) { use = b; }
 
-	float				time;				// 線形補間用
-	int					tblNo;				// 行動データのテーブル番号
-	int					tblMax;				// そのテーブルのデータ数
+	void SetPosition(const XMFLOAT3& p);
+	XMFLOAT3 GetPosition() const;
+
+	void SetScale(const XMFLOAT3& s);
+	XMFLOAT3 GetScale() const;
+
+protected:
+	XMFLOAT3 pos;
+	XMFLOAT3 scl;
+	XMFLOAT4X4 mtxWorld;
+	bool use;
+};
+
+//*****************************************************************************
+// 
+//*****************************************************************************
+class ScarecrowEnemy : public BaseEnemy {
+public:
+	ScarecrowEnemy();
+	~ScarecrowEnemy();
+
+	void Init() override;
+	void Update() override;
+	void Draw() override;
+
+	//void EnablePathAnimation(bool enable);
+
+private:
+	ID3D11ShaderResourceView* texture;
+	struct MATERIAL* material;
+	float width, height;
+
+	int currentFrame;
+	int frameCounter;
+	int frameInterval;
+	int maxFrames;
+
+	float time = 0.0f;
+	int tblNo = 0;
+	int tblMax = 0;
+
+	//エネミーが発射するとき
+	float fireTimer = 0.0f;
+	const float fireCooldown = 1.0f;
+
 
 };
 
 //*****************************************************************************
-// プロトタイプ宣言
+// 
 //*****************************************************************************
-HRESULT InitEnemy(void);
-void UninitEnemy(void);
-void UpdateEnemy(void);
-void DrawEnemy(void);
-
-ENEMY *GetEnemy(void);
-
+std::vector<BaseEnemy*>& GetEnemies();
+HRESULT MakeVertexEnemy();
+void InitEnemy();
+void UpdateEnemy();
+void DrawEnemy();
+void UninitEnemy();
