@@ -61,6 +61,11 @@ private:
 	int tblNo = 0;
 	int tblMax = 0;
 
+	//エネミーが発射するとき
+	float fireTimer = 0.0f;
+	const float fireCooldown = 5.0f;
+
+
 };
 
 //*****************************************************************************

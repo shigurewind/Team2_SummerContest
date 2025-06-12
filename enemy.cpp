@@ -6,6 +6,8 @@
 //=============================================================================
 #pragma once
 #include "enemy.h"
+#include "player.h"
+#include "bullet.h"
 #include "debugproc.h"
 #include "camera.h"
 #include "main.h"
@@ -84,6 +86,7 @@ void ScarecrowEnemy::Init() {
     tblMax = _countof(g_MoveTbl0);
     time = 0.0f;
 
+
 }
 
 void ScarecrowEnemy::Update() {
@@ -119,6 +122,39 @@ void ScarecrowEnemy::Update() {
     if ((int)time >= tblMax) {
         time -= tblMax;
     }
+
+    PLAYER* player = GetPlayer();
+
+    // エネミーからプレイヤーまでのベクトル
+    XMFLOAT3 dir;
+    dir.x = player->pos.x - pos.x;
+    dir.y = player->pos.y - pos.y;
+    dir.z = player->pos.z - pos.z;
+
+    if (fireTimer > 0.0f)
+    {
+        fireTimer -= 1.0f / 60.0f;  // 60fps
+    }
+
+    // プレイヤーの座標までの計算
+    XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
+
+    float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
+    float range = 100.0f; // 発射範囲
+
+    if (distSq < range * range)
+    {
+        // 発射するとき
+        if (fireTimer <= 0.0f)
+        {
+            SetBullet(pos, XMFLOAT3(0,0,0));
+
+            // Reset timer
+            fireTimer = fireCooldown;
+        }
+    }
+
+
 }
 
 void ScarecrowEnemy::Draw() {
