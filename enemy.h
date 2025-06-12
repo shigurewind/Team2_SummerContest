@@ -45,10 +45,22 @@ public:
 	void Update() override;
 	void Draw() override;
 
+	//void EnablePathAnimation(bool enable);
+
 private:
 	ID3D11ShaderResourceView* texture;
 	struct MATERIAL* material;
 	float width, height;
+
+	int currentFrame;
+	int frameCounter;
+	int frameInterval;
+	int maxFrames;
+
+	float time = 0.0f;
+	int tblNo = 0;
+	int tblMax = 0;
+
 };
 
 //*****************************************************************************

@@ -272,12 +272,12 @@ void DrawGame(void)
 		DrawGame0();
 
 		// エネミー視点
-		pos = GetEnemy()->pos;
-		pos.y = 0.0f;
-		SetCameraAT(pos);
-		SetCamera();
-		SetViewPort(TYPE_RIGHT_HALF_SCREEN);
-		DrawGame0();
+		//pos = GetEnemy()->pos;
+		//pos.y = 0.0f;
+		//SetCameraAT(pos);
+		//SetCamera();
+		//SetViewPort(TYPE_RIGHT_HALF_SCREEN);
+		//DrawGame0();
 		break;
 
 	case TYPE_UP_HALF_SCREEN:
@@ -286,12 +286,12 @@ void DrawGame(void)
 		DrawGame0();
 
 		// エネミー視点
-		pos = GetEnemy()->pos;
-		pos.y = 0.0f;
-		SetCameraAT(pos);
-		SetCamera();
-		SetViewPort(TYPE_DOWN_HALF_SCREEN);
-		DrawGame0();
+		//pos = GetEnemy()->pos;
+		//pos.y = 0.0f;
+		//SetCameraAT(pos);
+		//SetCamera();
+		//SetViewPort(TYPE_DOWN_HALF_SCREEN);
+		//DrawGame0();
 		break;
 
 	}
@@ -304,76 +304,76 @@ void DrawGame(void)
 //=============================================================================
 void CheckHit(void)
 {
-	ENEMY *enemy = GetEnemy();		// エネミーのポインターを初期化
-	PLAYER *player = GetPlayer();	// プレイヤーのポインターを初期化
-	BULLET *bullet = GetBullet();	// 弾のポインターを初期化
+	//ENEMY *enemy = GetEnemy();		// エネミーのポインターを初期化
+	//PLAYER *player = GetPlayer();	// プレイヤーのポインターを初期化
+	//BULLET *bullet = GetBullet();	// 弾のポインターを初期化
 
-	// 敵とプレイヤーキャラ
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		//敵の有効フラグをチェックする
-		if (enemy[i].use == FALSE)
-			continue;
-
-		//BCの当たり判定
-		if (CollisionBC(player->pos, enemy[i].pos, player->size, enemy[i].size))
-		{
-			// 敵キャラクターは倒される
-			enemy[i].use = FALSE;
-			ReleaseShadow(enemy[i].shadowIdx);
-
-			// スコアを足す
-			AddScore(100);
-		}
-	}
-
-
-	// プレイヤーの弾と敵
-	//for (int i = 0; i < MAX_BULLET; i++)
+	//// 敵とプレイヤーキャラ
+	//for (int i = 0; i < MAX_ENEMY; i++)
 	//{
-	//	//弾の有効フラグをチェックする
-	//	if (bullet[i].use == FALSE)
+	//	//敵の有効フラグをチェックする
+	//	if (enemy[i].use == FALSE)
 	//		continue;
 
-	//	// 敵と当たってるか調べる
-	//	for (int j = 0; j < MAX_ENEMY; j++)
+	//	//BCの当たり判定
+	//	if (CollisionBC(player->pos, enemy[i].pos, player->size, enemy[i].size))
 	//	{
-	//		//敵の有効フラグをチェックする
-	//		if (enemy[j].use == FALSE)
-	//			continue;
+	//		// 敵キャラクターは倒される
+	//		enemy[i].use = FALSE;
+	//		ReleaseShadow(enemy[i].shadowIdx);
 
-	//		//BCの当たり判定
-	//		if (CollisionBC(bullet[i].pos, enemy[j].pos, bullet[i].fWidth, enemy[j].size))
-	//		{
-	//			// 当たったから未使用に戻す
-	//			bullet[i].use = FALSE;
-	//			ReleaseShadow(bullet[i].shadowIdx);
-
-	//			// 敵キャラクターは倒される
-	//			enemy[j].use = FALSE;
-	//			ReleaseShadow(enemy[j].shadowIdx);
-
-	//			// スコアを足す
-	//			AddScore(10);
-	//		}
+	//		// スコアを足す
+	//		AddScore(100);
 	//	}
-
 	//}
 
 
-	// エネミーが全部死亡したら状態遷移
-	int enemy_count = 0;
-	for (int i = 0; i < MAX_ENEMY; i++)
-	{
-		if (enemy[i].use == FALSE) continue;
-		enemy_count++;
-	}
+	//// プレイヤーの弾と敵
+	////for (int i = 0; i < MAX_BULLET; i++)
+	////{
+	////	//弾の有効フラグをチェックする
+	////	if (bullet[i].use == FALSE)
+	////		continue;
 
-	// エネミーが０匹？
-	if (enemy_count == 0)
-	{
-		SetFade(FADE_OUT, MODE_RESULT);
-	}
+	////	// 敵と当たってるか調べる
+	////	for (int j = 0; j < MAX_ENEMY; j++)
+	////	{
+	////		//敵の有効フラグをチェックする
+	////		if (enemy[j].use == FALSE)
+	////			continue;
+
+	////		//BCの当たり判定
+	////		if (CollisionBC(bullet[i].pos, enemy[j].pos, bullet[i].fWidth, enemy[j].size))
+	////		{
+	////			// 当たったから未使用に戻す
+	////			bullet[i].use = FALSE;
+	////			ReleaseShadow(bullet[i].shadowIdx);
+
+	////			// 敵キャラクターは倒される
+	////			enemy[j].use = FALSE;
+	////			ReleaseShadow(enemy[j].shadowIdx);
+
+	////			// スコアを足す
+	////			AddScore(10);
+	////		}
+	////	}
+
+	////}
+
+
+	//// エネミーが全部死亡したら状態遷移
+	//int enemy_count = 0;
+	//for (int i = 0; i < MAX_ENEMY; i++)
+	//{
+	//	if (enemy[i].use == FALSE) continue;
+	//	enemy_count++;
+	//}
+
+	//// エネミーが０匹？
+	//if (enemy_count == 0)
+	//{
+	//	SetFade(FADE_OUT, MODE_RESULT);
+	//}
 
 }
 

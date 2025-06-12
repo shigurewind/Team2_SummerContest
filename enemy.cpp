@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "main.h"
 #include "renderer.h"
+#include "sprite.h"
 
 
 
@@ -19,6 +20,20 @@
 
 std::vector<BaseEnemy*> g_enemies;
 ID3D11Buffer* g_VertexBufferEnemy = nullptr;
+
+
+#define ENEMY_OFFSET_Y 0.0f
+
+static INTERPOLATION_DATA g_MoveTbl0[] = {
+    { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 20.0f),    XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 20.0f), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 200.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+};
+
+INTERPOLATION_DATA* g_MoveTblAdr[] = {
+    g_MoveTbl0,
+};
+
 
 //*****************************************************************************
 // 
@@ -33,6 +48,7 @@ ScarecrowEnemy::ScarecrowEnemy() :
 {
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+
 }
 ScarecrowEnemy::~ScarecrowEnemy() {
     if (texture) {
@@ -55,9 +71,51 @@ void ScarecrowEnemy::Init() {
     pos = XMFLOAT3(0.0f, 0.0f, 20.0f);
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
+
+    currentFrame = 0;
+    frameCounter = 0;
+    frameInterval = 30;//change speed
+    maxFrames = 2;
+
+    tblNo = 0;
+    tblMax = _countof(g_MoveTbl0);
+    time = 0.0f;
+
 }
 
 void ScarecrowEnemy::Update() {
+    if (!use) return;
+
+    frameCounter++;
+    if (frameCounter >= frameInterval) {
+        frameCounter = 0;
+        currentFrame = (currentFrame + 1) % maxFrames;
+    }
+
+    if (tblMax <= 0) return;
+
+    int nowNo = (int)time;
+    int nextNo = (nowNo + 1) % tblMax;
+
+    INTERPOLATION_DATA* tbl = g_MoveTblAdr[tblNo];
+
+    XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);
+    XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);
+    XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);
+
+    XMVECTOR diffPos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;
+    XMVECTOR diffRot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;
+    XMVECTOR diffScl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;
+
+    float localTime = time - nowNo;
+
+    XMStoreFloat3(&pos, nowPos + diffPos * localTime);
+    XMStoreFloat3(&scl, nowScl + diffScl * localTime);
+
+    time += 1.0f / tbl[nowNo].frame;
+    if ((int)time >= tblMax) {
+        time -= tblMax;
+    }
 
 }
 
@@ -90,12 +148,30 @@ void ScarecrowEnemy::Draw() {
     mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
     mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
-    //？？？
-    SetAlphaTestEnable(TRUE);
-    SetBlendState(BLEND_MODE_ALPHABLEND);
-    SetWorldMatrix(&mtxWorld);
-    SetMaterial(*material);
-    GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+    ////�H�H�H
+    //SetAlphaTestEnable(TRUE);
+    //SetBlendState(BLEND_MODE_ALPHABLEND);
+    //SetWorldMatrix(&mtxWorld);
+    //SetMaterial(*material);
+    //GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+
+    //float px = pos.x;	// プレイヤーの表示位置X
+    //float py = pos.y;	// プレイヤーの表示位置Y
+    //float pw = width;	// プレイヤーの表示幅
+    //float ph = height;	// プレイヤーの表示高さ
+    //py += 50.0f;		// 足元に表示
+
+    //float tw = 1.0f;	// テクスチャの幅
+    //float th = 1.0f;	// テクスチャの高さ
+    //float tx = 0.0f;	// テクスチャの左上X座標
+    //float ty = 0.0f;	// テクスチャの左上Y座標
+
+    //// １枚のポリゴンの頂点とテクスチャ座標を設定
+    //SetSpriteColor(g_VertexBufferEnemy, px, py, pw, ph, tx, ty, tw, th,
+    //    XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+
+
     GetDeviceContext()->Draw(4, 0);
 
     SetAlphaTestEnable(FALSE);
