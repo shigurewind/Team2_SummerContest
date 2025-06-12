@@ -11,6 +11,7 @@
 #include "main.h"
 #include "renderer.h"
 #include "sprite.h"
+#include "input.h"
 
 
 
@@ -22,7 +23,7 @@ std::vector<BaseEnemy*> g_enemies;
 ID3D11Buffer* g_VertexBufferEnemy = nullptr;
 
 #define ENEMY_MAX (1)
-
+static BOOL g_bAlphaTestEnemy;
 
 #define ENEMY_OFFSET_Y 0.0f
 
@@ -76,7 +77,7 @@ void ScarecrowEnemy::Init() {
 
     currentFrame = 0;
     frameCounter = 0;
-    frameInterval = 30;//change speed
+    frameInterval = 15;//change speed
     maxFrames = 2;
 
     tblNo = 0;
@@ -118,12 +119,14 @@ void ScarecrowEnemy::Update() {
     if ((int)time >= tblMax) {
         time -= tblMax;
     }
-    PrintDebugProc("Updating Scarecrow, Frame: %d\n", currentFrame);
-
 }
 
 void ScarecrowEnemy::Draw() {
+
     if (!use || !texture || !g_VertexBufferEnemy) return;
+
+
+    SetLightEnable(FALSE);
 
     UINT stride = sizeof(VERTEX_3D);
     UINT offset = 0;
@@ -180,21 +183,15 @@ void ScarecrowEnemy::Draw() {
     GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
 
     //�H�H�H
-    SetAlphaTestEnable(TRUE);
+    SetAlphaTestEnable(FALSE);
     SetBlendState(BLEND_MODE_ALPHABLEND);
     SetWorldMatrix(&mtxWorld);
     SetMaterial(*material);
     GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
 
 
-
-
-    PrintDebugProc("Frame: %d\n", currentFrame);
-
-
     GetDeviceContext()->Draw(4, 0);
 
-    SetAlphaTestEnable(FALSE);
 }
 //*****************************************************************************
 // 

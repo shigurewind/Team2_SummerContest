@@ -132,11 +132,20 @@ void PixelShaderPolygon( in  float4 inPosition		: SV_POSITION,
 
 						 out float4 outDiffuse		: SV_Target )
 {
+    //if (inDiffuse.a < 0.1f)
+    //{
+    //    discard;
+    //}
+	
 	float4 color;
 
 	if (Material.noTexSampling == 0)
 	{
 		color = g_Texture.Sample(g_SamplerState, inTexCoord);
+		
+        if (color.a < 0.1f)
+            clip(-1);
+
 
 		color *= inDiffuse;
 	}
