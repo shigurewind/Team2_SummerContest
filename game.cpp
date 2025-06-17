@@ -56,7 +56,7 @@ HRESULT InitGame(void)
 	g_ViewPortType_Game = TYPE_FULL_SCREEN;
 
 	// フィールドの初期化
-	InitMeshField(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 100, 100, 13.0f, 13.0f);
+	//InitMeshField(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), 100, 100, 13.0f, 13.0f);
 
 	// ライトを有効化	// 影の初期化処理
 	InitShadow();
@@ -128,7 +128,7 @@ void UninitGame(void)
 	UninitMeshWall();
 
 	// 地面の終了処理
-	UninitMeshField();
+	//UninitMeshField();
 
 	// エネミーの終了処理
 	UninitEnemy();
@@ -168,7 +168,7 @@ void UpdateGame(void)
 		return;
 
 	// 地面処理の更新
-	UpdateMeshField();
+	//UpdateMeshField();
 
 	// プレイヤーの更新処理
 	UpdatePlayer();
@@ -207,7 +207,7 @@ void DrawGame0(void)
 {
 	// 3Dの物を描画する処理
 	// 地面の描画処理
-	DrawMeshField();
+	//DrawMeshField();
 
 	// 影の描画処理
 	DrawShadow();
