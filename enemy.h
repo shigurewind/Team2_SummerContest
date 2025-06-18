@@ -17,6 +17,11 @@ public:
 	virtual void Update() = 0;
 	virtual void Draw() = 0;
 
+	virtual void NormalMovement() {}
+
+	void ChasingPlayer(float speed, float chaseRange);
+
+
 	bool IsUsed() const { return use; }
 	void SetUsed(bool b) { use = b; }
 
@@ -25,6 +30,7 @@ public:
 
 	void SetScale(const XMFLOAT3& s);
 	XMFLOAT3 GetScale() const;
+
 
 protected:
 	XMFLOAT3 pos;
@@ -36,14 +42,16 @@ protected:
 //*****************************************************************************
 // 
 //*****************************************************************************
-class ScarecrowEnemy : public BaseEnemy {
+class SpiderEnemy : public BaseEnemy {
 public:
-	ScarecrowEnemy();
-	~ScarecrowEnemy();
+	SpiderEnemy();
+	~SpiderEnemy();
 
 	void Init() override;
 	void Update() override;
 	void Draw() override;
+
+	void NormalMovement() override;
 
 	//void EnablePathAnimation(bool enable);
 
@@ -51,6 +59,7 @@ private:
 	ID3D11ShaderResourceView* texture;
 	struct MATERIAL* material;
 	float width, height;
+	float speed;						//エネミーのスピード
 
 	int currentFrame;
 	int frameCounter;

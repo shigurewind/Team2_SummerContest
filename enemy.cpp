@@ -31,12 +31,14 @@ ID3D11Buffer* g_VertexBufferEnemy = nullptr;
 #define ENEMY_MAX (1)
 static BOOL g_bAlphaTestEnemy;
 
-#define ENEMY_OFFSET_Y 0.0f
+#define ENEMY_OFFSET_Y  (0.0f)
 
 static INTERPOLATION_DATA g_MoveTbl0[] = {
     { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 20.0f),    XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 20.0f), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 200.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, -100.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+    { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, -200.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
+
 };
 
 INTERPOLATION_DATA* g_MoveTblAdr[] = {
@@ -52,13 +54,13 @@ BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
 }
 BaseEnemy::~BaseEnemy() {}
 
-ScarecrowEnemy::ScarecrowEnemy() :
+SpiderEnemy::SpiderEnemy() :
     texture(nullptr), width(100.0f), height(100.0f)
 {
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 }
-ScarecrowEnemy::~ScarecrowEnemy() {
+SpiderEnemy::~SpiderEnemy() {
     if (texture) {
         texture->Release();
         texture = nullptr;
@@ -67,7 +69,7 @@ ScarecrowEnemy::~ScarecrowEnemy() {
     material = nullptr;
 }
 
-void ScarecrowEnemy::Init() {
+void SpiderEnemy::Init() {
     D3DX11CreateShaderResourceViewFromFile(
         GetDevice(),
         "data/TEXTURE/enemy001.png",
@@ -80,6 +82,7 @@ void ScarecrowEnemy::Init() {
     pos = XMFLOAT3(0.0f, 0.0f, 20.0f);
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
+    speed = 1.0f;
 
     currentFrame = 0;
     frameCounter = 0;
@@ -93,40 +96,8 @@ void ScarecrowEnemy::Init() {
 
 }
 
-void ScarecrowEnemy::Update() {
+void SpiderEnemy::Update() {
     if (!use) return;
-
-    frameCounter++;
-    if (frameCounter >= frameInterval) {
-        frameCounter = 0;
-        currentFrame = (currentFrame + 1) % maxFrames;
-    }
-
-    if (tblMax <= 0) return;
-
-    int nowNo = (int)time;
-    int nextNo = (nowNo + 1) % tblMax;
-
-    INTERPOLATION_DATA* tbl = g_MoveTblAdr[tblNo];
-
-    XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);
-    XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);
-    XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);
-
-    XMVECTOR diffPos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;
-    XMVECTOR diffRot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;
-    XMVECTOR diffScl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;
-
-    float localTime = time - nowNo;
-
-    XMStoreFloat3(&pos, nowPos + diffPos * localTime);
-    XMStoreFloat3(&scl, nowScl + diffScl * localTime);
-
-    time += 1.0f / tbl[nowNo].frame;
-    if ((int)time >= tblMax) {
-        time -= tblMax;
-    }
-
 
     PLAYER* player = GetPlayer();
 
@@ -137,38 +108,44 @@ void ScarecrowEnemy::Update() {
     dir.z = player->pos.z - pos.z;
 
 
-    if (fireTimer > 0.0f)
-    {
-        fireTimer -= 1.0f / 60.0f;  // 60fps
-    }
 
-    // プレイヤーの座標までの計算
+    //// プレイヤーの座標までの計算
     XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
 
     float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
     float range = 100.0f; // 発射範囲
 
-    
-    float angleY = atan2f(pos.x - player->pos.x, pos.z - player->pos.z);
-    XMFLOAT3 bulletRot = { 0.0f, angleY, 0.0f };
-    XMFLOAT3 bulletPos = pos;
-    bulletPos.y += 10.0f; 
+    //if (fireTimer > 0.0f)
+    //{
+    //    fireTimer -= 1.0f / 60.0f;  // 60fps
+    //}
+
+    //float angleY = atan2f(pos.x - player->pos.x, pos.z - player->pos.z);
+    //XMFLOAT3 bulletRot = { 0.0f, angleY, 0.0f };
+    //XMFLOAT3 bulletPos = pos;
+    //bulletPos.y += 10.0f; 
+
 
     //攻撃行う範囲
-    //if (CollisionBC(pos, player->pos, 200.0f, 0.0f)) {
+    if (CollisionBC(pos, player->pos, 200.0f, 0.0f)) {
 
-    //    if (distSq < range * range)
-    //    {
-    //        // 発射するとき
-    //        if (fireTimer <= 0.0f)
-    //        {
-    //            SetBullet(bulletPos, bulletRot);
+        if (distSq < range * range)
+        {
+            //// 発射するとき
+            //if (fireTimer <= 0.0f)
+            //{
+            //    SetBullet(bulletPos, bulletRot);
 
-    //            // Reset timer
-    //            fireTimer = fireCooldown;
-    //        }
-    //    }
-    //}
+            //    // Reset timer
+            //    fireTimer = fireCooldown;
+            //}
+            ChasingPlayer(speed, range);
+        }
+        else
+        {
+            SpiderEnemy::NormalMovement();
+        }
+    }
 
 #ifdef _DEBUG
 
@@ -178,7 +155,7 @@ void ScarecrowEnemy::Update() {
 #endif
 }
 
-void ScarecrowEnemy::Draw() {
+void SpiderEnemy::Draw() {
 
     if (!use || !texture || !g_VertexBufferEnemy) return;
 
@@ -250,6 +227,40 @@ void ScarecrowEnemy::Draw() {
     GetDeviceContext()->Draw(4, 0);
 
 }
+void SpiderEnemy::NormalMovement()
+{
+    frameCounter++;
+    if (frameCounter >= frameInterval) {
+        frameCounter = 0;
+        currentFrame = (currentFrame + 1) % maxFrames;
+    }
+
+    if (tblMax <= 0) return;
+
+    int nowNo = (int)time;
+    int nextNo = (nowNo + 1) % tblMax;
+
+    INTERPOLATION_DATA* tbl = g_MoveTblAdr[tblNo];
+
+    XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);
+    XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);
+    XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);
+
+    XMVECTOR diffPos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;
+    XMVECTOR diffRot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;
+    XMVECTOR diffScl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;
+
+    float localTime = time - nowNo;
+
+    XMStoreFloat3(&pos, nowPos + diffPos * localTime);
+    XMStoreFloat3(&scl, nowScl + diffScl * localTime);
+
+    time += 1.0f / tbl[nowNo].frame;
+    if ((int)time >= tblMax) {
+        time -= tblMax;
+    }
+
+}
 //*****************************************************************************
 // 
 //*****************************************************************************
@@ -257,7 +268,7 @@ void InitEnemy() {
     MakeVertexEnemy();
     g_enemies.clear();
     for (int i = 0; i < ENEMY_MAX; ++i) {
-        ScarecrowEnemy* e = new ScarecrowEnemy();
+        SpiderEnemy* e = new SpiderEnemy();
         e->Init();
         e->SetUsed(true);
         XMFLOAT3 pos = XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f);
@@ -354,4 +365,28 @@ void BaseEnemy::SetScale(const XMFLOAT3& s) {
 
 XMFLOAT3 BaseEnemy::GetScale() const {
     return scl;
+}
+
+void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
+{
+    PLAYER* player = GetPlayer();
+
+    // エネミーからプレイヤーまでのベクトル
+    XMFLOAT3 dir;
+    dir.x = player->pos.x - pos.x;
+    dir.y = player->pos.y - pos.y;
+    dir.z = player->pos.z - pos.z;
+
+    float distSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
+
+    if (distSq < chaseRange * chaseRange) {
+        // 正規化ベクトル
+        XMVECTOR vec = XMVector3Normalize(XMLoadFloat3(&dir));
+        XMStoreFloat3(&dir, vec);
+
+        // 位置アップデート
+        pos.x += dir.x * speed;
+        pos.y += dir.y * speed;
+        pos.z += dir.z * speed;
+    }
 }
