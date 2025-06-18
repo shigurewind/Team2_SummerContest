@@ -53,8 +53,6 @@ public:
 
 	void NormalMovement() override;
 
-	//void EnablePathAnimation(bool enable);
-
 private:
 	ID3D11ShaderResourceView* texture;
 	struct MATERIAL* material;
@@ -69,6 +67,40 @@ private:
 	float time = 0.0f;
 	int tblNo = 0;
 	int tblMax = 0;
+
+	//エネミーが発射するとき
+	float fireTimer = 0.0f;
+	const float fireCooldown = 1.0f;
+
+
+};
+
+
+class GhostEnemy : public BaseEnemy {
+public:
+	GhostEnemy();
+	~GhostEnemy();
+
+	void Init() override;
+	void Update() override;
+	void Draw() override;
+
+	void NormalMovement() override;
+
+private:
+	ID3D11ShaderResourceView* texture;
+	struct MATERIAL* material;
+	float width, height;
+	XMFLOAT3 moveDir;       // 現在の動き方向
+	float moveChangeTimer;  // 向き変わるタイマー
+	float speed;			//エネミーのスピード
+
+	int currentFrame;
+	int frameCounter;
+	int frameInterval;
+	int maxFrames;
+
+
 
 	//エネミーが発射するとき
 	float fireTimer = 0.0f;
