@@ -19,8 +19,8 @@
 //=============================================================================
 // 弾の基本データ構造（属性など） //追加箇所
 //=============================================================================
-//                                  種類　　　　速さ  DMG  scl  lifetime    　　モデル　　　　　　　　RGB
-BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+//                                  種類　　　　速さ  DMG  scl   描画時間    　　モデル　　　　　　　　RGB
+BulletData bulletData_Normal = { BULLET_NORMAL,  20.0f, 10, 0.2f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
 BulletData bulletData_Fire   = { BULLET_FIRE,     5.0f, 20, 1.0f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
 
 // 武器インスタンス 
@@ -63,7 +63,7 @@ void UninitBullet()
 }
 
 //=============================================================================
-// 弾の発射（共通）
+// 弾の発射関数
 //=============================================================================
 int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data)
 {

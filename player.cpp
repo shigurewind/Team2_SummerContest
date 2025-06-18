@@ -211,7 +211,7 @@ void UpdatePlayer(void)
 		{
 			XMFLOAT3 pos = isFirstPersonMode ? GetGunMuzzlePosition() : g_Player.pos;  
 			XMFLOAT3 rot = isFirstPersonMode ? GetGunMuzzleRotation() : g_Player.rot;  
-			/*SetRevolverBullet(pos, rot);*/
+			//SetRevolverBullet(pos, rot);
 			SetShotgunBullet(pos, rot, *GetShotgun()->bulletData);
 			g_Player.ammo--;
 		}
