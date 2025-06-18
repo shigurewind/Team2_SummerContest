@@ -49,6 +49,10 @@ static LIGHT		g_Light;
 //重力
 static float gravity = 0.5f;
 
+//weponとbullet弾の状態
+static WeaponType currentWeapon  = WEAPON_REVOLVER;
+static BulletType currentBullet = BULLET_NORMAL;
+
 
 // プレイヤーの階層アニメーションデータ
 
@@ -206,14 +210,32 @@ void UpdatePlayer(void)
 			g_Player.isGround = TRUE;
 		}
 
-		// 弾発射処理（共通関数使用） 
-		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
+
+		//キーボードの1　武器の切り替え
+		if (GetKeyboardTrigger(DIK_1))
 		{
-			XMFLOAT3 pos = isFirstPersonMode ? GetGunMuzzlePosition() : g_Player.pos;  
-			XMFLOAT3 rot = isFirstPersonMode ? GetGunMuzzleRotation() : g_Player.rot;  
-			/*SetRevolverBullet(pos, rot);*/
-			SetShotgunBullet(pos, rot, *GetShotgun()->bulletData);
-			g_Player.ammo--;
+			currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
+			PrintDebugProc("武器切り替え！\n");
+		}
+		//キーボードの2　弾の切り替え
+		if (GetKeyboardTrigger(DIK_2)) {
+			currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
+			PrintDebugProc("弾切り替え！\n");
+		}
+
+		PLAYER* p = GetPlayer();
+
+		// 弾発射処理
+		if (IsMouseLeftTriggered() && p->ammo > 0) {
+			XMFLOAT3 pos = GetGunMuzzlePosition();
+			XMFLOAT3 rot = GetGunMuzzleRotation();
+			if (currentWeapon == WEAPON_REVOLVER) {
+				SetRevolverBullet(currentBullet, pos, rot);
+			}
+			else {
+				SetShotgunBullet(currentBullet, pos, rot);
+			}
+			p->ammo--;
 		}
 		// Rキーでリロード処理
 		if (GetKeyboardTrigger(DIK_R))
