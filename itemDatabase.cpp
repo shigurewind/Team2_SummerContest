@@ -3,7 +3,9 @@
 
 // アイテムデータベースのコンストラクタ
 ItemDatabase::ItemDatabase() {
-	texturePaths[ITEM_APPLE] = "textures/items/apple.png";
+	texturePaths[ITEM_APPLE] = "data/2Dpicture/item/apple.png";
+	texturePaths[ITEM_SAN] = "data/2Dpicture/item/heal.png";
+	texturePaths[ITEM_BULLET] = "data/2Dpicture/item/bullet.png";
 
 }
 

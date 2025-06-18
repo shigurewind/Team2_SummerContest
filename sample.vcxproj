@@ -484,6 +484,7 @@
     <ClCompile Include="imgui_widgets.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="inventory.cpp" />
+    <ClCompile Include="item.cpp" />
     <ClCompile Include="itemDatabase.cpp" />
     <ClCompile Include="light.cpp" />
     <ClCompile Include="main.cpp" />

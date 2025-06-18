@@ -26,6 +26,8 @@
 #include "debugproc.h"
 
 #include "FBXmodel.h"
+#include "item.h"
+
 
 //*****************************************************************************
 // É}ÉNÉçíËã`
@@ -101,6 +103,8 @@ HRESULT InitGame(void)
 
 	InitFBXTestModel();
 
+	InitItem();
+
 	// BGMçƒê∂
 	PlaySound(SOUND_LABEL_BGM_sample001);
 
@@ -140,6 +144,8 @@ void UninitGame(void)
 	UninitShadow();
 
 	UninitFBXTestModel();
+
+	UninitItem();
 
 }
 
@@ -198,6 +204,8 @@ void UpdateGame(void)
 	UpdateScore();
 
 	UpdateFBXTestModel();
+
+	UpdateItem();
 }
 
 //=============================================================================
@@ -231,6 +239,8 @@ void DrawGame0(void)
 	DrawParticle();
 
 	DrawFBXTestModel();
+
+	DrawItem();
 
 
 	// 2DÇÃï®Çï`âÊÇ∑ÇÈèàóù
