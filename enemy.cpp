@@ -389,6 +389,12 @@ void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
     }
 }
 
+
+
+//*****************************************************************************
+// 
+//*****************************************************************************
+
 GhostEnemy::GhostEnemy() :
     texture(nullptr), width(100.0f), height(100.0f)
 {
@@ -430,10 +436,9 @@ void GhostEnemy::Init()
 
 void GhostEnemy::Update()
 {
-    if (!use) return;
-
     NormalMovement();
 
+    if (!use) return;
 
     PLAYER* player = GetPlayer();
 
@@ -456,10 +461,11 @@ void GhostEnemy::Update()
     //攻撃行う範囲
     if (distSq < range * range)
     {
-        //ChasingPlayer(speed, range);
+        ChasingPlayer(speed, range);
     }
     else
     {
+
     }
 
 #ifdef _DEBUG
