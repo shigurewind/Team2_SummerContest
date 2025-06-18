@@ -432,6 +432,9 @@ void GhostEnemy::Update()
 {
     if (!use) return;
 
+    NormalMovement();
+
+
     PLAYER* player = GetPlayer();
 
     // エネミーからプレイヤーまでのベクトル
@@ -457,7 +460,6 @@ void GhostEnemy::Update()
     }
     else
     {
-        //NormalMovement();
     }
 
 #ifdef _DEBUG
@@ -544,22 +546,29 @@ void GhostEnemy::Draw()
 
 void GhostEnemy::NormalMovement()
 {
-    //moveChangeTimer -= 1.0f / 60.0f;
-    //if (moveChangeTimer <= 0.0f)
-    //{
-    //    // ランダム動き方向
-    //    float angle = (rand() % 360) * XM_PI / 180.0f;
-    //    moveDir.x = cosf(angle);
-    //    moveDir.z = sinf(angle);
-    //    moveDir.y = 0.0f;
+    frameCounter++;
+    if (frameCounter >= frameInterval) {
+        frameCounter = 0;
+        currentFrame = (currentFrame + 1) % maxFrames;
+    }
 
-    //    moveChangeTimer = 2.0f;
+    // 動き方向変わりタイマー
+    moveChangeTimer -= 1.0f / 60.0f; // 60fpsことに動き方向変わり
+    if (moveChangeTimer <= 0.0f) {
+        moveChangeTimer = 2.0f; // reset timer
 
-    //    // 動き範囲
-    //    if (pos.y < 0.0f) pos.y = 0.0f;
-    //    if (pos.y > 200.0f) pos.y = 200.0f;
+        // 動き方向変わることはランダム設定
+        int dir = rand() % 4;
+        switch (dir) {
+        case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // 右
+        case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // 左
+        case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // 前（+ｚ）
+        case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // 後ろ（-ｚ）
+        }
+    }
 
-    //}
-
+    pos.x += moveDir.x * speed;
+    pos.y += moveDir.y * speed;
+    pos.z += moveDir.z * speed;
 }
 
