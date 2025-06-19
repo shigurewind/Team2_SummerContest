@@ -55,7 +55,8 @@ struct PLAYER
 	float			maxFallSpeed;//Å‘å—‚Æ‚·Speed
 	float			jumpPower;	//jump‚Ìƒpƒ[
 
-
+	float				HP;
+	float				HP_MAX;
 };
 
 

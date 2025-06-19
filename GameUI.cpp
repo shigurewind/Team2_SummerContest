@@ -163,7 +163,7 @@ void DrawScore(void)
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
 		//ゲージの位置やテクスチャー座標を反映
 		float pw = 280;		// ゲージの表示幅
-		//pw = pw * ((float)player->HP / HP_MAX);
+		pw = pw * ((float)player->HP / player->HP_MAX);
 
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
