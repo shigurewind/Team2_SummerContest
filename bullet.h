@@ -42,6 +42,7 @@ enum WeaponType {
 struct Weapon {
     WeaponType weaponType;
     BulletData* bulletData;
+    int clipSize;   //ÉäÉçÅ[ÉhÇ≈Ç´ÇÈíeêîä«óù
 };
 
 //=============================================================================
@@ -72,8 +73,10 @@ void UninitBullet();
 void UpdateBullet(void);
 void DrawBullet(void);
 int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data);
-void SetRevolverBullet(XMFLOAT3 pos, XMFLOAT3 rot); //í«â¡â”èä
-void SetShotgunBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data);
+int SetBulletWithData(const BulletData& data, XMFLOAT3 pos, XMFLOAT3 rot);
+void SetRevolverBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot);
+void SetShotgunBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot);
+
 BULLET* GetBullet(void);
 Weapon* GetRevolver(void);
 Weapon* GetShotgun(void);

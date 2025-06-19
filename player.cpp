@@ -49,6 +49,10 @@ static LIGHT		g_Light;
 //重力
 static float gravity = 0.5f;
 
+//weponとbullet弾の状態
+static WeaponType currentWeapon  = WEAPON_REVOLVER;
+static BulletType currentBullet = BULLET_NORMAL;
+
 
 // プレイヤーの階層アニメーションデータ
 
@@ -98,8 +102,11 @@ HRESULT InitPlayer(void)
 	g_Player.alive = TRUE;			// TRUE:生きてる
 	g_Player.size = PLAYER_SIZE;	// 当たり判定の大きさ
 
-	g_Player.ammo = 5;				//リロードできる弾数
-	g_Player.maxammo = 20;			//持ってる弾数
+	g_Player.ammoNormal    = 0;		//最初に装填されてる弾数
+	g_Player.maxAmmoNormal = 20;	//今持ってる弾数全部
+
+	g_Player.ammoFire      = 0;		//最初に装填されてる弾数
+	g_Player.maxAmmoFire   = 10;	//今持ってる弾数全部
 
 	// ここでプレイヤー用の影を作成している
 	XMFLOAT3 pos = g_Player.pos;
@@ -202,26 +209,52 @@ void UpdatePlayer(void)
 			g_Player.isGround = TRUE;
 		}
 
-		// 弾発射処理（共通関数使用） 
-		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
-		{
-			XMFLOAT3 pos = isFirstPersonMode ? GetGunMuzzlePosition() : g_Player.pos;  
-			XMFLOAT3 rot = isFirstPersonMode ? GetGunMuzzleRotation() : g_Player.rot;  
-			/*SetRevolverBullet(pos, rot);*/
-			SetShotgunBullet(pos, rot, *GetShotgun()->bulletData);
-			g_Player.ammo--;
-		}
-		// Rキーでリロード処理
-		if (GetKeyboardTrigger(DIK_R))
-		{
-			// 弾が不足していて、かつ手持ちに弾がある場合のみリロード
-			if (g_Player.ammo < 5 && g_Player.maxammo > 0)
-			{
 
-				int need = 5 - g_Player.ammo;
-				int reload = Min(need, g_Player.maxammo);
-				g_Player.ammo += reload;
-				g_Player.maxammo -= reload;
+		//キーボードの1　武器の切り替え
+		if (GetKeyboardTrigger(DIK_1))
+		{
+			currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
+		}
+		//キーボードの2　弾の切り替え
+		if (GetKeyboardTrigger(DIK_2)) 
+		{
+			currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
+		}
+
+		PLAYER* p = GetPlayer();
+
+		// 弾発射処理
+		int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &p->ammoNormal : &p->ammoFire;
+		if (IsMouseLeftTriggered() && *currentAmmo > 0) 
+		{
+			XMFLOAT3 pos = GetGunMuzzlePosition();
+			XMFLOAT3 rot = GetGunMuzzleRotation();
+			if (currentWeapon == WEAPON_REVOLVER) 
+			{
+				SetRevolverBullet(currentBullet, pos, rot);
+			}
+			else {
+				SetShotgunBullet(currentBullet, pos, rot);
+			}
+			(*currentAmmo)--;
+		}
+
+
+		// Rキーでリロード処理
+		if (GetKeyboardTrigger(DIK_R)) 
+		{
+			Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
+			int clipSize = weapon->clipSize;
+
+			int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
+			int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
+
+			if (*ammo < clipSize && *maxAmmo > 0) 
+			{
+				int need = clipSize - *ammo;
+				int reload = Min(need, *maxAmmo);
+				*ammo += reload;
+				*maxAmmo -= reload;
 			}
 		}
 
