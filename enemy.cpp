@@ -15,6 +15,7 @@
 #include "sprite.h"
 #include "input.h"
 #include "collision.h"
+#include "score.h"
 
 
 
@@ -55,7 +56,7 @@ BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
 BaseEnemy::~BaseEnemy() {}
 
 SpiderEnemy::SpiderEnemy() :
-    texture(nullptr), width(100.0f), height(100.0f)
+    texture(nullptr), width(50.0f), height(50.0f)
 {
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
@@ -95,6 +96,9 @@ void SpiderEnemy::Init() {
 
     isAttacking = false;
     attackFrameTimer = 0.0f;
+    attackCooldownTimer = 0.0f;
+    attackCooldown = 1.5f;  // Mỗi 1.5 giây mới được tấn công một lần
+
 
 }
 
@@ -102,7 +106,8 @@ void SpiderEnemy::Update() {
     if (!use) return;
 
 
-    if (isAttacking) {
+    if (isAttacking)    //攻撃のアニメーション処理
+    {
         attackFrameTimer -= 1.0f / 60.0f;
         if (attackFrameTimer <= 0.0f) {
             isAttacking = false;
@@ -114,7 +119,7 @@ void SpiderEnemy::Update() {
         }
     }
     else {
-        // Animation bình thường: lặp giữa frame 0 và 1
+        // 移動のアニメーション処理
         frameCounter++;
         if (frameCounter >= frameInterval) {
             frameCounter = 0;
@@ -138,16 +143,20 @@ void SpiderEnemy::Update() {
     float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
     float range = 100.0f; // 発射範囲
 
+    attackCooldownTimer -= 1.0f / 60.0f;
+    if (attackCooldownTimer < 0.0f) attackCooldownTimer = 0.0f;
 
 
     //プレイヤーを追いかける行う範囲
     if (distSq < range * range)
     {
         ChasingPlayer(speed, range);
-           if (!isAttacking) {
-        isAttacking = true;
-        attackFrameTimer = .0f;
-    }
+
+        if (!isAttacking && attackCooldownTimer <= 0.0f) 
+        {
+            Attack();
+        }
+    
     }
     else
     {
@@ -268,9 +277,11 @@ void SpiderEnemy::Attack()
     if (attackCooldownTimer <= 0.0f && !isAttacking)
     {
         isAttacking = true;
-        attackFrameTimer = 0.5f;          // Frame tấn công hiển thị 0.5 giây
-        currentFrame = 2;                 // Frame tấn công
-        attackCooldownTimer = attackCooldown;  // Reset cooldown
+        attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
+        currentFrame = 2;                     // 攻撃のフレームの描画
+        attackCooldownTimer = attackCooldown; // Reset cooldown
+
+        ShowWebEffect(0.5f);
     }
 }
 //*****************************************************************************

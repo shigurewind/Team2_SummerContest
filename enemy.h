@@ -74,6 +74,9 @@ private:
 	float fireTimer = 0.0f;
 	const float fireCooldown = 1.0f;
 
+	float attackCooldownTimer;  // UŒ‚ŠÔ‚Ì‘Ò‚ÂŠÔ
+	float attackCooldown;
+
 	bool isAttacking;
 	float attackFrameTimer;
 
