@@ -2,6 +2,8 @@
 #include "itemDatabase.h"
 #include "main.h"
 #include "camera.h"
+#include "collision.h"
+#include "player.h"
 
 #include <cstdlib> // for rand()
 #include <ctime>   // for time()
@@ -16,6 +18,8 @@
 
 #define ITEM_WIDTH (20.0f)		// 
 #define ITEM_HEIGHT (20.0f)	// 
+
+#define ITEM_SIZE (20.0f)
 
 
 
@@ -45,6 +49,8 @@ static ID3D11Buffer* g_VertexBuffer = NULL;	// 頂点バッファ
 static ID3D11ShaderResourceView* g_ItemTextures[ITEM_ID_MAX]; // アイテム用テクスチャ（ItemID最大値）
 
 static float g_ItemGlobalTime = 0.0f;
+
+static PLAYER* g_player = GetPlayer();
 
 
 
@@ -145,7 +151,34 @@ void UpdateItem()
 
 
 			//Playerと当たり判定
+			if (CollisionBC(g_aItem[i].pos, g_player->pos, ITEM_SIZE, g_player->size))
+			{
+				switch (g_aItem[i].item.category)
+				{
+				case ItemCategory::WeaponPart_Ammo:
+					//インベントリーに入れる
 
+					break;
+				case ItemCategory::WeaponPart_FireType:
+					//インベントリーに入れる
+
+					break;
+				case ItemCategory::Consumable:
+					//インベントリーに入れる
+
+					break;
+				case ItemCategory::InstantEffect:
+					//相応の効果
+					//test
+					g_player->HP += 1.0f;
+					g_aItem[i].use = false;
+
+					break;
+
+				default:
+					break;
+				}
+			}
 
 
 		}

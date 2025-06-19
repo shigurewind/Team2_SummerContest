@@ -50,7 +50,7 @@ static LIGHT		g_Light;
 static float gravity = 0.5f;
 
 //wepon‚Æbullet’e‚Ìó‘Ô
-static WeaponType currentWeapon  = WEAPON_REVOLVER;
+static WeaponType currentWeapon = WEAPON_REVOLVER;
 static BulletType currentBullet = BULLET_NORMAL;
 
 
@@ -94,6 +94,7 @@ HRESULT InitPlayer(void)
 	LoadModel(MODEL_PLAYER, &g_Player.model);
 
 	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y + 50.0f, -50.0f);
+	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y, -50.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -102,11 +103,11 @@ HRESULT InitPlayer(void)
 	g_Player.alive = TRUE;			// TRUE:¶‚«‚Ä‚é
 	g_Player.size = PLAYER_SIZE;	// “–‚½‚è”»’è‚Ì‘å‚«‚³
 
-	g_Player.ammoNormal    = 0;		//Å‰‚É‘•“U‚³‚ê‚Ä‚é’e”
+	g_Player.ammoNormal = 0;		//Å‰‚É‘•“U‚³‚ê‚Ä‚é’e”
 	g_Player.maxAmmoNormal = 20;	//¡Ž‚Á‚Ä‚é’e”‘S•”
 
-	g_Player.ammoFire      = 0;		//Å‰‚É‘•“U‚³‚ê‚Ä‚é’e”
-	g_Player.maxAmmoFire   = 10;	//¡Ž‚Á‚Ä‚é’e”‘S•”
+	g_Player.ammoFire = 0;		//Å‰‚É‘•“U‚³‚ê‚Ä‚é’e”
+	g_Player.maxAmmoFire = 10;	//¡Ž‚Á‚Ä‚é’e”‘S•”
 
 	// ‚±‚±‚ÅƒvƒŒƒCƒ„[—p‚Ì‰e‚ðì¬‚µ‚Ä‚¢‚é
 	XMFLOAT3 pos = g_Player.pos;
@@ -216,7 +217,7 @@ void UpdatePlayer(void)
 			currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
 		}
 		//ƒL[ƒ{[ƒh‚Ì2@’e‚ÌØ‚è‘Ö‚¦
-		if (GetKeyboardTrigger(DIK_2)) 
+		if (GetKeyboardTrigger(DIK_2))
 		{
 			currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
 		}
@@ -225,11 +226,11 @@ void UpdatePlayer(void)
 
 		// ’e”­ŽËˆ—
 		int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &p->ammoNormal : &p->ammoFire;
-		if (IsMouseLeftTriggered() && *currentAmmo > 0) 
+		if (IsMouseLeftTriggered() && *currentAmmo > 0)
 		{
 			XMFLOAT3 pos = GetGunMuzzlePosition();
 			XMFLOAT3 rot = GetGunMuzzleRotation();
-			if (currentWeapon == WEAPON_REVOLVER) 
+			if (currentWeapon == WEAPON_REVOLVER)
 			{
 				SetRevolverBullet(currentBullet, pos, rot);
 			}
@@ -241,7 +242,7 @@ void UpdatePlayer(void)
 
 
 		// RƒL[‚ÅƒŠƒ[ƒhˆ—
-		if (GetKeyboardTrigger(DIK_R)) 
+		if (GetKeyboardTrigger(DIK_R))
 		{
 			Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
 			int clipSize = weapon->clipSize;
@@ -249,7 +250,7 @@ void UpdatePlayer(void)
 			int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
 			int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
 
-			if (*ammo < clipSize && *maxAmmo > 0) 
+			if (*ammo < clipSize && *maxAmmo > 0)
 			{
 				int need = clipSize - *ammo;
 				int reload = Min(need, *maxAmmo);
