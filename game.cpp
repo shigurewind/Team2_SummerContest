@@ -20,7 +20,7 @@
 #include "shadow.h"
 #include "tree.h"
 #include "bullet.h"
-#include "score.h"
+#include "GameUI.h"
 #include "particle.h"
 #include "collision.h"
 #include "debugproc.h"
