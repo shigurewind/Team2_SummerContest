@@ -18,6 +18,7 @@ public:
 	virtual void Draw() = 0;
 
 	virtual void NormalMovement() {}
+	virtual void Attack() {}
 
 	void ChasingPlayer(float speed, float chaseRange);
 
@@ -52,6 +53,7 @@ public:
 	void Draw() override;
 
 	void NormalMovement() override;
+	void Attack() override;
 
 private:
 	ID3D11ShaderResourceView* texture;
@@ -71,6 +73,10 @@ private:
 	//エネミーが発射するとき
 	float fireTimer = 0.0f;
 	const float fireCooldown = 1.0f;
+
+	bool isAttacking;
+	float attackFrameTimer;
+
 
 
 };

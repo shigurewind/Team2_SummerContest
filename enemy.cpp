@@ -72,7 +72,7 @@ SpiderEnemy::~SpiderEnemy() {
 void SpiderEnemy::Init() {
     D3DX11CreateShaderResourceViewFromFile(
         GetDevice(),
-        "data/2Dpicture/enemy/spider_move.png",
+        "data/2Dpicture/enemy/enemy001.png",
         NULL, NULL, &texture, NULL);
 
 
@@ -87,24 +87,40 @@ void SpiderEnemy::Init() {
     currentFrame = 0;
     frameCounter = 0;
     frameInterval = 15;//change speed
-    maxFrames = 2;
+    maxFrames = 3;
 
     tblNo = 0;
     tblMax = _countof(g_MoveTbl0);
     time = 0.0f;
 
+    isAttacking = false;
+    attackFrameTimer = 0.0f;
 
 }
 
 void SpiderEnemy::Update() {
     if (!use) return;
 
-    frameCounter++;
-    if (frameCounter >= frameInterval) {
-        frameCounter = 0;
-        currentFrame = (currentFrame + 1) % maxFrames;
-    }
 
+    if (isAttacking) {
+        attackFrameTimer -= 1.0f / 60.0f;
+        if (attackFrameTimer <= 0.0f) {
+            isAttacking = false;
+            frameCounter = 0;
+            currentFrame = 0;
+        }
+        else {
+            currentFrame = 2;
+        }
+    }
+    else {
+        // Animation bình thường: lặp giữa frame 0 và 1
+        frameCounter++;
+        if (frameCounter >= frameInterval) {
+            frameCounter = 0;
+            currentFrame = (currentFrame + 1) % 2;
+        }
+    }
 
     PLAYER* player = GetPlayer();
 
@@ -122,21 +138,16 @@ void SpiderEnemy::Update() {
     float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
     float range = 100.0f; // 発射範囲
 
-    //if (fireTimer > 0.0f)
-    //{
-    //    fireTimer -= 1.0f / 60.0f;  // 60fps
-    //}
-
-    //float angleY = atan2f(pos.x - player->pos.x, pos.z - player->pos.z);
-    //XMFLOAT3 bulletRot = { 0.0f, angleY, 0.0f };
-    //XMFLOAT3 bulletPos = pos;
-    //bulletPos.y += 10.0f; 
 
 
     //プレイヤーを追いかける行う範囲
     if (distSq < range * range)
     {
         ChasingPlayer(speed, range);
+           if (!isAttacking) {
+        isAttacking = true;
+        attackFrameTimer = .0f;
+    }
     }
     else
     {
@@ -251,6 +262,16 @@ void SpiderEnemy::NormalMovement()
         time -= tblMax;
     }
 
+}
+void SpiderEnemy::Attack()
+{
+    if (attackCooldownTimer <= 0.0f && !isAttacking)
+    {
+        isAttacking = true;
+        attackFrameTimer = 0.5f;          // Frame tấn công hiển thị 0.5 giây
+        currentFrame = 2;                 // Frame tấn công
+        attackCooldownTimer = attackCooldown;  // Reset cooldown
+    }
 }
 //*****************************************************************************
 // 
