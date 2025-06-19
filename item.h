@@ -15,10 +15,9 @@ struct Item {
 	int count;              //所持数(このアイテムの数、インベントリーの中のではない)?
 	ItemCategory category;  //アイテムのカテゴリ
 
-	bool isInstantEffect;
 
-	Item(int id, const std::string& name, int count, ItemCategory category, bool isInstant = false)
-		: id(id), name(name), count(count), category(category) , isInstantEffect(isInstant) {
+	Item(int id = 0, const std::string& name = "unknown", int count = 1, ItemCategory category = ItemCategory::Consumable)
+		: id(id), name(name), count(count), category(category) {
 	}
 };
 
@@ -28,8 +27,10 @@ struct Item {
 enum ItemID
 {
 	//弾の種類を決めるパーツ
+	PART_FIRE,
 
 	//打ち方を決めるパーツ
+	PART_SHUTGUN,
 
 	//消耗品
 	ITEM_APPLE,
@@ -37,6 +38,8 @@ enum ItemID
 	//回復品
 	ITEM_SAN,
 	ITEM_BULLET,
+
+	ITEM_ID_COUNT//ItemIDの数
 };
 
 
@@ -48,6 +51,8 @@ void UpdateItem();
 void DrawItem();
 
 void InitItemTextures();
+
+Item CreateItemFromID(int id);
 
 
 

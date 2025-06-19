@@ -3,13 +3,20 @@
 #include "main.h"
 #include "camera.h"
 
+#include <cstdlib> // for rand()
+#include <ctime>   // for time()
+
 
 #define MAX_ITEM (128)
-#define ITEM_ID_MAX (20) // アイテムIDの最大値
+#define ITEM_ID_MAX ITEM_ID_COUNT // アイテムIDの最大値
+
+#define ITEM_FLOAT_OFFSET (1.0f)
+#define ITEM_FLOAT_FREQUENCE (3.0f)
 
 
-#define ITEM_WIDTH (40.0f)		// 
-#define ITEM_HEIGHT (40.0f)	// 
+#define ITEM_WIDTH (20.0f)		// 
+#define ITEM_HEIGHT (20.0f)	// 
+
 
 
 typedef struct {
@@ -20,8 +27,12 @@ typedef struct {
 	float		fWidth;			// 幅
 	float		fHeight;		// 高さ
 
-	int         itemID;     // アイテムID（ItemDatabaseと連携）
+
+	Item		item;
 	BOOL		use;        // 使用中かどうか
+
+	float		timeOffset;
+	float		basePosY;
 } ITEM_OBJ;
 
 static ITEM_OBJ				g_aItem[MAX_ITEM]; // アイテム配列
@@ -30,8 +41,10 @@ static ItemDatabase			g_ItemDB;
 
 static BOOL					g_bAlpaTest;		// アルファテストON/OFF
 
-static ID3D11Buffer*		g_VertexBuffer = NULL;	// 頂点バッファ
-static ID3D11ShaderResourceView*	g_ItemTextures[ITEM_ID_MAX]; // アイテム用テクスチャ（ItemID最大値）
+static ID3D11Buffer* g_VertexBuffer = NULL;	// 頂点バッファ
+static ID3D11ShaderResourceView* g_ItemTextures[ITEM_ID_MAX]; // アイテム用テクスチャ（ItemID最大値）
+
+static float g_ItemGlobalTime = 0.0f;
 
 
 
@@ -53,17 +66,22 @@ int SetItem(XMFLOAT3 pos, int itemID)
 		{
 			g_aItem[i].pos = pos;
 			g_aItem[i].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-			g_aItem[i].itemID = itemID;
+			g_aItem[i].item = CreateItemFromID(itemID);
 			g_aItem[i].material.Diffuse = XMFLOAT4(1, 1, 1, 1);
 			g_aItem[i].use = TRUE;
+
+			g_aItem[i].timeOffset = static_cast<float>((rand() % 1000) / 1000.0f * XM_2PI);
+			g_aItem[i].basePosY = pos.y;
 			return i;
 		}
 	}
 	return -1;
 }
 
-HRESULT InitItem() 
+HRESULT InitItem()
 {
+
+	srand((unsigned int)time(nullptr));
 
 	g_ItemDB = ItemDatabase();  // TODO:ヒープ領域に移動するかもしれないので注意
 	InitItemTextures();         // テクスチャ読み込み
@@ -80,11 +98,14 @@ HRESULT InitItem()
 		g_aItem[CntItem].fWidth = ITEM_WIDTH;
 		g_aItem[CntItem].fHeight = ITEM_HEIGHT;
 		g_aItem[CntItem].use = FALSE;
+
 	}
 
 	g_bAlpaTest = TRUE;
 
 	SetItem(XMFLOAT3(10.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
+	SetItem(XMFLOAT3(20.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
+
 
 
 	return S_OK;
@@ -113,12 +134,19 @@ void UninitItem()
 
 void UpdateItem()
 {
+	g_ItemGlobalTime += ITEM_FLOAT_FREQUENCE / 60.0f;
 	// アイテムの更新処理
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
 		if (g_aItem[i].use)
 		{
+			//Itemのアニメーション
+			g_aItem[i].pos.y = g_aItem[i].basePosY + sinf(g_ItemGlobalTime + g_aItem[i].timeOffset) * ITEM_FLOAT_OFFSET;
+
+
 			//Playerと当たり判定
+
+
 
 		}
 	}
@@ -184,7 +212,7 @@ void DrawItem()
 
 
 			// ItemDatabaseから得たテクスチャで描画
-			int texID = g_aItem[i].itemID;
+			int texID = g_aItem[i].item.id;
 			if (g_ItemTextures[texID]) {
 				GetDeviceContext()->PSSetShaderResources(0, 1, &g_ItemTextures[texID]);
 				GetDeviceContext()->Draw(4, 0);
@@ -209,7 +237,7 @@ void InitItemTextures()
 	}
 }
 
-//TODO:find out fwidth and fheight
+
 HRESULT MakeVertexItem(void)
 {
 	// 頂点バッファ生成
@@ -258,4 +286,17 @@ HRESULT MakeVertexItem(void)
 	GetDeviceContext()->Unmap(g_VertexBuffer, 0);
 
 	return S_OK;
+}
+
+Item CreateItemFromID(int id) {
+	switch (id) {
+	case ITEM_APPLE:
+		return Item(id, "Apple", 1, ItemCategory::Consumable);
+	case ITEM_SAN:
+		return Item(id, "San", 1, ItemCategory::InstantEffect);
+	case ITEM_BULLET:
+		return Item(id, "Bullet", 10, ItemCategory::InstantEffect);
+	default:
+		return Item(id, "Unknown", 1, ItemCategory::Consumable);
+	}
 }
