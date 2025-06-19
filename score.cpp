@@ -237,7 +237,7 @@ void DrawScore(void)
 
 		// V? hi?u ?ng ph? to?n m?n h?nh, alpha gi?m d?n theo th?i gian
 		float alpha = g_WebEffectTimer; // 1.0 -> 0.0
-		SetSpriteColor(g_VertexBuffer, 640.0f, 360.0f, 1280.0f, 720.0f, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, alpha));
+		SetSpriteColor(g_VertexBuffer, 640.0f, 360.0f, 1277.0f, 770.0f, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, alpha));
 
 		GetDeviceContext()->Draw(4, 0);
 	}

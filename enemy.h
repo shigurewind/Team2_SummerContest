@@ -38,6 +38,8 @@ protected:
 	XMFLOAT3 scl;
 	XMFLOAT4X4 mtxWorld;
 	bool use;
+	float minDistance;
+
 };
 
 //*****************************************************************************
@@ -60,7 +62,7 @@ private:
 	struct MATERIAL* material;
 	float width, height;
 	float speed;						//エネミーのスピード
-
+	
 	int currentFrame;
 	int frameCounter;
 	int frameInterval;

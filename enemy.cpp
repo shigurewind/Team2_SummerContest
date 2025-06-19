@@ -32,7 +32,7 @@ ID3D11Buffer* g_VertexBufferEnemy = nullptr;
 #define ENEMY_MAX (1)
 static BOOL g_bAlphaTestEnemy;
 
-#define ENEMY_OFFSET_Y  (0.0f)
+#define ENEMY_OFFSET_Y  (-50.0f)
 
 static INTERPOLATION_DATA g_MoveTbl0[] = {
     { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 20.0f),    XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
@@ -56,7 +56,7 @@ BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
 BaseEnemy::~BaseEnemy() {}
 
 SpiderEnemy::SpiderEnemy() :
-    texture(nullptr), width(50.0f), height(50.0f)
+    texture(nullptr), width(100.0f), height(100.0f)
 {
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
@@ -97,9 +97,9 @@ void SpiderEnemy::Init() {
     isAttacking = false;
     attackFrameTimer = 0.0f;
     attackCooldownTimer = 0.0f;
-    attackCooldown = 1.5f;  // Mỗi 1.5 giây mới được tấn công một lần
+    attackCooldown = 1.5f;  // 1.5 秒ことに攻撃する
 
-
+    minDistance = 100.0f;
 }
 
 void SpiderEnemy::Update() {
@@ -114,11 +114,13 @@ void SpiderEnemy::Update() {
             frameCounter = 0;
             currentFrame = 0;
         }
-        else {
+        else 
+        {
             currentFrame = 2;
         }
     }
-    else {
+    else 
+    {
         // 移動のアニメーション処理
         frameCounter++;
         if (frameCounter >= frameInterval) {
@@ -141,7 +143,7 @@ void SpiderEnemy::Update() {
     XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
 
     float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
-    float range = 100.0f; // 発射範囲
+    float range = 200.0f; // 発射範囲
 
     attackCooldownTimer -= 1.0f / 60.0f;
     if (attackCooldownTimer < 0.0f) attackCooldownTimer = 0.0f;
@@ -409,7 +411,10 @@ void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 
     float distSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
 
-    if (distSq < chaseRange * chaseRange) {
+    float maxSq = chaseRange * chaseRange;
+    float minSq = minDistance * minDistance;
+
+    if (distSq < maxSq && distSq > minSq) {
         // 正規化ベクトル
         XMVECTOR vec = XMVector3Normalize(XMLoadFloat3(&dir));
         XMStoreFloat3(&dir, vec);
