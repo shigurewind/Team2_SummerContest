@@ -1,12 +1,15 @@
 #include "FBXmodel.h"
-
+#include "Octree.h"
 
 
 //-------------------------------------------------------------------------
-
+static std::vector<TriangleData> g_TriangleList;
 static FBXTESTMODEL g_FBXTestModel;	// FBXモデルのデータ
 
 static SHADER g_shaderCustom;
+
+static OctreeNode* g_WallTree = nullptr;
+static OctreeNode* g_FloorTree = nullptr;
 
 HRESULT InitFBXTestModel(void)
 {
@@ -26,7 +29,43 @@ HRESULT InitFBXTestModel(void)
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
 
 	g_FBXTestModel.alive = TRUE;			// TRUE:生きてる
+	XMMATRIX mtxScl = XMMatrixScaling(g_FBXTestModel.scl.x, g_FBXTestModel.scl.y, g_FBXTestModel.scl.z);
+	XMMATRIX mtxRot = XMMatrixRotationRollPitchYaw(g_FBXTestModel.rot.x, g_FBXTestModel.rot.y + XM_PI, g_FBXTestModel.rot.z);
+	XMMATRIX mtxQuat = XMMatrixRotationQuaternion(XMLoadFloat4(&g_FBXTestModel.Quaternion));
+	XMMATRIX mtxTrans = XMMatrixTranslation(g_FBXTestModel.pos.x, g_FBXTestModel.pos.y, g_FBXTestModel.pos.z);
 
+	XMMATRIX world = mtxScl * mtxRot * mtxQuat * mtxTrans;
+
+	ExtractTriangleData(g_FBXTestModel.model, world);
+	std::vector<TriangleData> floorTris;
+	std::vector<TriangleData> wallTris;
+
+	for (const auto& tri : GetTriangleList()) {
+		if (tri.type == TYPE_FLOOR) floorTris.push_back(tri);
+		else if (tri.type == TYPE_WALL) wallTris.push_back(tri);
+	}
+
+	XMFLOAT3 minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
+	XMFLOAT3 maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+	auto updateBounds = [&](const TriangleData& tri) {
+		for (const XMFLOAT3& v : { tri.v0, tri.v1, tri.v2 }) {
+			minBound.x = min(minBound.x, v.x);
+			minBound.y = min(minBound.y, v.y);
+			minBound.z = min(minBound.z, v.z);
+			maxBound.x = max(maxBound.x, v.x);
+			maxBound.y = max(maxBound.y, v.y);
+			maxBound.z = max(maxBound.z, v.z);
+		}
+		};
+
+	for (const auto& tri : floorTris) updateBounds(tri);
+	g_FloorTree = BuildOctree(floorTris, minBound, maxBound, 0, 5, 10);
+
+	minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
+	maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+	for (const auto& tri : wallTris) updateBounds(tri);
+	g_WallTree = BuildOctree(wallTris, minBound, maxBound, 0, 5, 10);
 
 	return S_OK;
 }
@@ -119,6 +158,48 @@ FBXTESTMODEL* GetFBXTestModel(void)
 
 
 
+void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix)
+{
+	g_TriangleList.clear();
+
+	for (unsigned int meshIndex = 0; meshIndex < model->AiScene->mNumMeshes; meshIndex++) {
+		const aiMesh* mesh = model->AiScene->mMeshes[meshIndex];
+		const aiVector3D* vertices = mesh->mVertices;
+
+		for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+			const aiFace& face = mesh->mFaces[i];
+			if (face.mNumIndices != 3) continue;
+
+			XMFLOAT3 v[3];
+			for (int j = 0; j < 3; j++) {
+				aiVector3D vRaw = vertices[face.mIndices[j]];
+				XMVECTOR vLocal = XMVectorSet(vRaw.x, vRaw.y, vRaw.z, 1.0f);
+				XMVECTOR vWorld = XMVector3Transform(vLocal, worldMatrix);
+				XMStoreFloat3(&v[j], vWorld);
+			}
+
+			XMVECTOR edge1 = XMVectorSubtract(XMLoadFloat3(&v[1]), XMLoadFloat3(&v[0]));
+			XMVECTOR edge2 = XMVectorSubtract(XMLoadFloat3(&v[2]), XMLoadFloat3(&v[0]));
+			XMVECTOR normal = XMVector3Normalize(XMVector3Cross(edge1, edge2));
+
+			XMFLOAT3 normal3;
+			XMStoreFloat3(&normal3, normal);
+
+			TriangleType type = TYPE_WALL;
+			if (fabs(normal3.y) >= 0.7f) {
+				type = TYPE_FLOOR;
+			}
+
+			g_TriangleList.push_back({ v[0], v[1], v[2], normal3, type });
+		}
+	}
+}
 
 
+const std::vector<TriangleData>& GetTriangleList()
+{
+	return g_TriangleList;
+}
 
+OctreeNode* GetWallTree() { return g_WallTree; }
+OctreeNode* GetFloorTree() { return g_FloorTree; }

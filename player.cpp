@@ -15,7 +15,8 @@
 #include "bullet.h"
 #include "debugproc.h"
 #include "meshfield.h"
-
+#include "FBXmodel.h"
+#include "Octree.h"
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -93,7 +94,7 @@ HRESULT InitPlayer(void)
 	//LoadFBXModel("data/MODEL/model.fbx", &g_Player.model);
 
 
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y+50.0f, -50.0f);
+	g_Player.pos = XMFLOAT3(-15.0f, PLAYER_OFFSET_Y+50.0f, -100.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -163,27 +164,48 @@ void UpdatePlayer(void)
 		g_Player.spd *= 0.7f;
 
 		// 移動処理
+		XMFLOAT3 move = {};
+
 		if (GetKeyboardPress(DIK_W)) {
-			g_Player.pos.x += sinf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z += cosf(cam->rot.y) * VALUE_MOVE;
+			move.x += sinf(cam->rot.y);
+			move.z += cosf(cam->rot.y);
 		}
 		if (GetKeyboardPress(DIK_S)) {
-			g_Player.pos.x -= sinf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z -= cosf(cam->rot.y) * VALUE_MOVE;
+			move.x -= sinf(cam->rot.y);
+			move.z -= cosf(cam->rot.y);
 		}
 		if (GetKeyboardPress(DIK_A)) {
-			g_Player.pos.x -= cosf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z += sinf(cam->rot.y) * VALUE_MOVE;
+			move.x -= cosf(cam->rot.y);
+			move.z += sinf(cam->rot.y);
 		}
 		if (GetKeyboardPress(DIK_D)) {
-
-			g_Player.pos.x += cosf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z -= sinf(cam->rot.y) * VALUE_MOVE;
+			move.x += cosf(cam->rot.y);
+			move.z -= sinf(cam->rot.y);
 		}
+
+		XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
+		XMVECTOR basePos = XMLoadFloat3(&g_Player.pos);
+		XMVECTOR newXZPos = XMVectorAdd(basePos, XMVectorScale(moveVec, VALUE_MOVE));
 		//正しい向き方向処理
 		//g_Player.rot.y = cam->rot.y + 3.14f;
 
+		XMFLOAT3 testPosXZ;
+		XMStoreFloat3(&testPosXZ, newXZPos);
 
+		XMFLOAT3 rayOrigin = testPosXZ;
+		XMFLOAT3 rayDir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+		float dist = FLT_MAX;
+		XMFLOAT3 hitPos;
+		XMFLOAT3 hitNormal;
+
+		bool isOnGround = false;
+		if (RayHitOctree(GetFloorTree(), rayOrigin, rayDir, &dist, &hitPos, &hitNormal)) {
+			float slopeAngle = acosf(hitNormal.y);
+			if (slopeAngle < XMConvertToRadians(30.0f)) {
+				testPosXZ.y = hitPos.y + PLAYER_OFFSET_Y;
+				isOnGround = true;
+			}
+		}
 		//Jump
 		if (GetKeyboardTrigger(DIK_SPACE) && g_Player.isGround)
 		{
@@ -197,14 +219,32 @@ void UpdatePlayer(void)
 		{
 			g_Player.verticalSpeed = g_Player.maxFallSpeed * -1.0f;
 		}
+		g_Player.pos.y += g_Player.verticalSpeed;
 
 		//地面
-		g_Player.pos.y += g_Player.verticalSpeed;
-		if (g_Player.pos.y < 0)
-		{
-			g_Player.pos.y = 0;
-			g_Player.isGround = TRUE;
+		rayOrigin = testPosXZ;
+		dist = FLT_MAX;
+		if (RayHitOctree(GetFloorTree(), rayOrigin, rayDir, &dist, &hitPos, &hitNormal)) {
+			float slopeAngle = acosf(hitNormal.y);
+			if (slopeAngle < XMConvertToRadians(30.0f)) {
+				float groundY = hitPos.y ;
+				if (testPosXZ.y <= groundY) {
+					testPosXZ.y = groundY;
+					g_Player.verticalSpeed = 0.0f;
+					g_Player.isGround = true;
+				}
+				else {
+					g_Player.isGround = false;
+				}
+			}
+			else {
+				g_Player.isGround = false;
+			}
 		}
+		else {
+			g_Player.isGround = false;
+		}
+		//g_Player.pos.y = testPosXZ.y;//<-?
 
 		// 弾発射処理（共通関数使用） 
 		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
@@ -341,7 +381,9 @@ void DrawPlayer(void)
 	// ワールドマトリックスの設定
 	SetWorldMatrix(&mtxWorld);
 
-	XMStoreFloat4x4(&g_Player.mtxWorld, mtxWorld);
+	XMFLOAT4X4 temp;
+	DirectX::XMStoreFloat4x4(&temp, mtxWorld);
+	g_Player.mtxWorld = temp;
 
 
 	// 縁取りの設定
