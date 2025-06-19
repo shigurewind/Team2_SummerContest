@@ -59,6 +59,8 @@ struct PLAYER
 	int ammo;       // ƒŠƒ[ƒh‚Å‚«‚é’e”  
 	int maxammo;    // ‚Á‚Ä‚é’e”
 
+	float				HP;
+	float				HP_MAX;
 };
 
 
