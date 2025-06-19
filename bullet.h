@@ -7,7 +7,6 @@
 #pragma once
 #include "model.h"
 #include <DirectXMath.h>
-#include <d3dx9math.h>
 
 using namespace DirectX;
 
@@ -43,6 +42,7 @@ enum WeaponType {
 struct Weapon {
     WeaponType weaponType;
     BulletData* bulletData;
+    int clipSize;   //ƒŠƒ[ƒh‚Å‚«‚é’e”ŠÇ—
 };
 
 //=============================================================================

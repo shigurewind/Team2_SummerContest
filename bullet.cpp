@@ -40,12 +40,14 @@ HRESULT InitBullet(void)
         g_Bullet[i].use = FALSE;
     }
 
-    // 武器ごとの弾をセット //追加箇所
+    // 武器ごとの弾をセット 
     g_Revolver.weaponType = WEAPON_REVOLVER;
     g_Revolver.bulletData = &bulletData_Normal;
+    g_Revolver.clipSize   = 5;      //リロードできる弾数
 
     g_Shotgun.weaponType = WEAPON_SHOTGUN;
     g_Shotgun.bulletData = &bulletData_Normal;
+    g_Shotgun.clipSize   = 3;       //リロードできる弾数
 
     return S_OK;
 }
