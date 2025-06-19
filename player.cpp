@@ -123,7 +123,7 @@ HRESULT InitPlayer(void)
 	g_Player.jumpPower = 8.0f;
 	
 
-
+	g_Player.HP = g_Player.HP_MAX = 5;
 
 	
 
@@ -227,6 +227,13 @@ void UpdatePlayer(void)
 				g_Player.ammo += reload;
 				g_Player.maxammo -= reload;
 			}
+		}
+
+
+		//test
+		if (GetKeyboardTrigger(DIK_H))
+		{
+			g_Player.HP = g_Player.HP - 1;
 		}
 
 	}
