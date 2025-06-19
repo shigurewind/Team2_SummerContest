@@ -99,6 +99,11 @@ void SpiderEnemy::Init() {
 void SpiderEnemy::Update() {
     if (!use) return;
 
+    frameCounter++;
+    if (frameCounter >= frameInterval) {
+        frameCounter = 0;
+        currentFrame = (currentFrame + 1) % maxFrames;
+    }
 
 
     PLAYER* player = GetPlayer();
@@ -195,7 +200,7 @@ void SpiderEnemy::Draw() {
         v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
     }
 
-    float tw = 1.0f / 2; // 2フレーム
+    float tw = 1.0f / maxFrames;
     float th = 1.0f;
     float tx = currentFrame * tw;
     float ty = 0.0f;
@@ -220,11 +225,6 @@ void SpiderEnemy::Draw() {
 }
 void SpiderEnemy::NormalMovement()
 {
-    frameCounter++;
-    if (frameCounter >= frameInterval) {
-        frameCounter = 0;
-        currentFrame = (currentFrame + 1) % maxFrames;
-    }
 
     if (tblMax <= 0) return;
 
@@ -436,7 +436,12 @@ void GhostEnemy::Init()
 
 void GhostEnemy::Update()
 {
-    NormalMovement();
+    frameCounter++;
+    if (frameCounter >= frameInterval) {
+        frameCounter = 0;
+        currentFrame = (currentFrame + 1) % maxFrames;
+    }
+
 
     if (!use) return;
 
@@ -465,6 +470,7 @@ void GhostEnemy::Update()
     }
     else
     {
+        NormalMovement();
 
     }
 
@@ -526,7 +532,7 @@ void GhostEnemy::Draw()
         v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
     }
 
-    float tw = 1.0f ; // 2フレーム
+    float tw = 1.0f/maxFrames ;
     float th = 1.0f;
     float tx = currentFrame * tw;
     float ty = 0.0f;
@@ -552,11 +558,6 @@ void GhostEnemy::Draw()
 
 void GhostEnemy::NormalMovement()
 {
-    frameCounter++;
-    if (frameCounter >= frameInterval) {
-        frameCounter = 0;
-        currentFrame = (currentFrame + 1) % maxFrames;
-    }
 
     // 動き方向変わりタイマー
     moveChangeTimer -= 1.0f / 60.0f; // 60fpsことに動き方向変わり
