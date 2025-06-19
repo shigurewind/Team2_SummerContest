@@ -451,6 +451,7 @@
     <ClInclude Include="model.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="playerUI.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="result.h" />
     <ClInclude Include="GameUI.h" />
@@ -488,6 +489,7 @@
     <ClCompile Include="model.cpp" />
     <ClCompile Include="particle.cpp" />
     <ClCompile Include="player.cpp" />
+    <ClCompile Include="playerUI.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="result.cpp" />
     <ClCompile Include="shaderManager.cpp" />
