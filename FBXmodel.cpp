@@ -17,7 +17,10 @@ HRESULT InitFBXTestModel(void)
 
 	//g_FBXTestModel.model = ModelLoad("data/MODEL/model.fbx");	// FBXモデルの読み込み
 	g_FBXTestModel.model = ModelLoad("data/MODEL/stage1.fbx");	// FBXモデルの読み込み
-
+	if (!g_FBXTestModel.model) {
+		MessageBoxA(NULL, "Failed to load stage1.fbx", "Error", MB_OK);
+		return E_FAIL;
+	}
 	LoadShaderFromFile("Shader/testShader.hlsl", "VertexShaderPolygon", "PixelShaderPolygon", &g_shaderCustom);
 	g_FBXTestModel.shader = &g_shaderCustom;
 
@@ -162,8 +165,17 @@ void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix)
 {
 	g_TriangleList.clear();
 
+	if (!model || !model->AiScene) {
+		OutputDebugStringA("Error: Invalid model or AiScene\n");
+		return;
+	}
+
 	for (unsigned int meshIndex = 0; meshIndex < model->AiScene->mNumMeshes; meshIndex++) {
 		const aiMesh* mesh = model->AiScene->mMeshes[meshIndex];
+		if (!mesh || !mesh->mVertices) {
+			continue;
+		}
+
 		const aiVector3D* vertices = mesh->mVertices;
 
 		for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
@@ -178,6 +190,7 @@ void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix)
 				XMStoreFloat3(&v[j], vWorld);
 			}
 
+			// 法線計算
 			XMVECTOR edge1 = XMVectorSubtract(XMLoadFloat3(&v[1]), XMLoadFloat3(&v[0]));
 			XMVECTOR edge2 = XMVectorSubtract(XMLoadFloat3(&v[2]), XMLoadFloat3(&v[0]));
 			XMVECTOR normal = XMVector3Normalize(XMVector3Cross(edge1, edge2));
@@ -185,16 +198,33 @@ void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix)
 			XMFLOAT3 normal3;
 			XMStoreFloat3(&normal3, normal);
 
-			TriangleType type = TYPE_WALL;
-			if (fabs(normal3.y) >= 0.7f) {
+			// 三角形の分類を改善
+			TriangleType type = TYPE_UNKNOWN;
+			float normalY = fabs(normal3.y);
+
+			if (normalY >= 0.5f) {  // Y成分が0.5以上なら床
 				type = TYPE_FLOOR;
+			}
+			else if (normalY <= 0.3f) {  // Y成分が0.3以下なら壁
+				type = TYPE_WALL;
+			}
+			else {
+				type = TYPE_FLOOR; // 中間的な角度も床として扱う
 			}
 
 			g_TriangleList.push_back({ v[0], v[1], v[2], normal3, type });
+			char buf[128];
+			sprintf_s(buf, "Normal Y: %.2f Type: %d\n", normal3.y, type);
+			OutputDebugStringA(buf);
 		}
 	}
-}
 
+	char debugMsg[256];
+	sprintf_s(debugMsg, "ExtractTriangleData: %zu triangles extracted\n", g_TriangleList.size());
+	OutputDebugStringA(debugMsg);
+	
+	
+}
 
 const std::vector<TriangleData>& GetTriangleList()
 {

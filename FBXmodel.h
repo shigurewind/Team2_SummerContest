@@ -5,11 +5,6 @@
 #include "DirectXMath.h"
 #include "Octree.h"
 
-enum TriangleType {
-	TYPE_UNKNOWN = -1,
-	TYPE_FLOOR = 0,
-	TYPE_WALL = 1
-};
 
 
 
@@ -50,11 +45,6 @@ struct FBXTESTMODEL
 
 };
 
-struct TriangleData {
-	XMFLOAT3 v0, v1, v2;
-	XMFLOAT3 normal; 
-	TriangleType type; 
-};
 
 //*****************************************************************************
 // プロトタイプ宣言

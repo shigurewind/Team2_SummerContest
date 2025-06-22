@@ -165,86 +165,100 @@ void UpdatePlayer(void)
 
 		// 移動処理
 		XMFLOAT3 move = {};
+		bool isMoving = false;
 
 		if (GetKeyboardPress(DIK_W)) {
 			move.x += sinf(cam->rot.y);
 			move.z += cosf(cam->rot.y);
+			isMoving = true;
 		}
 		if (GetKeyboardPress(DIK_S)) {
 			move.x -= sinf(cam->rot.y);
 			move.z -= cosf(cam->rot.y);
+			isMoving = true;
 		}
 		if (GetKeyboardPress(DIK_A)) {
 			move.x -= cosf(cam->rot.y);
 			move.z += sinf(cam->rot.y);
+			isMoving = true;
 		}
 		if (GetKeyboardPress(DIK_D)) {
 			move.x += cosf(cam->rot.y);
 			move.z -= sinf(cam->rot.y);
+			isMoving = true;
 		}
 
-		XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
-		XMVECTOR basePos = XMLoadFloat3(&g_Player.pos);
-		XMVECTOR newXZPos = XMVectorAdd(basePos, XMVectorScale(moveVec, VALUE_MOVE));
+		XMFLOAT3 newPos = g_Player.pos;
+		if (isMoving) {
+			XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
+			XMVECTOR basePos = XMLoadFloat3(&g_Player.pos);
+			XMVECTOR newXZPos = XMVectorAdd(basePos, XMVectorScale(moveVec, VALUE_MOVE));
+			XMStoreFloat3(&newPos, newXZPos);
+		}
+
 		//正しい向き方向処理
 		//g_Player.rot.y = cam->rot.y + 3.14f;
 
-		XMFLOAT3 testPosXZ;
-		XMStoreFloat3(&testPosXZ, newXZPos);
-
-		XMFLOAT3 rayOrigin = testPosXZ;
-		XMFLOAT3 rayDir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-		float dist = FLT_MAX;
-		XMFLOAT3 hitPos;
-		XMFLOAT3 hitNormal;
-
-		bool isOnGround = false;
-		if (RayHitOctree(GetFloorTree(), rayOrigin, rayDir, &dist, &hitPos, &hitNormal)) {
-			float slopeAngle = acosf(hitNormal.y);
-			if (slopeAngle < XMConvertToRadians(30.0f)) {
-				testPosXZ.y = hitPos.y + PLAYER_OFFSET_Y;
-				isOnGround = true;
-			}
-		}
+		
 		//Jump
-		if (GetKeyboardTrigger(DIK_SPACE) && g_Player.isGround)
-		{
+		if (GetKeyboardTrigger(DIK_SPACE) && g_Player.isGround) {
 			g_Player.verticalSpeed = g_Player.jumpPower;
 			g_Player.isGround = FALSE;
 		}
 
 		//重力
-		g_Player.verticalSpeed -= gravity;
-		if (g_Player.verticalSpeed < (g_Player.maxFallSpeed * -1.0f))
-		{
-			g_Player.verticalSpeed = g_Player.maxFallSpeed * -1.0f;
+		if (!g_Player.isGround) {
+			g_Player.verticalSpeed -= gravity;
+			if (g_Player.verticalSpeed < -g_Player.maxFallSpeed) {
+				g_Player.verticalSpeed = -g_Player.maxFallSpeed;
+			}
 		}
-		g_Player.pos.y += g_Player.verticalSpeed;
 
+		newPos.y += g_Player.verticalSpeed;
 		//地面
-		rayOrigin = testPosXZ;
-		dist = FLT_MAX;
-		if (RayHitOctree(GetFloorTree(), rayOrigin, rayDir, &dist, &hitPos, &hitNormal)) {
-			float slopeAngle = acosf(hitNormal.y);
-			if (slopeAngle < XMConvertToRadians(30.0f)) {
-				float groundY = hitPos.y ;
-				if (testPosXZ.y <= groundY) {
-					testPosXZ.y = groundY;
+		XMFLOAT3 rayOrigin = g_Player.pos;
+		rayOrigin.y += 50.0f;
+		XMFLOAT3 rayDir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+		float dist = FLT_MAX;
+		XMFLOAT3 hitPos;
+		XMFLOAT3 hitNormal;
+
+		OctreeNode* floorTree = GetFloorTree();
+		if (floorTree == nullptr) {
+			g_Player.pos.y = PLAYER_OFFSET_Y;
+			g_Player.isGround = TRUE;
+			g_Player.verticalSpeed = 0.0f;
+			return;
+		}
+		bool hitGround = RayHitOctree(floorTree, rayOrigin, rayDir, &dist, &hitPos, &hitNormal);
+		if (hitGround && dist < FLT_MAX) {
+			float slopeAngle = acosf(XMMax(0.0f, XMMin(1.0f, hitNormal.y)));
+
+			if (slopeAngle < XMConvertToRadians(45.0f)) { 
+				float groundY = hitPos.y + PLAYER_OFFSET_Y;
+
+				if (newPos.y <= groundY + 0.1f && g_Player.verticalSpeed <= 0.0f) {
+					newPos.y = groundY;
 					g_Player.verticalSpeed = 0.0f;
-					g_Player.isGround = true;
+					g_Player.isGround = TRUE;
 				}
 				else {
-					g_Player.isGround = false;
+					g_Player.isGround = FALSE;
 				}
 			}
 			else {
-				g_Player.isGround = false;
+				g_Player.isGround = FALSE;
 			}
 		}
 		else {
-			g_Player.isGround = false;
+			g_Player.isGround = FALSE;
+			if (newPos.y < -100.0f) {
+				newPos = XMFLOAT3(-15.0f, PLAYER_OFFSET_Y + 50.0f, -100.0f);
+				g_Player.verticalSpeed = 0.0f;
+				g_Player.isGround = TRUE;
+			}
 		}
-		//g_Player.pos.y = testPosXZ.y;//<-?
+		g_Player.pos = newPos;
 
 		// 弾発射処理（共通関数使用） 
 		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
@@ -345,6 +359,8 @@ void UpdatePlayer(void)
 #ifdef _DEBUG
 	// デバッグ表示
 	PrintDebugProc("Player X:%f Y:%f Z:%f \n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
+	PrintDebugProc("Player Ground:%s VertSpeed:%f\n", g_Player.isGround ? "TRUE" : "FALSE", g_Player.verticalSpeed);
+	PrintDebugProc("FloorTree:%p\n", GetFloorTree());
 #endif
 
 }

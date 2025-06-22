@@ -1,5 +1,7 @@
 #define NOMINMAX 
+
 #include "Octree.h"
+
 #include <algorithm>
 #include "FBXmodel.h"
 
@@ -84,7 +86,7 @@ OctreeNode* BuildOctree(const std::vector<TriangleData>& triangleList, const XMF
 
 	for (const TriangleData& tri : triangleList) {
 		if (TriangleInBox(tri, minBound, maxBound)) {
-			node->triangles.push_back(&tri);
+			node->triangles.push_back(tri);
 		}
 	}
 
@@ -118,13 +120,13 @@ bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir,
 	bool hit = false;
 	float minDist = *closestDist;
 
-	for (const TriangleData* tri : node->triangles) {
+	for (const TriangleData& tri : node->triangles) {
 		float dist;
 		if (TriangleRayIntersect(
 			rayOrigin, rayDir,
-			XMLoadFloat3(&tri->v0),
-			XMLoadFloat3(&tri->v1),
-			XMLoadFloat3(&tri->v2),
+			XMLoadFloat3(&tri.v0),
+			XMLoadFloat3(&tri.v1),
+			XMLoadFloat3(&tri.v2),
 			&dist)) {
 
 			if (dist < minDist && dist > 0.0f) {
@@ -133,9 +135,9 @@ bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir,
 				XMVECTOR hitPoint = XMVectorAdd(rayOrigin, XMVectorScale(rayDir, dist));
 				XMStoreFloat3(hitPos, hitPoint);
 
-				XMVECTOR v0 = XMLoadFloat3(&tri->v0);
-				XMVECTOR v1 = XMLoadFloat3(&tri->v1);
-				XMVECTOR v2 = XMLoadFloat3(&tri->v2);
+				XMVECTOR v0 = XMLoadFloat3(&tri.v0);
+				XMVECTOR v1 = XMLoadFloat3(&tri.v1);
+				XMVECTOR v2 = XMLoadFloat3(&tri.v2);
 				XMVECTOR edge1 = XMVectorSubtract(v1, v0);
 				XMVECTOR edge2 = XMVectorSubtract(v2, v0);
 				XMVECTOR normal = XMVector3Normalize(XMVector3Cross(edge1, edge2));
@@ -178,8 +180,15 @@ bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir,
 void DeleteOctree(OctreeNode* node)
 {
 	if (!node) return;
-	for (int i = 0; i < 8; i++)
+
+	
+	node->triangles.clear();
+
+	for (int i = 0; i < 8; i++) {
 		DeleteOctree(node->children[i]);
+		node->children[i] = nullptr;
+	}
+
 	delete node;
 }
 
@@ -215,8 +224,8 @@ bool AABBHitOctree(OctreeNode* node, const XMFLOAT3& boxMin, const XMFLOAT3& box
 
 	if (!overlap) return false;
 
-	for (const TriangleData* tri : node->triangles) {
-		if (AABBvsTriangle(boxMin, boxMax, tri->v0, tri->v1, tri->v2)) {
+	for (const TriangleData& tri : node->triangles) {
+		if (AABBvsTriangle(boxMin, boxMax, tri.v0, tri.v1, tri.v2)) {
 			return true;
 		}
 	}
