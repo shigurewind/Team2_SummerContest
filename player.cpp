@@ -27,7 +27,7 @@
 #define	VALUE_ROTATE		(D3DX_PI * 0.02f)				// 回転量
 
 #define PLAYER_SHADOW_SIZE	(0.4f)							// 影の大きさ
-#define PLAYER_OFFSET_Y		(7.0f)							// プレイヤーの足元をあわせる
+#define PLAYER_OFFSET_Y		(7.0f*20.0f)							// プレイヤーの足元をあわせる
 
 #define PLAYER_PARTS_MAX	(2)								// プレイヤーのパーツの数
 
@@ -190,9 +190,26 @@ void UpdatePlayer(void)
 		XMFLOAT3 newPos = g_Player.pos;
 		if (isMoving) {
 			XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
-			XMVECTOR basePos = XMLoadFloat3(&g_Player.pos);
-			XMVECTOR newXZPos = XMVectorAdd(basePos, XMVectorScale(moveVec, VALUE_MOVE));
-			XMStoreFloat3(&newPos, newXZPos);
+			XMFLOAT3 testPos = g_Player.pos;
+			testPos.x += XMVectorGetX(moveVec) * VALUE_MOVE;
+			testPos.z += XMVectorGetZ(moveVec) * VALUE_MOVE;
+
+			XMFLOAT3 wallBoxMin = testPos;
+			XMFLOAT3 wallBoxMax = testPos;
+			float halfSize = g_Player.size;
+
+			wallBoxMin.x -= halfSize;
+			wallBoxMin.y -= PLAYER_OFFSET_Y;
+			wallBoxMin.z -= halfSize;
+
+			wallBoxMax.x += halfSize;
+			wallBoxMax.y += PLAYER_OFFSET_Y;
+			wallBoxMax.z += halfSize;
+
+			if (!AABBHitOctree(GetWallTree(), wallBoxMin, wallBoxMax)) {
+				newPos.x = testPos.x;
+				newPos.z = testPos.z;
+			}
 		}
 
 		//正しい向き方向処理

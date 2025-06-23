@@ -13,7 +13,7 @@ static void CalcTriangleBounds(const TriangleData& tri, XMFLOAT3& minOut, XMFLOA
 	minOut.y = std::min(std::min(tri.v0.y, tri.v1.y), tri.v2.y);
 	minOut.z = std::min(std::min(tri.v0.z, tri.v1.z), tri.v2.z);
 
-	maxOut.x = std::max(std::max(tri.v0.x, tri.v1.x), tri.v2.x); 
+	maxOut.x = std::max(std::max(tri.v0.x, tri.v1.x), tri.v2.x);
 	maxOut.y = std::max(std::max(tri.v0.y, tri.v1.y), tri.v2.y);
 	maxOut.z = std::max(std::max(tri.v0.z, tri.v1.z), tri.v2.z);
 }
@@ -112,7 +112,7 @@ OctreeNode* BuildOctree(const std::vector<TriangleData>& triangleList, const XMF
 bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir, float* closestDist, XMFLOAT3* hitPos, XMFLOAT3* hitNormal)
 {
 	XMVECTOR rayOrigin = XMLoadFloat3(&origin);
-	XMVECTOR rayDir = XMVector3Normalize(XMLoadFloat3(&dir)); 
+	XMVECTOR rayDir = XMVector3Normalize(XMLoadFloat3(&dir));
 
 	if (!RayIntersectAABB(rayOrigin, rayDir, node->minBound, node->maxBound))
 		return false;
@@ -158,7 +158,7 @@ bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir,
 
 			XMFLOAT3 childHitPos;
 			XMFLOAT3 childHitNormal;
-			float childMinDist = minDist; 
+			float childMinDist = minDist;
 
 			if (RayHitOctree(node->children[i], origin, dir, &childMinDist, &childHitPos, &childHitNormal)) {
 				if (childMinDist < minDist) {
@@ -181,7 +181,7 @@ void DeleteOctree(OctreeNode* node)
 {
 	if (!node) return;
 
-	
+
 	node->triangles.clear();
 
 	for (int i = 0; i < 8; i++) {
