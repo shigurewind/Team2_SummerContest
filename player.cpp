@@ -77,7 +77,6 @@ static INTERPOLATION_DATA* g_MoveTblAdr[] =
 };
 
 
-
 int Min(int a, int b) {
 	return (a < b) ? a : b;
 }
@@ -216,35 +215,34 @@ void UpdatePlayer(void)
 
 		newPos.y += g_Player.verticalSpeed;
 		//地面
-		XMFLOAT3 rayOrigin = g_Player.pos;
-		rayOrigin.y += 50.0f;
-		XMFLOAT3 rayDir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-		float dist = FLT_MAX;
-		XMFLOAT3 hitPos;
-		XMFLOAT3 hitNormal;
-
 		OctreeNode* floorTree = GetFloorTree();
 		if (floorTree == nullptr) {
+			OutputDebugStringA("cant find flooroctree\n");
 			g_Player.pos.y = PLAYER_OFFSET_Y;
 			g_Player.isGround = TRUE;
 			g_Player.verticalSpeed = 0.0f;
 			return;
+
 		}
-		bool hitGround = RayHitOctree(floorTree, rayOrigin, rayDir, &dist, &hitPos, &hitNormal);
-		if (hitGround && dist < FLT_MAX) {
-			float slopeAngle = acosf(XMMax(0.0f, XMMin(1.0f, hitNormal.y)));
+		XMFLOAT3 from = g_Player.pos;
+		from.y += 1.0f;  
+		XMFLOAT3 to = g_Player.pos;
+		to.y -= 5.0f;    
 
-			if (slopeAngle < XMConvertToRadians(45.0f)) { 
-				float groundY = hitPos.y + PLAYER_OFFSET_Y;
+		XMFLOAT3 dir = {
+			to.x - from.x,
+			to.y - from.y,
+			to.z - from.z
+		};
 
-				if (newPos.y <= groundY + 0.1f && g_Player.verticalSpeed <= 0.0f) {
-					newPos.y = groundY;
-					g_Player.verticalSpeed = 0.0f;
-					g_Player.isGround = TRUE;
-				}
-				else {
-					g_Player.isGround = FALSE;
-				}
+		XMFLOAT3 hitPos, hitNormal;
+		float dist = 1000.0f;
+
+		if (RayHitOctree(GetFloorTree(), from, dir, &dist, &hitPos, &hitNormal)) {
+			if (g_Player.verticalSpeed <= 0.0f && hitPos.y <= g_Player.pos.y) {
+				newPos.y = hitPos.y + PLAYER_OFFSET_Y;
+				g_Player.verticalSpeed = 0.0f;
+				g_Player.isGround = TRUE;
 			}
 			else {
 				g_Player.isGround = FALSE;
@@ -252,6 +250,7 @@ void UpdatePlayer(void)
 		}
 		else {
 			g_Player.isGround = FALSE;
+
 			if (newPos.y < -100.0f) {
 				newPos = XMFLOAT3(-15.0f, PLAYER_OFFSET_Y + 50.0f, -100.0f);
 				g_Player.verticalSpeed = 0.0f;
@@ -259,7 +258,9 @@ void UpdatePlayer(void)
 			}
 		}
 		g_Player.pos = newPos;
+	
 
+		
 		// 弾発射処理（共通関数使用） 
 		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
 		{
