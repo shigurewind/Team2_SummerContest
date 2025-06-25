@@ -50,7 +50,7 @@ static LIGHT		g_Light;
 static float gravity = 0.5f;
 
 //weponとbullet弾の状態
-static WeaponType currentWeapon  = WEAPON_REVOLVER;
+static WeaponType currentWeapon = WEAPON_REVOLVER;
 static BulletType currentBullet = BULLET_NORMAL;
 
 
@@ -67,7 +67,7 @@ static INTERPOLATION_DATA move_tbl_left[] = {	// pos, rot, scl, frame
 
 static INTERPOLATION_DATA move_tbl_right[] = {	// pos, rot, scl, frame
 	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),      XMFLOAT3(1.0f, 1.0f, 1.0f), 120 },
-	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(XM_PI/2, 0.0f, 0.0f),   XMFLOAT3(1.0f, 1.0f, 1.0f), 240 },
+	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(XM_PI / 2, 0.0f, 0.0f),   XMFLOAT3(1.0f, 1.0f, 1.0f), 240 },
 
 };
 
@@ -93,11 +93,8 @@ HRESULT InitPlayer(void)
 	g_Player.load = TRUE;
 	LoadModel(MODEL_PLAYER, &g_Player.model);
 
-	//FBXTEST
-	//LoadFBXModel("data/MODEL/model.fbx", &g_Player.model);
-
-
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y+50.0f, -50.0f);
+	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y + 50.0f, -50.0f);
+	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y, -50.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -106,11 +103,11 @@ HRESULT InitPlayer(void)
 	g_Player.alive = TRUE;			// TRUE:生きてる
 	g_Player.size = PLAYER_SIZE;	// 当たり判定の大きさ
 
-	g_Player.ammoNormal    = 0;		//最初に装填されてる弾数
+	g_Player.ammoNormal = 0;		//最初に装填されてる弾数
 	g_Player.maxAmmoNormal = 20;	//今持ってる弾数全部
 
-	g_Player.ammoFire      = 0;		//最初に装填されてる弾数
-	g_Player.maxAmmoFire   = 10;	//今持ってる弾数全部
+	g_Player.ammoFire = 0;		//最初に装填されてる弾数
+	g_Player.maxAmmoFire = 10;	//今持ってる弾数全部
 
 	// ここでプレイヤー用の影を作成している
 	XMFLOAT3 pos = g_Player.pos;
@@ -122,17 +119,17 @@ HRESULT InitPlayer(void)
 	// キーを押した時のプレイヤーの向き
 	roty = 0.0f;
 
-	
+
 
 
 	g_Player.isGround = FALSE;
 	g_Player.maxFallSpeed = 6.0f;
 	g_Player.jumpPower = 8.0f;
-	
 
 	g_Player.HP = g_Player.HP_MAX = 5;
 
-	
+
+
 
 
 
@@ -151,7 +148,7 @@ void UninitPlayer(void)
 		g_Player.load = FALSE;
 	}
 
-	
+
 
 
 
@@ -162,7 +159,7 @@ void UninitPlayer(void)
 //=============================================================================
 void UpdatePlayer(void)
 {
-	CAMERA *cam = GetCamera();
+	CAMERA* cam = GetCamera();
 
 
 	if (g_Player.alive)
@@ -220,7 +217,7 @@ void UpdatePlayer(void)
 			currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
 		}
 		//キーボードの2　弾の切り替え
-		if (GetKeyboardTrigger(DIK_2)) 
+		if (GetKeyboardTrigger(DIK_2))
 		{
 			currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
 		}
@@ -229,11 +226,11 @@ void UpdatePlayer(void)
 
 		// 弾発射処理
 		int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &p->ammoNormal : &p->ammoFire;
-		if (IsMouseLeftTriggered() && *currentAmmo > 0) 
+		if (IsMouseLeftTriggered() && *currentAmmo > 0)
 		{
 			XMFLOAT3 pos = GetGunMuzzlePosition();
 			XMFLOAT3 rot = GetGunMuzzleRotation();
-			if (currentWeapon == WEAPON_REVOLVER) 
+			if (currentWeapon == WEAPON_REVOLVER)
 			{
 				SetRevolverBullet(currentBullet, pos, rot);
 			}
@@ -245,7 +242,7 @@ void UpdatePlayer(void)
 
 
 		// Rキーでリロード処理
-		if (GetKeyboardTrigger(DIK_R)) 
+		if (GetKeyboardTrigger(DIK_R))
 		{
 			Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
 			int clipSize = weapon->clipSize;
@@ -253,7 +250,7 @@ void UpdatePlayer(void)
 			int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
 			int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
 
-			if (*ammo < clipSize && *maxAmmo > 0) 
+			if (*ammo < clipSize && *maxAmmo > 0)
 			{
 				int need = clipSize - *ammo;
 				int reload = Min(need, *maxAmmo);
@@ -271,7 +268,7 @@ void UpdatePlayer(void)
 
 	}
 
-	
+
 
 #ifdef _DEBUG
 	/*if (GetKeyboardPress(DIK_R))
@@ -320,12 +317,12 @@ void UpdatePlayer(void)
 	SetPositionShadow(g_Player.shadowIdx, pos);
 
 
-	
+
 
 
 	// ポイントライトのテスト
 	{
-		LIGHT *light = GetLightData(1);
+		LIGHT* light = GetLightData(1);
 		XMFLOAT3 pos = g_Player.pos;
 		pos.y += 20.0f;
 
@@ -402,7 +399,7 @@ void DrawPlayer(void)
 //=============================================================================
 // プレイヤー情報を取得
 //=============================================================================
-PLAYER *GetPlayer(void)
+PLAYER* GetPlayer(void)
 {
 	return &g_Player;
 }
