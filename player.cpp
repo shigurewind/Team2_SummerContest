@@ -15,6 +15,8 @@
 #include "bullet.h"
 #include "debugproc.h"
 #include "meshfield.h"
+#include "overlay2D.h"
+#include "enemy.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -29,6 +31,8 @@
 #define PLAYER_OFFSET_Y		(7.0f)							// プレイヤーの足元をあわせる
 
 #define PLAYER_PARTS_MAX	(2)								// プレイヤーのパーツの数
+
+
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -48,6 +52,11 @@ static LIGHT		g_Light;
 
 //重力
 static float gravity = 0.5f;
+//近接攻撃クールダウン
+static float meleeCooldown = 0.0f;
+//チュートリアル判定用
+static bool tutorialTriggered = false;
+
 
 
 // プレイヤーの階層アニメーションデータ
@@ -157,6 +166,9 @@ void UpdatePlayer(void)
 {
 	CAMERA *cam = GetCamera();
 
+	if (meleeCooldown > 0.0f) {
+		meleeCooldown -= 1.0f / 60.0f;  
+	}
 
 	if (g_Player.alive)
 	{
@@ -205,6 +217,39 @@ void UpdatePlayer(void)
 			g_Player.pos.y = 0;
 			g_Player.isGround = TRUE;
 		}
+		//近接攻撃
+
+		if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
+		{
+			meleeCooldown = 0.8f;
+			PlayMeleeAnimation();
+			//enemy 
+
+			auto& enemies = GetEnemies();
+			for (auto enemy : enemies) {
+				if (!enemy->IsUsed()) continue;
+
+				XMFLOAT3 ePos = enemy->GetPosition();
+				float dx = g_Player.pos.x - ePos.x;
+				float dz = g_Player.pos.z - ePos.z;
+				float distance = sqrtf(dx * dx + dz * dz);
+
+				if (distance > 100.0f) continue;
+
+				enemy->SetUsed(false);  
+			}
+		}
+
+		//特定の地域入るとゲームを停止
+		if (!tutorialTriggered &&
+			g_Player.pos.x > 50.0f && g_Player.pos.x < 100.0f &&
+			g_Player.pos.z > 50.0f && g_Player.pos.z < 100.0f)
+		{
+			SetTutorialShowing(true);
+			tutorialTriggered = true;
+		}
+
+
 
 		// 弾発射処理（共通関数使用） 
 		if (IsMouseLeftTriggered() && g_Player.ammo > 0)

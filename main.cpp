@@ -30,7 +30,7 @@
 // マクロ定義
 //*****************************************************************************
 #define CLASS_NAME		"AppClass"				// ウインドウのクラス名
-#define WINDOW_NAME		"影表示"	// ウインドウのキャプション名
+#define WINDOW_NAME		"RECOIL"	// ウインドウのキャプション名
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -231,6 +231,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
+	case WM_SETFOCUS:
+	case WM_ACTIVATE:
+		ImmAssociateContext(hWnd, NULL); //IMEを無効化する
+		break;
 	case WM_MOUSEMOVE:
 		g_MouseX = LOWORD(lParam);
 		g_MouseY = HIWORD(lParam);
