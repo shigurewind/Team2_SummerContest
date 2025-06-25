@@ -123,10 +123,7 @@ HRESULT InitPlayer(void)
 	g_Player.jumpPower = 8.0f;
 	
 
-
-
-	
-
+	g_Player.HP = g_Player.HP_MAX = 5;
 
 
 	return S_OK;
@@ -143,10 +140,6 @@ void UninitPlayer(void)
 		UnloadModel(&g_Player.model);
 		g_Player.load = FALSE;
 	}
-
-	
-
-
 
 }
 

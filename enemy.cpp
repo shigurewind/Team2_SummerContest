@@ -47,6 +47,9 @@ INTERPOLATION_DATA* g_MoveTblAdr[] = {
 };
 
 
+PLAYER* player = GetPlayer();
+BULLET* bullet = GetBullet();
+
 //*****************************************************************************
 // 
 //*****************************************************************************
@@ -80,7 +83,7 @@ void SpiderEnemy::Init() {
     *material = {};
     material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-    pos = XMFLOAT3(0.0f, 0.0f, 20.0f);
+    pos = XMFLOAT3(0.0f, -50.0f, 20.0f);
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
     speed = 1.0f;
@@ -100,6 +103,8 @@ void SpiderEnemy::Init() {
     attackCooldown = 1.5f;  // 1.5 秒ことに攻撃する
 
     minDistance = 100.0f;
+
+    HP = 1;
 }
 
 void SpiderEnemy::Update() {
@@ -129,12 +134,11 @@ void SpiderEnemy::Update() {
         }
     }
 
-    PLAYER* player = GetPlayer();
 
     // エネミーからプレイヤーまでのベクトル
     XMFLOAT3 dir;
     dir.x = player->pos.x - pos.x;
-    dir.y = player->pos.y - pos.y;
+    dir.y = 0.0f;
     dir.z = player->pos.z - pos.z;
 
 
@@ -165,10 +169,29 @@ void SpiderEnemy::Update() {
         NormalMovement();
     }
 
+
+    //弾と当たり判定？
+    for (int i = 0; i < MAX_BULLET; i++)
+    {
+        if (!bullet[i].use) continue;
+
+        XMFLOAT3 enemyHalfSize = { width, height - 20.0f, 50.f }; //エネミーの当たり判定のサイズ
+
+        if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+        {
+            bullet[i].use = false;
+            HP -= 1;
+            if (HP <= 0) use = false;
+        }
+
+    }
+
+
+
 #ifdef _DEBUG
 
     float dist = sqrtf(distSq);
-    PrintDebugProc("Enemy1 to Player Distance: %f\n", dist);
+    PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n", pos.x, pos.y, pos.z);
 
 #endif
 }
@@ -279,6 +302,7 @@ void SpiderEnemy::Attack()
     if (attackCooldownTimer <= 0.0f && !isAttacking)
     {
         isAttacking = true;
+        player->HP -= 1;
         attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
         currentFrame = 2;                     // 攻撃のフレームの描画
         attackCooldownTimer = attackCooldown; // Reset cooldown
@@ -293,19 +317,11 @@ void InitEnemy() {
     MakeVertexEnemy();
     g_enemies.clear();
     for (int i = 0; i < ENEMY_MAX; ++i) {
-        SpiderEnemy* e1 = new SpiderEnemy();
-        e1->Init();
-        e1->SetUsed(true);
-        XMFLOAT3 pos1 = XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f);
-        e1->SetPosition(pos1);
-        g_enemies.push_back(e1);
 
-        GhostEnemy* e = new GhostEnemy();
-        e->Init();
-        e->SetUsed(true);
-        XMFLOAT3 pos = XMFLOAT3(50.0f + i * 30.0f, 0.0f, 20.0f);
-        e->SetPosition(pos);
-        g_enemies.push_back(e);
+        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f),SPIDER);
+
+        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
+
     }
 }
 
@@ -350,6 +366,10 @@ std::vector<BaseEnemy*>& GetEnemies() {
     return g_enemies;
 }
 
+//*****************************************************************************
+// 
+//*****************************************************************************
+
 HRESULT MakeVertexEnemy() {
     D3D11_BUFFER_DESC bd = {};
     bd.Usage = D3D11_USAGE_DYNAMIC;
@@ -383,6 +403,43 @@ HRESULT MakeVertexEnemy() {
     GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
     return S_OK;
 }
+
+void EnemySpawner(XMFLOAT3 position, int type) {
+    BaseEnemy* newEnemy = nullptr;
+
+    switch (type) {
+    case SPIDER: { // SpiderEnemy
+        SpiderEnemy* spider = new SpiderEnemy();
+        spider->Init();
+        spider->SetUsed(true);
+        spider->SetPosition(position);
+        newEnemy = spider;
+        break;
+    }
+    case GHOST: { // GhostEnemy
+        GhostEnemy* ghost = new GhostEnemy();
+        ghost->Init();
+        ghost->SetUsed(true);
+        ghost->SetPosition(position);
+        newEnemy = ghost;
+        break;
+    }
+    default:
+        return;
+    }
+
+    if (newEnemy) {
+        g_enemies.push_back(newEnemy);
+    }
+}
+
+
+
+//*****************************************************************************
+// 
+//*****************************************************************************
+
+
 void BaseEnemy::SetPosition(const XMFLOAT3& p) {
     pos = p;
 }
@@ -406,7 +463,7 @@ void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
     // エネミーからプレイヤーまでのベクトル
     XMFLOAT3 dir;
     dir.x = player->pos.x - pos.x;
-    dir.y = player->pos.y - pos.y;
+    dir.y = 0.0f;
     dir.z = player->pos.z - pos.z;
 
     float distSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
@@ -469,6 +526,7 @@ void GhostEnemy::Init()
     frameInterval = 15;//change speed
     maxFrames = 1;
 
+    HP = 50;
 }
 
 void GhostEnemy::Update()
@@ -511,10 +569,27 @@ void GhostEnemy::Update()
 
     }
 
+    //弾と当たり判定？
+    for (int i = 0; i < MAX_BULLET; i++)
+    {
+        if (!bullet[i].use) continue;
+
+        XMFLOAT3 enemyHalfSize = { width/2, height, 50.f }; //エネミーの当たり判定のサイズ
+
+        if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+        {
+            bullet[i].use = false;
+            HP -= 1;
+            if (HP <= 0) use = false;
+        }
+
+    }
+
+
 #ifdef _DEBUG
 
     float dist = sqrtf(distSq);
-    PrintDebugProc("Enemy2 to Player Distance: %f\n", dist);
+    PrintDebugProc("Enemy2 HP: %d\n", HP);
 
 #endif
 
@@ -614,5 +689,9 @@ void GhostEnemy::NormalMovement()
     pos.x += moveDir.x * speed;
     pos.y += moveDir.y * speed;
     pos.z += moveDir.z * speed;
+}
+
+void GhostEnemy::Attack()
+{
 }
 

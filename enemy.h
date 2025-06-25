@@ -61,7 +61,7 @@ private:
 	ID3D11ShaderResourceView* texture;
 	struct MATERIAL* material;
 	float width, height;
-	float speed;						//エネミーのスピード
+	float speed, size;						//エネミーのスピード
 	
 	int currentFrame;
 	int frameCounter;
@@ -82,6 +82,7 @@ private:
 	bool isAttacking;
 	float attackFrameTimer;
 
+	int HP;
 
 
 };
@@ -97,6 +98,8 @@ public:
 	void Draw() override;
 
 	void NormalMovement() override;
+	void Attack() override;
+
 
 private:
 	ID3D11ShaderResourceView* texture;
@@ -111,6 +114,7 @@ private:
 	int frameInterval;
 	int maxFrames;
 
+	int HP;
 
 
 	//エネミーが発射するとき
@@ -119,6 +123,16 @@ private:
 
 
 };
+
+enum ENEMY_TYPE
+{
+	SPIDER,
+	GHOST,
+
+	MAX
+};
+
+
 
 //*****************************************************************************
 // 
@@ -129,3 +143,5 @@ void InitEnemy();
 void UpdateEnemy();
 void DrawEnemy();
 void UninitEnemy();
+
+void EnemySpawner(XMFLOAT3 position, int type);
