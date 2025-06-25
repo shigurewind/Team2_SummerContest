@@ -21,6 +21,22 @@ struct Item {
 	}
 };
 
+typedef struct {
+	XMFLOAT3	pos;        // 位置
+	XMFLOAT3	scl;        // スケール
+	MATERIAL	material;   // マテリアル（色）
+
+	float		fWidth;			// 幅
+	float		fHeight;		// 高さ
+
+
+	Item		item;
+	BOOL		use;        // 使用中かどうか
+
+	float		timeOffset;
+	float		basePosY;
+} ITEM_OBJ;
+
 
 
 // アイテムIDの定義
@@ -53,6 +69,11 @@ void DrawItem();
 void InitItemTextures();
 
 Item CreateItemFromID(int id);
+
+ITEM_OBJ* GetItemOBJ();
+
+void SaveItemData(const std::string& filename);
+void LoadItemData(const std::string& filename);
 
 
 
