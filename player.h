@@ -6,6 +6,7 @@
 //=============================================================================
 #pragma once
 #include "model.h"
+#include "bullet.h"
 
 //*****************************************************************************
 // É}ÉNÉçíËã`
@@ -76,5 +77,8 @@ void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
 
-PLAYER *GetPlayer(void);
+WeaponType GetCurrentWeaponType(void);
+BulletType GetCurrentBulletType(void);
 
+
+PLAYER* GetPlayer(void);

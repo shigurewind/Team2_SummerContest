@@ -20,8 +20,8 @@
 // 弾の基本データ構造（属性など） //追加箇所
 //=============================================================================
 //                                  種類　　　　速さ  DMG  scl  lifetime    　　モデル　　　　　　　　RGB
-BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
-BulletData bulletData_Fire   = { BULLET_FIRE,     5.0f, 20, 1.0f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+BulletData bulletData_Fire   = { BULLET_FIRE,     5.0f, 20, 1.0f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
 
 // 武器インスタンス 
 Weapon g_Revolver;

@@ -12,7 +12,6 @@
 #include "model.h"
 #include "player.h"
 #include "shadow.h"
-#include "bullet.h"
 #include "debugproc.h"
 #include "meshfield.h"
 
@@ -107,10 +106,10 @@ HRESULT InitPlayer(void)
 	g_Player.size = PLAYER_SIZE;	// 当たり判定の大きさ
 
 	g_Player.ammoNormal    = 0;		//最初に装填されてる弾数
-	g_Player.maxAmmoNormal = 20;	//今持ってる弾数全部
+	g_Player.maxAmmoNormal = 30;	//今持ってる弾数全部
 
 	g_Player.ammoFire      = 0;		//最初に装填されてる弾数
-	g_Player.maxAmmoFire   = 10;	//今持ってる弾数全部
+	g_Player.maxAmmoFire   = 20;	//今持ってる弾数全部
 
 	// ここでプレイヤー用の影を作成している
 	XMFLOAT3 pos = g_Player.pos;
@@ -344,7 +343,11 @@ void UpdatePlayer(void)
 
 #ifdef _DEBUG
 	// デバッグ表示
-	PrintDebugProc("Player X:%f Y:%f Z:%f \n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
+	PrintDebugProc("Player X:%f Y:%f Z:%f \n\n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
+	
+	PrintDebugProc("Rキーでリロード\n"
+				   "1キーで武器切り替え\n"
+				   "2キーで弾切り替え");
 #endif
 
 }
@@ -407,3 +410,12 @@ PLAYER *GetPlayer(void)
 	return &g_Player;
 }
 
+WeaponType GetCurrentWeaponType(void)
+{
+	return currentWeapon;
+}
+
+BulletType GetCurrentBulletType(void)
+{
+	return currentBullet;
+}
