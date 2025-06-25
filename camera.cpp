@@ -19,7 +19,7 @@
 #define	POS_Z_CAM			(-140.0f)		// カメラの初期位置(Z座標)
 
 //TODO:マウス感度の調整機能
-#define SENS                (0.002f)			// マウスの感度
+//#define SENS                (0.002f)			// マウスの感度
 
 
 
@@ -41,6 +41,9 @@ static int				g_ViewPortType = TYPE_FULL_SCREEN;
 
 bool isFirstPersonMode = false; // 最初はマウス自由操作状態
 bool tabKeyWasPressed = false; // 前フレームのTabキー状態
+
+//マオスの感度調整
+float sensitivity = 0.002f;
 
 //=============================================================================
 // 初期化処理
@@ -99,8 +102,8 @@ void UpdateCamera(void)
 		POINT mousePos;
 		GetCursorPos(&mousePos);
 
-		float offsetX = (mousePos.x - centerX) * SENS;
-		float offsetY = (mousePos.y - centerY) * SENS;
+		float offsetX = (mousePos.x - centerX) * sensitivity;
+		float offsetY = (mousePos.y - centerY) * sensitivity;
 
 
 		g_Camera.rot.y += offsetX;
@@ -125,6 +128,8 @@ void UpdateCamera(void)
 		g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y) * cosf(g_Camera.rot.x);
 		g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
 		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y) * cosf(g_Camera.rot.x);
+
+		
 	}
 
 	//// カメラを初期に戻す
