@@ -209,7 +209,6 @@ void DrawScore(void)
 		SetBlendState(BLEND_MODE_ALPHABLEND);
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[3]);
 
-		// V? hi?u ?ng ph? to?n m?n h?nh, alpha gi?m d?n theo th?i gian
 		float alpha = g_WebEffectTimer; // 1.0 -> 0.0
 		SetSpriteColor(g_VertexBuffer, 640.0f, 360.0f, 1277.0f, 770.0f, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, alpha));
 
