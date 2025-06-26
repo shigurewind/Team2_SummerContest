@@ -14,6 +14,7 @@
 #include "fade.h"
 
 #include "bullet.h"
+#include "enemyBullet.h"
 #include "player.h"
 #include "enemy.h"
 #include "meshfield.h"
@@ -63,6 +64,9 @@ HRESULT InitGame(void)
 
 	// プレイヤーの初期化
 	InitPlayer();
+
+	// 弾の初期化
+	InitEnemyBullet();
 
 	// エネミーの初期化
 	InitEnemy();
@@ -120,6 +124,7 @@ void UninitGame(void)
 
 	// 弾の終了処理
 	UninitBullet();
+	UninitEnemyBullet();
 
 	// 木の終了処理
 	UninitTree();
@@ -184,6 +189,7 @@ void UpdateGame(void)
 
 	// 弾の更新処理
 	UpdateBullet();
+	UpdateEnemyBullet();
 
 	// パーティクルの更新処理
 	UpdateParticle();
@@ -220,6 +226,7 @@ void DrawGame0(void)
 
 	// 弾の描画処理
 	DrawBullet();
+	DrawEnemyBullet();
 
 	// 壁の描画処理
 	DrawMeshWall();

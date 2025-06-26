@@ -16,6 +16,7 @@
 #include "input.h"
 #include "collision.h"
 #include "GameUI.h"
+#include "enemyBullet.h"
 
 
 
@@ -49,6 +50,8 @@ INTERPOLATION_DATA* g_MoveTblAdr[] = {
 
 PLAYER* player = GetPlayer();
 BULLET* bullet = GetBullet();
+
+
 
 //*****************************************************************************
 // 
@@ -302,7 +305,7 @@ void SpiderEnemy::Attack()
     if (attackCooldownTimer <= 0.0f && !isAttacking)
     {
         isAttacking = true;
-        player->HP -= 1;
+        SetEnemyBullet(pos, XMFLOAT3(0.0f, 0.0f, 0.0f), bulletData_String);
         attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
         currentFrame = 2;                     // 攻撃のフレームの描画
         attackCooldownTimer = attackCooldown; // Reset cooldown

@@ -961,6 +961,9 @@
     <ClInclude Include="texture.h">
       <Filter>�w�b�_�[ �t�%40�C��</Filter>
     </ClInclude>
+    <ClInclude Include="enemyBullet.h">
+      <Filter>�w�b�_�[ �t�%40�C��</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imgui.cpp">
@@ -1011,5 +1014,6 @@
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="title.cpp" />
     <ClCompile Include="tree.cpp" />
+    <ClCompile Include="enemyBullet.cpp" />
   </ItemGroup>
 </Project>
