@@ -17,6 +17,12 @@ public:
 	virtual void Update() = 0;
 	virtual void Draw() = 0;
 
+	virtual void NormalMovement() {}
+	virtual void Attack() {}
+
+	void ChasingPlayer(float speed, float chaseRange);
+
+
 	bool IsUsed() const { return use; }
 	void SetUsed(bool b) { use = b; }
 
@@ -26,31 +32,40 @@ public:
 	void SetScale(const XMFLOAT3& s);
 	XMFLOAT3 GetScale() const;
 
+
 protected:
 	XMFLOAT3 pos;
 	XMFLOAT3 scl;
 	XMFLOAT4X4 mtxWorld;
 	bool use;
+	float minDistance;
+	int HP, maxHP;
+
 };
 
 //*****************************************************************************
 // 
 //*****************************************************************************
-class ScarecrowEnemy : public BaseEnemy {
+class SpiderEnemy : public BaseEnemy {
 public:
-	ScarecrowEnemy();
-	~ScarecrowEnemy();
+	SpiderEnemy();
+	~SpiderEnemy();
 
 	void Init() override;
 	void Update() override;
 	void Draw() override;
 
-	//void EnablePathAnimation(bool enable);
+	void NormalMovement() override;
+	void Attack() override;
 
 private:
 	ID3D11ShaderResourceView* texture;
 	struct MATERIAL* material;
 	float width, height;
+	float speed, size;						//エネミーのスピード
+	XMFLOAT3 moveDir;       // 現在の動き方向
+	float moveChangeTimer;  // 向き変わるタイマー
+
 
 	int currentFrame;
 	int frameCounter;
@@ -65,8 +80,68 @@ private:
 	float fireTimer = 0.0f;
 	const float fireCooldown = 1.0f;
 
+	float attackCooldownTimer;  // 攻撃間の待つ時間
+	float attackCooldown;
+
+	bool isAttacking;
+	float attackFrameTimer;
+
+	int id;
+
 
 };
+
+
+class GhostEnemy : public BaseEnemy {
+public:
+	GhostEnemy();
+	~GhostEnemy();
+
+	void Init() override;
+	void Update() override;
+	void Draw() override;
+
+	void NormalMovement() override;
+	void Attack() override;
+
+
+private:
+	ID3D11ShaderResourceView* texture;
+	struct MATERIAL* material;
+	float width, height;
+	XMFLOAT3 moveDir;       // 現在の動き方向
+	float moveChangeTimer;  // 向き変わるタイマー
+	float speed;			//エネミーのスピード
+
+	int currentFrame;
+	int frameCounter;
+	int frameInterval;
+	int maxFrames;
+
+
+
+	//エネミーが発射するとき
+	float fireTimer = 0.0f;
+	const float fireCooldown = 1.0f;
+
+	float attackCooldownTimer;  // 攻撃間の待つ時間
+	float attackCooldown;
+
+	bool isAttacking;
+	float attackFrameTimer;
+
+
+};
+
+enum ENEMY_TYPE
+{
+	SPIDER,
+	GHOST,
+
+	MAX
+};
+
+
 
 //*****************************************************************************
 // 
@@ -77,3 +152,5 @@ void InitEnemy();
 void UpdateEnemy();
 void DrawEnemy();
 void UninitEnemy();
+
+void EnemySpawner(XMFLOAT3 position, int type);

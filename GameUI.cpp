@@ -52,6 +52,7 @@ int Min2(int a, int b) {
 	return (a < b) ? a : b;
 }
 
+static float g_WebEffectTimer = 0.0f;
 
 //=============================================================================
 // 初期化処理
@@ -118,6 +119,14 @@ void UninitScore(void)
 		}
 	}
 
+	if (g_WebEffectTimer > 0.0f)
+	{
+		g_WebEffectTimer -= 0.05f / 60.0f;
+		if (g_WebEffectTimer < 0.0f) g_WebEffectTimer = 0.0f;
+	}
+
+
+
 	g_Load = FALSE;
 }
 
@@ -172,9 +181,10 @@ void DrawScore(void)
 		float pw = 280;		// ゲージの表示幅
 		pw = pw * ((float)player->HP / player->HP_MAX);
 
+		float x = ((float)player->HP / player->HP_MAX);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
-		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, 1.0f, 1.0f);
+		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, x, 1.0f);
 
 		// ポリゴン描画
 		GetDeviceContext()->Draw(4, 0);
@@ -191,6 +201,26 @@ void DrawScore(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 	
+	//クモの攻撃のエフェクト
+	if (g_WebEffectTimer > 0.0f)
+	{
+		MATERIAL m = {};
+		m.Diffuse = XMFLOAT4(1, 1, 1, 1);
+		SetMaterial(m);
+
+		SetWorldViewProjection2D();
+		SetAlphaTestEnable(FALSE);
+		SetBlendState(BLEND_MODE_ALPHABLEND);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[3]);
+
+
+		float alpha = g_WebEffectTimer; // 1.0 -> 0.0
+		SetSpriteColor(g_VertexBuffer, 640.0f, 360.0f, 1277.0f, 770.0f, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, alpha));
+
+		GetDeviceContext()->Draw(4, 0);
+	}
+
+
 	//弾数表示の呼び出し
 	DrawAmmoUI();
 
@@ -304,3 +334,10 @@ int GetScore(void)
 	return g_Score;
 }
 
+//=============================================================================
+// 蜘蛛のネット効果（画面に表示）を一定時間見せる関数
+//=============================================================================
+void ShowWebEffect(float time)
+{
+	g_WebEffectTimer = time; // time 秒間、画面に蜘蛛のネットを表示
+}
