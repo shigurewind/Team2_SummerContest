@@ -16,7 +16,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(5)		// テクスチャの数
+#define TEXTURE_MAX					(6)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -36,6 +36,7 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/HP01.png",
 	"data/TEXTURE/revolver.png",
 	"data/TEXTURE/shotgun.png",
+	//"data/TEXTURE/shotgun.png",
 };
 
 
