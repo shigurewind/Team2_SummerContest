@@ -200,4 +200,20 @@ BOOL RayCast(XMFLOAT3 xp0, XMFLOAT3 xp1, XMFLOAT3 xp2, XMFLOAT3 xpos0, XMFLOAT3 
 }
 
 
+//=============================================================================
+// BB+BCÅ@ÇÃìñÇΩÇËîªíË
+//=============================================================================
+BOOL CheckSphereAABBCollision(XMFLOAT3 spherePos, float sphereRadius,
+	XMFLOAT3 boxPos, XMFLOAT3 boxHalfSize)
+{
+	float x = max(boxPos.x - boxHalfSize.x, min(spherePos.x, boxPos.x + boxHalfSize.x));
+	float y = max(boxPos.y - boxHalfSize.y, min(spherePos.y, boxPos.y + boxHalfSize.y));
+	float z = max(boxPos.z - boxHalfSize.z, min(spherePos.z, boxPos.z + boxHalfSize.z));
+
+	float dx = x - spherePos.x;
+	float dy = y - spherePos.y;
+	float dz = z - spherePos.z;
+
+	return (dx * dx + dy * dy + dz * dz) <= (sphereRadius * sphereRadius);
+}
 

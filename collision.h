@@ -27,3 +27,5 @@ float dotProduct(XMVECTOR *v1, XMVECTOR *v2);
 void crossProduct(XMVECTOR *ret, XMVECTOR *v1, XMVECTOR *v2);
 BOOL RayCast(XMFLOAT3 p0, XMFLOAT3 p1, XMFLOAT3 p2, XMFLOAT3 pos0, XMFLOAT3 pos1, XMFLOAT3 *hit, XMFLOAT3 *normal);
 
+BOOL CheckSphereAABBCollision(XMFLOAT3 spherePos, float sphereRadius, XMFLOAT3 boxPos, XMFLOAT3 boxHalfSize);
+
