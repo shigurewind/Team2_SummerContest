@@ -125,9 +125,6 @@ HRESULT InitPlayer(void)
 
 	g_Player.HP = g_Player.HP_MAX = 5;
 
-	
-
-
 
 	return S_OK;
 }
@@ -143,10 +140,6 @@ void UninitPlayer(void)
 		UnloadModel(&g_Player.model);
 		g_Player.load = FALSE;
 	}
-
-	
-
-
 
 }
 
@@ -227,13 +220,6 @@ void UpdatePlayer(void)
 				g_Player.ammo += reload;
 				g_Player.maxammo -= reload;
 			}
-		}
-
-
-		//test
-		if (GetKeyboardTrigger(DIK_H))
-		{
-			g_Player.HP = g_Player.HP - 1;
 		}
 
 	}

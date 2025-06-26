@@ -27,4 +27,5 @@ void DrawScore(void);
 void AddScore(int add);
 int GetScore(void);
 
+void ShowWebEffect(float time);
 
