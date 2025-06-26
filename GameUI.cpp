@@ -1,6 +1,6 @@
 ﻿//=============================================================================
 //
-// スコア処理 [score.cpp]
+// スコア処理 [UI.cpp]
 // Author : 
 //
 //=============================================================================
@@ -48,9 +48,11 @@ static int						g_Score;					// スコア
 
 static BOOL						g_Load = FALSE;
 
+static float g_WebEffectTimer = 0.0f;
 int Min2(int a, int b) {
 	return (a < b) ? a : b;
 }
+
 
 
 //=============================================================================
@@ -126,6 +128,11 @@ void UninitScore(void)
 //=============================================================================
 void UpdateScore(void)
 {
+	if (g_WebEffectTimer > 0.0f)
+	{
+		g_WebEffectTimer -= 0.05f / 60.0f;
+		if (g_WebEffectTimer < 0.0f) g_WebEffectTimer = 0.0f;
+	}
 
 
 #ifdef _DEBUG	// デバッグ情報を表示する
@@ -161,27 +168,29 @@ void DrawScore(void)
 	// テクスチャ設定
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_TexNo]);
 
-	
-	
-	PLAYER* player = GetPlayer();
+	//HP
+	{
+		PLAYER* player = GetPlayer();
 
-	//ケージのHPバー
-	{// テクスチャ設定
+		//ケージのHPバー
+		// テクスチャ設定
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
+
 		//ゲージの位置やテクスチャー座標を反映
 		float pw = 280;		// ゲージの表示幅
 		pw = pw * ((float)player->HP / player->HP_MAX);
-
+		float x = ((float)player->HP / player->HP_MAX);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
-		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, 1.0f, 1.0f);
+		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, x, 1.0f);
 
 		// ポリゴン描画
 		GetDeviceContext()->Draw(4, 0);
-	}
 
-	//HPのUI
-	{// テクスチャ設定
+
+
+		//上のHPのUI
+		// テクスチャ設定
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
@@ -189,7 +198,24 @@ void DrawScore(void)
 
 		// ポリゴン描画
 		GetDeviceContext()->Draw(4, 0);
+
 	}
+
+	//クモの攻撃のエフェクト
+	if (g_WebEffectTimer > 0.0f)
+	{
+		MATERIAL m = {};
+		m.Diffuse = XMFLOAT4(1, 1, 1, 1);
+		SetMaterial(m);
+
+		SetWorldViewProjection2D();
+		SetAlphaTestEnable(FALSE);
+		SetBlendState(BLEND_MODE_ALPHABLEND);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[3]);
+
+		// V? hi?u ?ng ph? to?n m?n h?nh, alpha gi?m d?n theo th?i gian
+		float alpha = g_WebEffectTimer; // 1.0 -> 0.0
+		SetSpriteColor(g_VertexBuffer, 640.0f, 360.0f, 1277.0f, 770.0f, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, alpha));
 	
 	//弾数表示の呼び出し
 	DrawAmmoUI();
@@ -283,7 +309,6 @@ void DrawAmmoUI(void)
 	}
 }
 
-
 //=============================================================================
 // スコアを加算する
 // 引数:add :追加する点数。マイナスも可能
@@ -304,3 +329,10 @@ int GetScore(void)
 	return g_Score;
 }
 
+//=============================================================================
+// 蜘蛛のネット効果（画面に表示）を一定時間見せる関数
+//=============================================================================
+void ShowWebEffect(float time)
+{
+	g_WebEffectTimer = time; // time 秒間、画面に蜘蛛のネットを表示
+}
