@@ -36,7 +36,7 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/HP01.png",
 	"data/TEXTURE/revolver.png",
 	"data/TEXTURE/shotgun.png",
-	//"data/TEXTURE/shotgun.png",
+	"data/2Dpicture/enemy/enemyWeb.png",
 };
 
 
@@ -209,7 +209,7 @@ void DrawScore(void)
 		SetWorldViewProjection2D();
 		SetAlphaTestEnable(FALSE);
 		SetBlendState(BLEND_MODE_ALPHABLEND);
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[3]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[5]);
 
 		float alpha = g_WebEffectTimer; // 1.0 -> 0.0
 		SetSpriteColor(g_VertexBuffer, 640.0f, 360.0f, 1277.0f, 770.0f, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, alpha));
