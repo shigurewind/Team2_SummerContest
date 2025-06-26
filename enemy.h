@@ -39,6 +39,7 @@ protected:
 	XMFLOAT4X4 mtxWorld;
 	bool use;
 	float minDistance;
+	int HP, maxHP;
 
 };
 
@@ -82,7 +83,6 @@ private:
 	bool isAttacking;
 	float attackFrameTimer;
 
-	int HP;
 
 
 };
@@ -114,7 +114,6 @@ private:
 	int frameInterval;
 	int maxFrames;
 
-	int HP;
 
 
 	//エネミーが発射するとき

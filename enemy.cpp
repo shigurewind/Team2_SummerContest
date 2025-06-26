@@ -15,7 +15,7 @@
 #include "sprite.h"
 #include "input.h"
 #include "collision.h"
-#include "score.h"
+#include "GameUI.h"
 
 
 

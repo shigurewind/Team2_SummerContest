@@ -11,7 +11,7 @@
 #include "fade.h"
 #include "sound.h"
 #include "sprite.h"
-#include "score.h"
+#include "GameUI.h"
 
 //*****************************************************************************
 // É}ÉNÉçíËã`
