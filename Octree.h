@@ -23,7 +23,6 @@ struct OctreeNode
 	XMFLOAT3 minBound;
 	XMFLOAT3 maxBound;
 
-	std::vector<TriangleData> triangles;
 
 	OctreeNode* children[8] = { nullptr };
 
@@ -33,8 +32,16 @@ struct OctreeNode
 		}
 		return true;
 	}
+	std::vector<int> triangleIndices; 
+	bool isSubdivided = false;
+
 };
 OctreeNode* BuildOctree(const std::vector<TriangleData>& triangleList, const XMFLOAT3& minBound, const XMFLOAT3& maxBound, int depth, int maxDepth, int minTri);
-bool RayHitOctree(OctreeNode* node,const XMFLOAT3& origin,const XMFLOAT3& dir,float* closestDist,XMFLOAT3* hitPos, XMFLOAT3* hitNormal);
-bool AABBHitOctree(OctreeNode* node, const XMFLOAT3& boxMin, const XMFLOAT3& boxMax);
-
+bool RayHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleList,
+	const XMFLOAT3& origin, const XMFLOAT3& dir,
+	float* closestDist, XMFLOAT3* hitPos, XMFLOAT3* hitNormal,
+	int depth, int maxDepth, int minTri);
+bool AABBHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleList,
+	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
+	int depth, int maxDepth, int minTri);
+void Subdivide(OctreeNode* node, const std::vector<TriangleData>& triangleList, int depth, int maxDepth, int minTri);

@@ -11,12 +11,18 @@ static SHADER g_shaderCustom;
 static OctreeNode* g_WallTree = nullptr;
 static OctreeNode* g_FloorTree = nullptr;
 
+static std::vector<TriangleData> g_FloorTris;
+static std::vector<TriangleData> g_WallTris;
+
+const std::vector<TriangleData>& GetFloorTriangles() { return g_FloorTris; }
+const std::vector<TriangleData>& GetWallTriangles() { return g_WallTris; }
+
 HRESULT InitFBXTestModel(void)
 {
 	g_FBXTestModel.load = TRUE;
 
 	//g_FBXTestModel.model = ModelLoad("data/MODEL/model.fbx");	// FBXモデルの読み込み
-	g_FBXTestModel.model = ModelLoad("data/MODEL/stage1.fbx");	// FBXモデルの読み込み
+	g_FBXTestModel.model = ModelLoad("data/MODEL/stage111.fbx");	// FBXモデルの読み込み
 	if (!g_FBXTestModel.model) {
 		MessageBoxA(NULL, "Failed to load stage1.fbx", "Error", MB_OK);
 		return E_FAIL;
@@ -25,9 +31,9 @@ HRESULT InitFBXTestModel(void)
 	g_FBXTestModel.shader = &g_shaderCustom;
 
 
-	g_FBXTestModel.pos = XMFLOAT3(-10.0f, 20.0f, -50.0f);
+	g_FBXTestModel.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_FBXTestModel.scl = XMFLOAT3(20.0f, 20.0f, 20.0f);
+	g_FBXTestModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
 
@@ -40,13 +46,26 @@ HRESULT InitFBXTestModel(void)
 	XMMATRIX world = mtxScl * mtxRot * mtxQuat * mtxTrans;
 
 	ExtractTriangleData(g_FBXTestModel.model, world);
-	std::vector<TriangleData> floorTris;
-	std::vector<TriangleData> wallTris;
+
+
+
+	g_FloorTris.clear();
+	g_WallTris.clear();
 
 	for (const auto& tri : GetTriangleList()) {
-		if (tri.type == TYPE_FLOOR) floorTris.push_back(tri);
-		else if (tri.type == TYPE_WALL) wallTris.push_back(tri);
+		if (tri.type == TYPE_FLOOR) g_FloorTris.push_back(tri);
+		else if (tri.type == TYPE_WALL) g_WallTris.push_back(tri);
 	}
+	float floorMinY = FLT_MAX, floorMaxY = -FLT_MAX;
+	for (const auto& tri : g_FloorTris) {
+		for (auto v : { tri.v0, tri.v1, tri.v2 }) {
+			floorMinY = min(floorMinY, v.y);
+			floorMaxY = max(floorMaxY, v.y);
+		}
+	}
+	char debugFloor[128];
+	sprintf_s(debugFloor, "Floor Y Range: min = %.2f, max = %.2f\n", floorMinY, floorMaxY);
+	OutputDebugStringA(debugFloor);
 
 	XMFLOAT3 minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
 	XMFLOAT3 maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
@@ -62,13 +81,14 @@ HRESULT InitFBXTestModel(void)
 		}
 		};
 
-	for (const auto& tri : floorTris) updateBounds(tri);
-	g_FloorTree = BuildOctree(floorTris, minBound, maxBound, 0, 5, 10);
-
+	for (const auto& tri : g_FloorTris) updateBounds(tri);
+	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 6,1);
+			
 	minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
 	maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
-	for (const auto& tri : wallTris) updateBounds(tri);
-	g_WallTree = BuildOctree(wallTris, minBound, maxBound, 0, 5, 10);
+	for (const auto& tri : g_WallTris) updateBounds(tri);
+	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 6, 1);
+
 
 	return S_OK;
 }
@@ -202,14 +222,11 @@ void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix)
 			TriangleType type = TYPE_UNKNOWN;
 			float normalY = fabs(normal3.y);
 
-			if (normalY >= 0.5f) {  // Y成分が0.5以上なら床
+			if (normalY >= 0.5f) {
 				type = TYPE_FLOOR;
 			}
-			else if (normalY <= 0.3f) {  // Y成分が0.3以下なら壁
-				type = TYPE_WALL;
-			}
 			else {
-				type = TYPE_FLOOR; // 中間的な角度も床として扱う
+				type = TYPE_WALL;
 			}
 
 			g_TriangleList.push_back({ v[0], v[1], v[2], normal3, type });

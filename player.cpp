@@ -18,7 +18,7 @@
 #include "FBXmodel.h"
 #include "Octree.h"
 //*****************************************************************************
-// マクロ定義
+// マクロ定義	
 //*****************************************************************************
 #define	MODEL_PLAYER		"data/MODEL/cone.obj"			// 読み込むモデル名
 
@@ -27,7 +27,7 @@
 #define	VALUE_ROTATE		(D3DX_PI * 0.02f)				// 回転量
 
 #define PLAYER_SHADOW_SIZE	(0.4f)							// 影の大きさ
-#define PLAYER_OFFSET_Y		(7.0f*20.0f)							// プレイヤーの足元をあわせる
+#define PLAYER_OFFSET_Y		(7.0f)							// プレイヤーの足元をあわせる
 
 #define PLAYER_PARTS_MAX	(2)								// プレイヤーのパーツの数
 
@@ -93,7 +93,7 @@ HRESULT InitPlayer(void)
 	//LoadFBXModel("data/MODEL/model.fbx", &g_Player.model);
 
 
-	g_Player.pos = XMFLOAT3(-15.0f, PLAYER_OFFSET_Y+50.0f, -100.0f);
+	g_Player.pos = XMFLOAT3(0.0f, PLAYER_OFFSET_Y+50.0f, 0.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -181,7 +181,7 @@ void UpdatePlayer(void)
 			move.z += sinf(cam->rot.y);
 			isMoving = true;
 		}
-		if (GetKeyboardPress(DIK_D)) {
+		if(GetKeyboardPress(DIK_D)) {
 			move.x += cosf(cam->rot.y);
 			move.z -= sinf(cam->rot.y);
 			isMoving = true;
@@ -199,14 +199,14 @@ void UpdatePlayer(void)
 			float halfSize = g_Player.size;
 
 			wallBoxMin.x -= halfSize;
-			wallBoxMin.y -= PLAYER_OFFSET_Y;
+			wallBoxMin.y -= 0.1f;
 			wallBoxMin.z -= halfSize;
 
 			wallBoxMax.x += halfSize;
-			wallBoxMax.y += PLAYER_OFFSET_Y;
+			wallBoxMax.y += 0.1f;
 			wallBoxMax.z += halfSize;
 
-			if (!AABBHitOctree(GetWallTree(), wallBoxMin, wallBoxMax)) {
+			if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), wallBoxMin, wallBoxMax, 0, 5, 5)) {
 				newPos.x = testPos.x;
 				newPos.z = testPos.z;
 			}
@@ -230,6 +230,7 @@ void UpdatePlayer(void)
 			}
 		}
 
+
 		newPos.y += g_Player.verticalSpeed;
 		//地面
 		OctreeNode* floorTree = GetFloorTree();
@@ -241,42 +242,32 @@ void UpdatePlayer(void)
 			return;
 
 		}
-		XMFLOAT3 from = g_Player.pos;
-		from.y += 1.0f;  
-		XMFLOAT3 to = g_Player.pos;
-		to.y -= 5.0f;    
+		
+		XMFLOAT3 footMin = newPos;
+		XMFLOAT3 footMax = newPos;
+		float footSize = g_Player.size;
 
-		XMFLOAT3 dir = {
-			to.x - from.x,
-			to.y - from.y,
-			to.z - from.z
-		};
+		footMin.x -= footSize;
+		footMin.z -= footSize;
+		footMin.y -= 0.2f;  
 
-		XMFLOAT3 hitPos, hitNormal;
-		float dist = 1000.0f;
+		footMax.x += footSize;
+		footMax.z += footSize;
+		footMax.y += 0.1f;  
 
-		if (RayHitOctree(GetFloorTree(), from, dir, &dist, &hitPos, &hitNormal)) {
-			if (g_Player.verticalSpeed <= 0.0f && hitPos.y <= g_Player.pos.y) {
-				newPos.y = hitPos.y + PLAYER_OFFSET_Y;
-				g_Player.verticalSpeed = 0.0f;
-				g_Player.isGround = TRUE;
-			}
-			else {
-				g_Player.isGround = FALSE;
-			}
+		bool onGround = AABBHitOctree(GetFloorTree(), GetFloorTriangles(), footMin, footMax, 0, 6, 1);
+
+		if (onGround && g_Player.verticalSpeed <= 0.0f) {
+			newPos.y = g_Player.pos.y; 
+			g_Player.verticalSpeed = 0.0f;
+			g_Player.isGround = TRUE;
 		}
 		else {
 			g_Player.isGround = FALSE;
-
-			if (newPos.y < -100.0f) {
-				newPos = XMFLOAT3(-15.0f, PLAYER_OFFSET_Y + 50.0f, -100.0f);
-				g_Player.verticalSpeed = 0.0f;
-				g_Player.isGround = TRUE;
-			}
 		}
 		g_Player.pos = newPos;
 	
-
+		
 		
 		// 弾発射処理（共通関数使用） 
 		if (IsMouseLeftTriggered() && g_Player.ammo > 0)

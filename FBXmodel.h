@@ -61,3 +61,5 @@ const std::vector<TriangleData>& GetTriangleList();
 
 OctreeNode* GetWallTree();
 OctreeNode* GetFloorTree();
+const std::vector<TriangleData>& GetFloorTriangles();
+const std::vector<TriangleData>& GetWallTriangles();

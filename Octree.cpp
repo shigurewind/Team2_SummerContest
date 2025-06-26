@@ -79,37 +79,36 @@ OctreeNode* BuildOctree(const std::vector<TriangleData>& triangleList, const XMF
 	OctreeNode* node = new OctreeNode;
 	node->minBound = minBound;
 	node->maxBound = maxBound;
+	node->isSubdivided = false;
 
-	char buf[256];
-	sprintf_s(buf, "Building octree: depth=%d\n", depth);
-	OutputDebugStringA(buf);
-
-	for (const TriangleData& tri : triangleList) {
-		if (TriangleInBox(tri, minBound, maxBound)) {
-			node->triangles.push_back(tri);
+	for (int i = 0; i < triangleList.size(); ++i) {
+		if (TriangleInBox(triangleList[i], minBound, maxBound)) {
+			node->triangleIndices.push_back(i);
 		}
 	}
 
-	if (depth >= maxDepth || node->triangles.size() <= minTri) return node;
-
-	XMFLOAT3 center = {
-		(minBound.x + maxBound.x) * 0.5f,
-		(minBound.y + maxBound.y) * 0.5f,
-		(minBound.z + maxBound.z) * 0.5f
-	};
-
-	for (int i = 0; i < 8; i++) {
-		XMFLOAT3 cmin = minBound, cmax = center;
-		if (i & 1) { cmin.x = center.x; cmax.x = maxBound.x; }
-		if (i & 2) { cmin.y = center.y; cmax.y = maxBound.y; }
-		if (i & 4) { cmin.z = center.z; cmax.z = maxBound.z; }
-		node->children[i] = BuildOctree(triangleList, cmin, cmax, depth + 1, maxDepth, minTri);
-	}
+	/*if (depth == 0) {
+		XMFLOAT3 center = {
+			(minBound.x + maxBound.x) * 0.5f,
+			(minBound.y + maxBound.y) * 0.5f,
+			(minBound.z + maxBound.z) * 0.5f
+		};
+		for (int i = 0; i < 8; i++) {
+			XMFLOAT3 cmin = minBound, cmax = center;
+			if (i & 1) { cmin.x = center.x; cmax.x = maxBound.x; }
+			if (i & 2) { cmin.y = center.y; cmax.y = maxBound.y; }
+			if (i & 4) { cmin.z = center.z; cmax.z = maxBound.z; }
+			node->children[i] = BuildOctree(triangleList, cmin, cmax, depth + 1, 1, minTri);
+		}
+	}*/
 
 	return node;
 }
 
-bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir, float* closestDist, XMFLOAT3* hitPos, XMFLOAT3* hitNormal)
+bool RayHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleList,
+	const XMFLOAT3& origin, const XMFLOAT3& dir,
+	float* closestDist, XMFLOAT3* hitPos, XMFLOAT3* hitNormal,
+	int depth, int maxDepth, int minTri) 
 {
 	XMVECTOR rayOrigin = XMLoadFloat3(&origin);
 	XMVECTOR rayDir = XMVector3Normalize(XMLoadFloat3(&dir));
@@ -117,10 +116,15 @@ bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir,
 	if (!RayIntersectAABB(rayOrigin, rayDir, node->minBound, node->maxBound))
 		return false;
 
+	if (!node->isSubdivided && node->triangleIndices.size() > minTri && depth < maxDepth) {
+		Subdivide(node, triangleList, depth, maxDepth, minTri);
+	}
+
 	bool hit = false;
 	float minDist = *closestDist;
 
-	for (const TriangleData& tri : node->triangles) {
+	for (int idx : node->triangleIndices) {
+		const TriangleData& tri = triangleList[idx];
 		float dist;
 		if (TriangleRayIntersect(
 			rayOrigin, rayDir,
@@ -152,7 +156,7 @@ bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir,
 		}
 	}
 
-	if (!node->IsLeaf()) {
+	if (node->isSubdivided) {
 		for (int i = 0; i < 8; ++i) {
 			if (!node->children[i]) continue;
 
@@ -160,7 +164,10 @@ bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir,
 			XMFLOAT3 childHitNormal;
 			float childMinDist = minDist;
 
-			if (RayHitOctree(node->children[i], origin, dir, &childMinDist, &childHitPos, &childHitNormal)) {
+			if (RayHitOctree(node->children[i], triangleList, origin, dir,
+				&childMinDist, &childHitPos, &childHitNormal,
+				depth + 1, maxDepth, minTri)) {
+
 				if (childMinDist < minDist) {
 					minDist = childMinDist;
 					*hitPos = childHitPos;
@@ -174,7 +181,6 @@ bool RayHitOctree(OctreeNode* node, const XMFLOAT3& origin, const XMFLOAT3& dir,
 	if (hit) {
 		*closestDist = minDist;
 	}
-
 	return hit;
 }
 void DeleteOctree(OctreeNode* node)
@@ -182,7 +188,6 @@ void DeleteOctree(OctreeNode* node)
 	if (!node) return;
 
 
-	node->triangles.clear();
 
 	for (int i = 0; i < 8; i++) {
 		DeleteOctree(node->children[i]);
@@ -212,7 +217,9 @@ bool AABBvsTriangle(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
 	return overlap;
 }
 
-bool AABBHitOctree(OctreeNode* node, const XMFLOAT3& boxMin, const XMFLOAT3& boxMax)
+bool AABBHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleList,
+	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
+	int depth, int maxDepth, int minTri)
 {
 	XMFLOAT3 nmin = node->minBound;
 	XMFLOAT3 nmax = node->maxBound;
@@ -224,18 +231,61 @@ bool AABBHitOctree(OctreeNode* node, const XMFLOAT3& boxMin, const XMFLOAT3& box
 
 	if (!overlap) return false;
 
-	for (const TriangleData& tri : node->triangles) {
+	if (!node->isSubdivided && node->triangleIndices.size() > minTri && depth < maxDepth) {
+		Subdivide(node, triangleList, depth, maxDepth, minTri);
+	}
+
+	for (int idx : node->triangleIndices) {
+		const TriangleData& tri = triangleList[idx];
 		if (AABBvsTriangle(boxMin, boxMax, tri.v0, tri.v1, tri.v2)) {
 			return true;
 		}
 	}
 
-	if (!node->IsLeaf()) {
+	if (node->isSubdivided) {
 		for (int i = 0; i < 8; i++) {
-			if (AABBHitOctree(node->children[i], boxMin, boxMax))
+			if (!node->children[i]) continue;
+			if (AABBHitOctree(node->children[i], triangleList, boxMin, boxMax,
+				depth + 1, maxDepth, minTri)) {
 				return true;
+			}
 		}
 	}
 
 	return false;
+}
+
+void Subdivide(OctreeNode* node, const std::vector<TriangleData>& triangleList, int depth, int maxDepth, int minTri)
+{
+	if (node->isSubdivided || depth >= maxDepth || node->triangleIndices.size() <= minTri)
+		return;
+
+	node->isSubdivided = true;
+
+	XMFLOAT3 center = {
+		(node->minBound.x + node->maxBound.x) * 0.5f,
+		(node->minBound.y + node->maxBound.y) * 0.5f,
+		(node->minBound.z + node->maxBound.z) * 0.5f
+	};
+
+	for (int i = 0; i < 8; i++) {
+		XMFLOAT3 cmin = node->minBound, cmax = center;
+		if (i & 1) { cmin.x = center.x; cmax.x = node->maxBound.x; }
+		if (i & 2) { cmin.y = center.y; cmax.y = node->maxBound.y; }
+		if (i & 4) { cmin.z = center.z; cmax.z = node->maxBound.z; }
+
+		OctreeNode* child = new OctreeNode;
+		child->minBound = cmin;
+		child->maxBound = cmax;
+
+		for (int idx : node->triangleIndices) {
+			if (TriangleInBox(triangleList[idx], cmin, cmax)) {
+				child->triangleIndices.push_back(idx);
+			}
+		}
+
+		node->children[i] = child;
+	}
+
+	node->triangleIndices.clear(); 
 }
