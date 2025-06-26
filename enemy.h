@@ -63,7 +63,10 @@ private:
 	struct MATERIAL* material;
 	float width, height;
 	float speed, size;						//エネミーのスピード
-	
+	XMFLOAT3 moveDir;       // 現在の動き方向
+	float moveChangeTimer;  // 向き変わるタイマー
+
+
 	int currentFrame;
 	int frameCounter;
 	int frameInterval;
@@ -83,6 +86,7 @@ private:
 	bool isAttacking;
 	float attackFrameTimer;
 
+	int id;
 
 
 };
@@ -119,6 +123,12 @@ private:
 	//エネミーが発射するとき
 	float fireTimer = 0.0f;
 	const float fireCooldown = 1.0f;
+
+	float attackCooldownTimer;  // 攻撃間の待つ時間
+	float attackCooldown;
+
+	bool isAttacking;
+	float attackFrameTimer;
 
 
 };

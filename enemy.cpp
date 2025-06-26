@@ -102,6 +102,14 @@ void SpiderEnemy::Init() {
     attackCooldownTimer = 0.0f;
     attackCooldown = 1.5f;  // 1.5 秒ことに攻撃する
 
+    moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // 現在の動き方向
+    moveChangeTimer = 2.0f;  // 向き変わるタイマー
+    speed = 0.5f;			//エネミーのスピード
+    currentFrame = 0;
+    frameCounter = 0;
+    frameInterval = 15;//change speed
+
+
     minDistance = 100.0f;
 
     HP = 1;
@@ -271,31 +279,42 @@ void SpiderEnemy::Draw() {
 void SpiderEnemy::NormalMovement()
 {
 
-    if (tblMax <= 0) return;
+    // 動き方向変わりタイマー
+    moveChangeTimer -= 1.0f / 60.0f; // 60fpsことに動き方向変わり
+    if (moveChangeTimer <= 0.0f) {
+        moveChangeTimer = 2.0f; // reset timer
 
-    int nowNo = (int)time;
-    int nextNo = (nowNo + 1) % tblMax;
-
-    INTERPOLATION_DATA* tbl = g_MoveTblAdr[tblNo];
-
-    XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);
-    XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);
-    XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);
-
-    XMVECTOR diffPos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;
-    XMVECTOR diffRot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;
-    XMVECTOR diffScl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;
-
-    float localTime = time - nowNo;
-
-    XMStoreFloat3(&pos, nowPos + diffPos * localTime);
-    XMStoreFloat3(&scl, nowScl + diffScl * localTime);
-
-    time += 1.0f / tbl[nowNo].frame;
-    if ((int)time >= tblMax) {
-        time -= tblMax;
+        // 動き方向変わることはランダム設定
+        int dir = rand() % 4;
+        switch (dir) {
+        case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // 右
+        case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // 左
+        case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // 前（+ｚ）
+        case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // 後ろ（-ｚ）
+        }
     }
 
+    // 新しい位置を計算
+    XMFLOAT3 newPos = pos;
+    newPos.x += moveDir.x * speed;
+    newPos.y += moveDir.y * speed;
+    newPos.z += moveDir.z * speed;
+
+    // 範囲制限（例えば：XとZは -50.0f 〜 +50.0f）
+    const float minX = -200.0f;
+    const float maxX = 200.0f;
+    const float minZ = -100.0f;
+    const float maxZ = 100.0f;
+
+    // 範囲内なら移動
+    if (newPos.x >= minX && newPos.x <= maxX &&
+        newPos.z >= minZ && newPos.z <= maxZ) {
+        pos = newPos;
+    }
+    else {
+        // 範囲外に出そうなら方向を変える
+        moveChangeTimer = 0.0f; // すぐ次の方向へ変更
+    }
 }
 void SpiderEnemy::Attack()
 {
@@ -319,7 +338,6 @@ void InitEnemy() {
     for (int i = 0; i < ENEMY_MAX; ++i) {
 
         EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f),SPIDER);
-
         EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
     }
@@ -670,7 +688,6 @@ void GhostEnemy::Draw()
 
 void GhostEnemy::NormalMovement()
 {
-
     // 動き方向変わりタイマー
     moveChangeTimer -= 1.0f / 60.0f; // 60fpsことに動き方向変わり
     if (moveChangeTimer <= 0.0f) {
