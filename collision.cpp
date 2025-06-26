@@ -85,7 +85,7 @@ BOOL CollisionBC(XMFLOAT3 pos1, XMFLOAT3 pos2, float r1, float r2)
 //=============================================================================
 // 内積(dot)
 //=============================================================================
-float dotProduct(XMVECTOR *v1, XMVECTOR *v2)
+float dotProduct(XMVECTOR* v1, XMVECTOR* v2)
 {
 #if 0
 	float ans = v1->x * v2->x + v1->y * v2->y + v1->z * v2->z;
@@ -103,7 +103,7 @@ float dotProduct(XMVECTOR *v1, XMVECTOR *v2)
 //=============================================================================
 // 外積(cross)
 //=============================================================================
-void crossProduct(XMVECTOR *ret, XMVECTOR *v1, XMVECTOR *v2)
+void crossProduct(XMVECTOR* ret, XMVECTOR* v1, XMVECTOR* v2)
 {
 #if 0
 	ret->x = v1->y * v2->z - v1->z * v2->y;
@@ -111,7 +111,7 @@ void crossProduct(XMVECTOR *ret, XMVECTOR *v1, XMVECTOR *v2)
 	ret->z = v1->x * v2->y - v1->y * v2->x;
 #else
 	// ダイレクトＸでは、、、
-	*ret = XMVector3Cross(*v1, *v2);
+	* ret = XMVector3Cross(*v1, *v2);
 #endif
 
 }
@@ -126,11 +126,11 @@ void crossProduct(XMVECTOR *ret, XMVECTOR *v1, XMVECTOR *v2)
 // normal 法線ベクトルの返却用
 // 当たっている場合、TRUEを返す
 //=============================================================================
-BOOL RayCast(XMFLOAT3 xp0, XMFLOAT3 xp1, XMFLOAT3 xp2, XMFLOAT3 xpos0, XMFLOAT3 xpos1, XMFLOAT3 *hit, XMFLOAT3 *normal)
+BOOL RayCast(XMFLOAT3 xp0, XMFLOAT3 xp1, XMFLOAT3 xp2, XMFLOAT3 xpos0, XMFLOAT3 xpos1, XMFLOAT3* hit, XMFLOAT3* normal)
 {
-	XMVECTOR	p0   = XMLoadFloat3(&xp0);
-	XMVECTOR	p1   = XMLoadFloat3(&xp1);
-	XMVECTOR	p2   = XMLoadFloat3(&xp2);
+	XMVECTOR	p0 = XMLoadFloat3(&xp0);
+	XMVECTOR	p1 = XMLoadFloat3(&xp1);
+	XMVECTOR	p2 = XMLoadFloat3(&xp2);
 	XMVECTOR	pos0 = XMLoadFloat3(&xpos0);
 	XMVECTOR	pos1 = XMLoadFloat3(&xpos1);
 
@@ -190,7 +190,7 @@ BOOL RayCast(XMFLOAT3 xp0, XMFLOAT3 xp1, XMFLOAT3 xp2, XMFLOAT3 xpos0, XMFLOAT3 
 
 			crossProduct(&n2, &v5, &v2);
 			if (dotProduct(&n2, &nor) < 0.0f) return(FALSE);	// 当たっていない
-			
+
 			crossProduct(&n3, &v6, &v3);
 			if (dotProduct(&n3, &nor) < 0.0f) return(FALSE);	// 当たっていない
 		}
@@ -200,4 +200,19 @@ BOOL RayCast(XMFLOAT3 xp0, XMFLOAT3 xp1, XMFLOAT3 xp2, XMFLOAT3 xpos0, XMFLOAT3 
 }
 
 
+//=============================================================================
+// BB+BC　の当たり判定
+//=============================================================================
+BOOL CheckSphereAABBCollision(XMFLOAT3 spherePos, float sphereRadius,
+	XMFLOAT3 boxPos, XMFLOAT3 boxHalfSize)
+{
+	float x = max(boxPos.x - boxHalfSize.x, min(spherePos.x, boxPos.x + boxHalfSize.x));
+	float y = max(boxPos.y - boxHalfSize.y, min(spherePos.y, boxPos.y + boxHalfSize.y));
+	float z = max(boxPos.z - boxHalfSize.z, min(spherePos.z, boxPos.z + boxHalfSize.z));
 
+	float dx = x - spherePos.x;
+	float dy = y - spherePos.y;
+	float dz = z - spherePos.z;
+
+	return (dx * dx + dy * dy + dz * dz) <= (sphereRadius * sphereRadius);
+}
