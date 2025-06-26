@@ -69,28 +69,9 @@ HRESULT InitGame(void)
 	// エネミーの初期化
 	InitEnemy();
 
-	// 壁の初期化
-	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_TOP), XMFLOAT3(0.0f, 0.0f, 0.0f),
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 16, 2, 80.0f, 80.0f);
-	InitMeshWall(XMFLOAT3(MAP_LEFT, 0.0f, 0.0f), XMFLOAT3(0.0f, -XM_PI * 0.50f, 0.0f),
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 16, 2, 80.0f, 80.0f);
-	InitMeshWall(XMFLOAT3(MAP_RIGHT, 0.0f, 0.0f), XMFLOAT3(0.0f, XM_PI * 0.50f, 0.0f),
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 16, 2, 80.0f, 80.0f);
-	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_DOWN), XMFLOAT3(0.0f, XM_PI, 0.0f),
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 16, 2, 80.0f, 80.0f);
+	
 
-	// 壁(裏側用の半透明)
-	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_TOP), XMFLOAT3(0.0f, XM_PI, 0.0f),
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.25f), 16, 2, 80.0f, 80.0f);
-	InitMeshWall(XMFLOAT3(MAP_LEFT, 0.0f, 0.0f), XMFLOAT3(0.0f, XM_PI * 0.50f, 0.0f),
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.25f), 16, 2, 80.0f, 80.0f);
-	InitMeshWall(XMFLOAT3(MAP_RIGHT, 0.0f, 0.0f), XMFLOAT3(0.0f, -XM_PI * 0.50f, 0.0f),
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.25f), 16, 2, 80.0f, 80.0f);
-	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_DOWN), XMFLOAT3(0.0f, 0.0f, 0.0f),
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.25f), 16, 2, 80.0f, 80.0f);
-
-	// 木を生やす
-	InitTree();
+	
 
 	// 弾の初期化
 	InitBullet();
@@ -125,11 +106,7 @@ void UninitGame(void)
 	// 弾の終了処理
 	UninitBullet();
 
-	// 木の終了処理
-	UninitTree();
-
-	// 壁の終了処理
-	UninitMeshWall();
+	
 
 	// 地面の終了処理
 	//UninitMeshField();
@@ -182,17 +159,12 @@ void UpdateGame(void)
 	// エネミーの更新処理
 	UpdateEnemy();
 
-	// 壁処理の更新
-	UpdateMeshWall();
-
-	// 木の更新処理
-	UpdateTree();
 
 	// 弾の更新処理
 	UpdateBullet();
 
 	// パーティクルの更新処理
-	UpdateParticle();
+	//UpdateParticle();
 
 	// 影の更新処理
 	UpdateShadow();
@@ -229,12 +201,7 @@ void DrawGame0(void)
 	// 弾の描画処理
 	DrawBullet();
 
-	// 壁の描画処理
-	DrawMeshWall();
-
-	// 木の描画処理
-	DrawTree();
-
+	
 	// パーティクルの描画処理
 	DrawParticle();
 
