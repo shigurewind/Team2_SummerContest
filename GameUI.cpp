@@ -1,6 +1,6 @@
 ﻿//=============================================================================
 //
-// スコア処理 [score.cpp]
+// スコア処理 [UI.cpp]
 // Author : 
 //
 //=============================================================================
@@ -49,6 +49,7 @@ static int						g_Score;					// スコア
 
 static BOOL						g_Load = FALSE;
 
+static float g_WebEffectTimer = 0.0f;
 int Min2(int a, int b) {
 	return (a < b) ? a : b;
 }
@@ -169,27 +170,29 @@ void DrawScore(void)
 	// テクスチャ設定
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_TexNo]);
 
-	
-	
-	PLAYER* player = GetPlayer();
+	//HP
+	{
+		PLAYER* player = GetPlayer();
 
-	//ケージのHPバー
-	{// テクスチャ設定
+		//ケージのHPバー
+		// テクスチャ設定
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
+
 		//ゲージの位置やテクスチャー座標を反映
 		float pw = 280;		// ゲージの表示幅
 		pw = pw * ((float)player->HP / player->HP_MAX);
-
+		float x = ((float)player->HP / player->HP_MAX);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
-		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, 1.0f, 1.0f);
+		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, x, 1.0f);
 
 		// ポリゴン描画
 		GetDeviceContext()->Draw(4, 0);
-	}
 
-	//HPのUI
-	{// テクスチャ設定
+
+
+		//上のHPのUI
+		// テクスチャ設定
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
@@ -197,6 +200,7 @@ void DrawScore(void)
 
 		// ポリゴン描画
 		GetDeviceContext()->Draw(4, 0);
+
 	}
 
 	//クモの攻撃のエフェクト
@@ -309,7 +313,6 @@ void DrawAmmoUI(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 }
-
 
 //=============================================================================
 // スコアを加算する

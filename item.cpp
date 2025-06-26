@@ -8,6 +8,10 @@
 #include <cstdlib> // for rand()
 #include <ctime>   // for time()
 
+#include <fstream>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 
 #define MAX_ITEM (128)
 #define ITEM_ID_MAX ITEM_ID_COUNT // アイテムIDの最大値
@@ -23,21 +27,7 @@
 
 
 
-typedef struct {
-	XMFLOAT3	pos;        // 位置
-	XMFLOAT3	scl;        // スケール
-	MATERIAL	material;   // マテリアル（色）
 
-	float		fWidth;			// 幅
-	float		fHeight;		// 高さ
-
-
-	Item		item;
-	BOOL		use;        // 使用中かどうか
-
-	float		timeOffset;
-	float		basePosY;
-} ITEM_OBJ;
 
 static ITEM_OBJ				g_aItem[MAX_ITEM]; // アイテム配列
 
@@ -55,10 +45,6 @@ static PLAYER* g_player = GetPlayer();
 
 
 HRESULT MakeVertexItem(void);
-
-
-
-
 
 
 
@@ -331,5 +317,54 @@ Item CreateItemFromID(int id) {
 		return Item(id, "Bullet", 10, ItemCategory::InstantEffect);
 	default:
 		return Item(id, "Unknown", 1, ItemCategory::Consumable);
+	}
+}
+
+
+ITEM_OBJ* GetItemOBJ()
+{
+	return g_aItem;
+}
+
+
+void SaveItemData(const std::string& filename)
+{
+	json j = json::array();
+	for (int i = 0; i < MAX_ITEM; ++i)
+	{
+		if (g_aItem[i].use)
+		{
+			json itemObj;
+			itemObj["id"] = g_aItem[i].item.id;
+			itemObj["pos"] = { g_aItem[i].pos.x, g_aItem[i].pos.y, g_aItem[i].pos.z };
+			itemObj["scl"] = { g_aItem[i].scl.x, g_aItem[i].scl.y, g_aItem[i].scl.z };
+			j.push_back(itemObj);
+		}
+	}
+
+	std::ofstream file(filename);
+	file << j.dump(4);
+}
+
+void LoadItemData(const std::string& filename)
+{
+	std::ifstream file(filename);
+	if (!file) return;
+
+	json j;
+	file >> j;
+
+	for (int i = 0; i < MAX_ITEM; ++i)
+		g_aItem[i].use = false;
+
+	for (const auto& itemObj : j)
+	{
+		int id = itemObj["id"];
+		XMFLOAT3 pos = XMFLOAT3(itemObj["pos"][0], itemObj["pos"][1], itemObj["pos"][2]);
+		int index = SetItem(pos, id);
+		if (index >= 0)
+		{
+			g_aItem[index].scl = XMFLOAT3(itemObj["scl"][0], itemObj["scl"][1], itemObj["scl"][2]);
+		}
 	}
 }

@@ -29,3 +29,5 @@ BOOL RayCast(XMFLOAT3 p0, XMFLOAT3 p1, XMFLOAT3 p2, XMFLOAT3 pos0, XMFLOAT3 pos1
 
 BOOL CheckSphereAABBCollision(XMFLOAT3 spherePos, float sphereRadius, XMFLOAT3 boxPos, XMFLOAT3 boxHalfSize);
 
+BOOL CheckSphereAABBCollision(XMFLOAT3 spherePos, float sphereRadius, XMFLOAT3 boxPos, XMFLOAT3 boxHalfSize);
+

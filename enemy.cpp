@@ -173,6 +173,9 @@ void SpiderEnemy::Update() {
 
     }
     else
+
+
+    if (fireTimer > 0.0f)
     {
         NormalMovement();
     }
@@ -333,13 +336,13 @@ void SpiderEnemy::Attack()
 // 
 //*****************************************************************************
 void InitEnemy() {
-    MakeVertexEnemy();
-    g_enemies.clear();
-    for (int i = 0; i < ENEMY_MAX; ++i) {
 
         EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
         EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
+        XMFLOAT3 pos = XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f);
+        e->SetPosition(pos);
+        g_enemies.push_back(e);
     }
 }
 
@@ -469,9 +472,6 @@ XMFLOAT3 BaseEnemy::GetPosition() const {
 void BaseEnemy::SetScale(const XMFLOAT3& s) {
     scl = s;
 }
-
-XMFLOAT3 BaseEnemy::GetScale() const {
-    return scl;
 }
 
 void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
@@ -712,3 +712,6 @@ void GhostEnemy::Attack()
 {
 }
 
+XMFLOAT3 BaseEnemy::GetScale() const {
+    return scl;
+}
