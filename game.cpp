@@ -12,6 +12,7 @@
 #include "input.h"
 #include "sound.h"
 #include "fade.h"
+#include "overlay2D.h"
 
 #include "player.h"
 #include "enemy.h"
@@ -98,6 +99,7 @@ HRESULT InitGame(void)
 	// スコアの初期化
 	InitScore();
 
+	InitOverlay2D();
 	// パーティクルの初期化
 	InitParticle();
 
@@ -121,7 +123,7 @@ void UninitGame(void)
 
 	// スコアの終了処理
 	UninitScore();
-
+	UninitOverlay2D();
 	// 弾の終了処理
 	UninitBullet();
 
@@ -172,7 +174,15 @@ void UpdateGame(void)
 
 	if (g_bPause == TRUE)
 		return;
-
+	
+	if (IsTutorialShowing())
+	{
+		if (IsMouseLeftTriggered())
+		{
+			SetTutorialShowing(false); 
+		}
+		return;  
+	}
 	// 地面処理の更新
 	//UpdateMeshField();
 
@@ -199,7 +209,7 @@ void UpdateGame(void)
 
 	// 当たり判定処理
 	CheckHit();
-
+	UpdateOverlay2D();
 	// スコアの更新処理
 	UpdateScore();
 
@@ -252,8 +262,8 @@ void DrawGame0(void)
 
 	// スコアの描画処理
 	DrawScore();
-
-
+	DrawOverlay2D();
+	
 
 
 	// ライティングを有効に
