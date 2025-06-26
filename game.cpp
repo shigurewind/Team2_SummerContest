@@ -26,6 +26,8 @@
 #include "debugproc.h"
 
 #include "FBXmodel.h"
+#include "item.h"
+
 
 //*****************************************************************************
 // マクロ定義
@@ -74,13 +76,13 @@ HRESULT InitGame(void)
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 16, 2, 80.0f, 80.0f);
 	InitMeshWall(XMFLOAT3(MAP_RIGHT, 0.0f, 0.0f), XMFLOAT3(0.0f, XM_PI * 0.50f, 0.0f),
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 16, 2, 80.0f, 80.0f);
-	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_DOWN), XMFLOAT3(0.0f,  XM_PI, 0.0f),
+	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_DOWN), XMFLOAT3(0.0f, XM_PI, 0.0f),
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 16, 2, 80.0f, 80.0f);
 
 	// 壁(裏側用の半透明)
-	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_TOP), XMFLOAT3(0.0f,    XM_PI, 0.0f),
+	InitMeshWall(XMFLOAT3(0.0f, 0.0f, MAP_TOP), XMFLOAT3(0.0f, XM_PI, 0.0f),
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.25f), 16, 2, 80.0f, 80.0f);
-	InitMeshWall(XMFLOAT3(MAP_LEFT, 0.0f, 0.0f), XMFLOAT3(0.0f,   XM_PI * 0.50f, 0.0f),
+	InitMeshWall(XMFLOAT3(MAP_LEFT, 0.0f, 0.0f), XMFLOAT3(0.0f, XM_PI * 0.50f, 0.0f),
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.25f), 16, 2, 80.0f, 80.0f);
 	InitMeshWall(XMFLOAT3(MAP_RIGHT, 0.0f, 0.0f), XMFLOAT3(0.0f, -XM_PI * 0.50f, 0.0f),
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.25f), 16, 2, 80.0f, 80.0f);
@@ -100,6 +102,8 @@ HRESULT InitGame(void)
 	InitParticle();
 
 	InitFBXTestModel();
+
+	InitItem();
 
 	// BGM再生
 	PlaySound(SOUND_LABEL_BGM_sample001);
@@ -141,6 +145,8 @@ void UninitGame(void)
 
 	UninitFBXTestModel();
 
+	UninitItem();
+
 }
 
 //=============================================================================
@@ -164,7 +170,7 @@ void UpdateGame(void)
 
 #endif
 
-	if(g_bPause == TRUE)
+	if (g_bPause == TRUE)
 		return;
 
 	// 地面処理の更新
@@ -198,6 +204,8 @@ void UpdateGame(void)
 	UpdateScore();
 
 	UpdateFBXTestModel();
+
+	UpdateItem();
 }
 
 //=============================================================================
@@ -232,6 +240,8 @@ void DrawGame0(void)
 
 	DrawFBXTestModel();
 
+	DrawItem();
+
 
 	// 2Dの物を描画する処理
 	// Z比較なし
@@ -243,7 +253,7 @@ void DrawGame0(void)
 	// スコアの描画処理
 	DrawScore();
 
-	
+
 
 
 	// ライティングを有効に
@@ -271,7 +281,7 @@ void DrawGame(void)
 	//SetCameraAT(pos);
 	SetCamera();
 
-	switch(g_ViewPortType_Game)
+	switch (g_ViewPortType_Game)
 	{
 	case TYPE_FULL_SCREEN:
 		SetViewPort(TYPE_FULL_SCREEN);
@@ -359,7 +369,7 @@ void CheckHit(void)
 			//{
 			//	// 当たったから未使用に戻す
 			//	bullet[i].use = FALSE;
-				
+
 
 	////			// 敵キャラクターは倒される
 	////			enemy[j].use = FALSE;
