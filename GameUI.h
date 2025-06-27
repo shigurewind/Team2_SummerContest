@@ -27,4 +27,7 @@ void DrawScore(void);
 void AddScore(int add);
 int GetScore(void);
 
+void DrawAmmoUI(void);
+
+void ShowWebEffect(float time);
 

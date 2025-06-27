@@ -6,6 +6,7 @@
 //=============================================================================
 #pragma once
 #include "model.h"
+#include "bullet.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -56,9 +57,14 @@ struct PLAYER
 	float			jumpPower;	//jumpのパワー
 
 
-	int ammo;       // リロードできる弾数  
-	int maxammo;    // 持ってる弾数
+	// 弾数管理（種類ごと）
+	int ammoNormal;
+	int maxAmmoNormal;
 
+	int ammoFire;
+	int maxAmmoFire;
+	float				HP;
+	float				HP_MAX;
 };
 
 
@@ -71,5 +77,8 @@ void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
 
-PLAYER *GetPlayer(void);
+WeaponType GetCurrentWeaponType(void);
+BulletType GetCurrentBulletType(void);
 
+
+PLAYER* GetPlayer(void);

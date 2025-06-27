@@ -70,19 +70,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(WindowsSDK_IncludePath);$(SolutionDir)Dependenceis\FBX\include;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Dependenceis;$(WindowsSDK_IncludePath);$(SolutionDir)Dependenceis\FBX\include;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.7\lib\x64\debug;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(WindowsSDK_IncludePath);$(SolutionDir)Dependenceis\FBX\include;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Dependenceis;$(WindowsSDK_IncludePath);$(SolutionDir)Dependenceis\FBX\include;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.7\lib\x64\release;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(WindowsSDK_IncludePath);$(SolutionDir)Dependenceis\FBX\include;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Dependenceis;$(WindowsSDK_IncludePath);$(SolutionDir)Dependenceis\FBX\include;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.7\lib\x64\debug;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(WindowsSDK_IncludePath);$(SolutionDir)Dependenceis\FBX\include;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Dependenceis;$(WindowsSDK_IncludePath);$(SolutionDir)Dependenceis\FBX\include;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.7\lib\x64\release;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -430,6 +430,11 @@
     <ClInclude Include="Dependenceis\FBX\include\libxml2\libxml\xpath.h" />
     <ClInclude Include="Dependenceis\FBX\include\libxml2\libxml\xpathInternals.h" />
     <ClInclude Include="Dependenceis\FBX\include\libxml2\libxml\xpointer.h" />
+    <ClInclude Include="Dependenceis\nlohmann\adl_serializer.hpp" />
+    <ClInclude Include="Dependenceis\nlohmann\byte_container_with_subtype.hpp" />
+    <ClInclude Include="Dependenceis\nlohmann\json.hpp" />
+    <ClInclude Include="Dependenceis\nlohmann\json_fwd.hpp" />
+    <ClInclude Include="Dependenceis\nlohmann\ordered_map.hpp" />
     <ClInclude Include="DirectXTex.h" />
     <ClInclude Include="enemy.h" />
     <ClInclude Include="fade.h" />
@@ -444,6 +449,9 @@
     <ClInclude Include="imstb_textedit.h" />
     <ClInclude Include="imstb_truetype.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="inventory.h" />
+    <ClInclude Include="item.h" />
+    <ClInclude Include="itemDatabase.h" />
     <ClInclude Include="light.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="meshfield.h" />
@@ -454,7 +462,7 @@
     <ClInclude Include="player.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="result.h" />
-    <ClInclude Include="score.h" />
+    <ClInclude Include="GameUI.h" />
     <ClInclude Include="shaderManager.h" />
     <ClInclude Include="shadow.h" />
     <ClInclude Include="sound.h" />
@@ -473,6 +481,7 @@
     <ClCompile Include="fade.cpp" />
     <ClCompile Include="FBXmodel.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="GameUI.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
@@ -481,6 +490,9 @@
     <ClCompile Include="imgui_tables.cpp" />
     <ClCompile Include="imgui_widgets.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="inventory.cpp" />
+    <ClCompile Include="item.cpp" />
+    <ClCompile Include="itemDatabase.cpp" />
     <ClCompile Include="light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="meshfield.cpp" />
@@ -491,7 +503,6 @@
     <ClCompile Include="player.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="result.cpp" />
-    <ClCompile Include="score.cpp" />
     <ClCompile Include="shaderManager.cpp" />
     <ClCompile Include="shadow.cpp" />
     <ClCompile Include="sound.cpp" />

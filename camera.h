@@ -58,6 +58,8 @@ XMFLOAT3 GetGunMuzzleRotation(void);
 
 extern bool isFirstPersonMode;
 
+extern float sensitivity;
+
 void SetViewPort(int type);
 int GetViewPortType(void);
 

@@ -20,8 +20,8 @@
 // 弾の基本データ構造（属性など） //追加箇所
 //=============================================================================
 //                                  種類　　　　速さ  DMG  scl  lifetime    　　モデル　　　　　　　　RGB
-BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
-BulletData bulletData_Fire   = { BULLET_FIRE,     5.0f, 20, 1.0f, 200.0f, "data/MODEL/sphere.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+BulletData bulletData_Fire   = { BULLET_FIRE,     5.0f, 20, 1.0f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
 
 // 武器インスタンス 
 Weapon g_Revolver;
@@ -40,12 +40,14 @@ HRESULT InitBullet(void)
         g_Bullet[i].use = FALSE;
     }
 
-    // 武器ごとの弾をセット //追加箇所
+    // 武器ごとの弾をセット 
     g_Revolver.weaponType = WEAPON_REVOLVER;
     g_Revolver.bulletData = &bulletData_Normal;
+    g_Revolver.clipSize   = 5;      //リロードできる弾数
 
     g_Shotgun.weaponType = WEAPON_SHOTGUN;
     g_Shotgun.bulletData = &bulletData_Normal;
+    g_Shotgun.clipSize   = 3;       //リロードできる弾数
 
     return S_OK;
 }
@@ -98,31 +100,37 @@ int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data)
     return 0;
 }
 
-//=============================================================================
-// リボルバー弾の発射関数（分かりやすさのため） //追加箇所
-//=============================================================================
-void SetRevolverBullet(XMFLOAT3 pos, XMFLOAT3 rot)
+//弾の情報（data）をもとに弾を発射する関数//
+int SetBulletWithData(const BulletData& data, XMFLOAT3 pos, XMFLOAT3 rot)
 {
-    SetBullet(pos, rot, *GetRevolver()->bulletData);
-
+    return SetBullet(pos, rot, data);
 }
 
 //=============================================================================
+// リボルバー弾の発射関数（分かりやすさのため） //追加箇所
+//=============================================================================
+void SetRevolverBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot)
+{
+    const BulletData& data = (type == BULLET_NORMAL) ? bulletData_Normal : bulletData_Fire;
+    SetBullet(pos, rot, data);
+}
+//=============================================================================
 // ショットガン弾の発射関数（複数同時発射） //追加箇所
 //=============================================================================
-void SetShotgunBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data)
+void SetShotgunBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot)
 {
+    const BulletData& data = (type == BULLET_NORMAL) ? bulletData_Normal : bulletData_Fire;
+
     for (int i = 0; i < 8; ++i)
     {
         // 弾ごとにランダムな角度のばらけを与える（前方円錐状）
         XMFLOAT3 randRot = rot;
-        randRot.x += XMConvertToRadians((float)(rand() % 11 - 5));   // -5?5度の縦方向ばらけ
-        randRot.y += XMConvertToRadians((float)(rand() % 21 - 10));  // -10?10度の横方向ばらけ
+        randRot.x += XMConvertToRadians((float)(rand() % 11 - 5));   // -5～5度の縦方向ばらけ
+        randRot.y += XMConvertToRadians((float)(rand() % 21 - 10));  // -10～10度の横方向ばらけ
 
         SetBullet(pos, randRot, data);
     }
 }
-
 //=============================================================================
 // 弾の更新
 //=============================================================================
