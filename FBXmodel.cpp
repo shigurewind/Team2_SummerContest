@@ -13,7 +13,7 @@ HRESULT InitFBXTestModel(void)
 	g_FBXTestModel.load = TRUE;
 
 	//g_FBXTestModel.model = ModelLoad("data/MODEL/model.fbx");	// FBXモデルの読み込み
-	g_FBXTestModel.model = ModelLoad("data/MODEL/stage1.fbx");	// FBXモデルの読み込み
+	g_FBXTestModel.model = ModelLoad("data/MODEL/FBX/map/map_tutorial.fbx");	// FBXモデルの読み込み
 
 	LoadShaderFromFile("Shader/testShader.hlsl", "VertexShaderPolygon", "PixelShaderPolygon", &g_shaderCustom);
 	g_FBXTestModel.shader = &g_shaderCustom;
@@ -21,7 +21,7 @@ HRESULT InitFBXTestModel(void)
 
 	g_FBXTestModel.pos = XMFLOAT3(-10.0f, 20.0f, -50.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_FBXTestModel.scl = XMFLOAT3(20.0f, 20.0f, 20.0f);
+	g_FBXTestModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
 
