@@ -172,7 +172,7 @@ void UnloadModel( DX11_MODEL *Model )
 //=============================================================================
 void DrawModel( DX11_MODEL *Model )
 {
-
+	
 	// 頂点バッファ設定
 	UINT stride = sizeof( VERTEX_3D );
 	UINT offset = 0;
@@ -199,6 +199,8 @@ void DrawModel( DX11_MODEL *Model )
 		GetDeviceContext()->DrawIndexed( Model->SubsetArray[i].IndexNum, Model->SubsetArray[i].StartIndex, 0 );
 	}
 
+	
+	
 
 }
 
