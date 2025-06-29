@@ -253,7 +253,7 @@ void UpdatePlayer(void)
 		};
 
 		XMFLOAT3 hitPos, hitNormal;
-		float dist = 1000.0f;
+		float dist = 10.0f;
 
 		if (RayHitOctree(GetFloorTree(), from, dir, &dist, &hitPos, &hitNormal)) {
 			if (g_Player.verticalSpeed <= 0.0f && hitPos.y <= g_Player.pos.y) {
@@ -274,6 +274,15 @@ void UpdatePlayer(void)
 				g_Player.isGround = TRUE;
 			}
 		}
+
+		{	// 押した方向にプレイヤーを移動させる
+		// 押した方向にプレイヤーを向かせている所
+			g_Player.rot.y = roty + cam->rot.y;
+
+			newPos.x -= sinf(g_Player.rot.y) * g_Player.spd;
+			newPos.z -= cosf(g_Player.rot.y) * g_Player.spd;
+		}
+
 		g_Player.pos = newPos;
 	
 
@@ -315,13 +324,7 @@ void UpdatePlayer(void)
 #endif
 
 
-	{	// 押した方向にプレイヤーを移動させる
-		// 押した方向にプレイヤーを向かせている所
-		g_Player.rot.y = roty + cam->rot.y;
-
-		g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.spd;
-		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.spd;
-	}
+	
 
 
 	// レイキャストして足元の高さを求める

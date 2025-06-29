@@ -25,11 +25,13 @@ HRESULT InitFBXTestModel(void)
 	g_FBXTestModel.shader = &g_shaderCustom;
 
 
-	g_FBXTestModel.pos = XMFLOAT3(-10.0f, 20.0f, -50.0f);
+	g_FBXTestModel.pos = XMFLOAT3(-10.0f, 0.0f, -50.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_FBXTestModel.scl = XMFLOAT3(20.0f, 20.0f, 20.0f);
 
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
+
+	g_FBXTestModel.Quaternion = XMFLOAT4(0, 0, 0, 1);
 
 	g_FBXTestModel.alive = TRUE;			// TRUE:生きてる
 	XMMATRIX mtxScl = XMMatrixScaling(g_FBXTestModel.scl.x, g_FBXTestModel.scl.y, g_FBXTestModel.scl.z);
@@ -185,7 +187,8 @@ void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix)
 			XMFLOAT3 v[3];
 			for (int j = 0; j < 3; j++) {
 				aiVector3D vRaw = vertices[face.mIndices[j]];
-				XMVECTOR vLocal = XMVectorSet(vRaw.x, vRaw.y, vRaw.z, 1.0f);
+				//XMVECTOR vLocal = XMVectorSet(vRaw.x, vRaw.y, vRaw.z, 1.0f);
+				XMVECTOR vLocal = XMVectorSet(vRaw.x, -vRaw.z, vRaw.y, 1.0f);//右手座標を左手に
 				XMVECTOR vWorld = XMVector3Transform(vLocal, worldMatrix);
 				XMStoreFloat3(&v[j], vWorld);
 			}
