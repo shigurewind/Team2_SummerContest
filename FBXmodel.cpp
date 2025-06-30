@@ -13,13 +13,13 @@ HRESULT InitFBXTestModel(void)
 	g_FBXTestModel.load = TRUE;
 
 	//g_FBXTestModel.model = ModelLoad("data/MODEL/model.fbx");	// FBXÉÇÉfÉãÇÃì«Ç›çûÇ›
-	g_FBXTestModel.model = ModelLoad("data/MODEL/stage1.fbx");	// FBXÉÇÉfÉãÇÃì«Ç›çûÇ›
+	g_FBXTestModel.model = ModelLoad("data/MODEL/stage06304.fbx");	// FBXÉÇÉfÉãÇÃì«Ç›çûÇ›
 
 	LoadShaderFromFile("Shader/testShader.hlsl", "VertexShaderPolygon", "PixelShaderPolygon", &g_shaderCustom);
 	g_FBXTestModel.shader = &g_shaderCustom;
 
 
-	g_FBXTestModel.pos = XMFLOAT3(-10.0f, 20.0f, -50.0f);
+	g_FBXTestModel.pos = XMFLOAT3(-10.0f,2.0f, -50.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_FBXTestModel.scl = XMFLOAT3(20.0f, 20.0f, 20.0f);
 	g_FBXTestModel.Quaternion = XMFLOAT4(0, 0, 0, 1);
