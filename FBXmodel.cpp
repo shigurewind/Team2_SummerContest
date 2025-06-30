@@ -1,5 +1,5 @@
 #include "FBXmodel.h"
-
+#include "navmesh.h"
 
 
 //-------------------------------------------------------------------------
@@ -22,12 +22,16 @@ HRESULT InitFBXTestModel(void)
 	g_FBXTestModel.pos = XMFLOAT3(-10.0f, 20.0f, -50.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_FBXTestModel.scl = XMFLOAT3(20.0f, 20.0f, 20.0f);
+	g_FBXTestModel.Quaternion = XMFLOAT4(0, 0, 0, 1);
 
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
 
 	g_FBXTestModel.alive = TRUE;			// TRUE:生きてる
 
-
+	InitNavMeshFromModel(g_FBXTestModel.model, XMMatrixScaling(g_FBXTestModel.scl.x, g_FBXTestModel.scl.y, g_FBXTestModel.scl.z) *
+		XMMatrixRotationRollPitchYaw(g_FBXTestModel.rot.x, g_FBXTestModel.rot.y + XM_PI, g_FBXTestModel.rot.z) *
+		XMMatrixRotationQuaternion(XMLoadFloat4(&g_FBXTestModel.Quaternion)) *
+		XMMatrixTranslation(g_FBXTestModel.pos.x, g_FBXTestModel.pos.y, g_FBXTestModel.pos.z));
 	return S_OK;
 }
 
@@ -106,6 +110,8 @@ void DrawFBXTestModel(void)
 
 	// カリング設定を戻す
 	SetCullingMode(CULL_MODE_BACK);
+
+
 }
 
 

@@ -16,7 +16,7 @@
 #include "meshfield.h"
 #include "overlay2D.h"
 #include "enemy.h"
-
+#include "navmesh.h"
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -214,11 +214,27 @@ void UpdatePlayer(void)
 		}
 
 		//地面
-		g_Player.pos.y += g_Player.verticalSpeed;
-		if (g_Player.pos.y < 0)
-		{
-			g_Player.pos.y = 0;
-			g_Player.isGround = TRUE;
+		float navY;
+		bool hit = GetNavMeshHeight(g_Player.pos.x, g_Player.pos.z, &navY);
+		if (hit) {
+			g_Player.pos.y += g_Player.verticalSpeed;
+
+			if (g_Player.pos.y <= navY + PLAYER_OFFSET_Y) {
+				g_Player.pos.y = navY + PLAYER_OFFSET_Y;
+				g_Player.verticalSpeed = 0.0f;
+				g_Player.isGround = true;
+			}
+			else {
+				g_Player.isGround = false;
+			}
+		}
+		else {
+			g_Player.pos.y += g_Player.verticalSpeed;
+			if (g_Player.pos.y < 0.0f) {
+				g_Player.pos.y = 0.0f;
+				g_Player.isGround = true;
+				g_Player.verticalSpeed = 0.0f;
+			}
 		}
 		//近接攻撃
 
