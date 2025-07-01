@@ -5,6 +5,7 @@
 using namespace DirectX;
 
 
+
 enum TriangleType {
 	TYPE_UNKNOWN = -1,
 	TYPE_FLOOR = 0,

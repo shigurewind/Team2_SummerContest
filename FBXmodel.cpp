@@ -6,6 +6,7 @@
 static std::vector<TriangleData> g_TriangleList;
 static FBXTESTMODEL g_FBXTestModel;	// FBXモデルのデータ
 
+
 static SHADER g_shaderCustom;
 
 static OctreeNode* g_WallTree = nullptr;
@@ -27,11 +28,16 @@ HRESULT InitFBXTestModel(void)
 		MessageBoxA(NULL, "Failed to load stage1.fbx", "Error", MB_OK);
 		return E_FAIL;
 	}
+
+	char debugPos[128];
+	sprintf_s(debugPos, "FBX pos.y = %.2f\n", g_FBXTestModel.pos.y);
+	OutputDebugStringA(debugPos);
+
 	LoadShaderFromFile("Shader/testShader.hlsl", "VertexShaderPolygon", "PixelShaderPolygon", &g_shaderCustom);
 	g_FBXTestModel.shader = &g_shaderCustom;
 
 
-	g_FBXTestModel.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	g_FBXTestModel.pos = XMFLOAT3(0.0f, -200.0f, 0.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_FBXTestModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -89,6 +95,8 @@ HRESULT InitFBXTestModel(void)
 	for (const auto& tri : g_WallTris) updateBounds(tri);
 	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 6, 1);
 
+
+	
 
 	return S_OK;
 }

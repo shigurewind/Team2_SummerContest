@@ -17,10 +17,12 @@
 #include "meshfield.h"
 #include "FBXmodel.h"
 #include "Octree.h"
+#include "collision.h"
+
 //*****************************************************************************
 // マクロ定義	
 //*****************************************************************************
-#define	MODEL_PLAYER		"data/MODEL/cone.obj"			// 読み込むモデル名
+#define	MODEL_PLAYER		"data/MODEL/player.obj"			// 読み込むモデル名
 
 
 #define	VALUE_MOVE			(2.0f)							// 移動量
@@ -233,41 +235,19 @@ void UpdatePlayer(void)
 
 		newPos.y += g_Player.verticalSpeed;
 		//地面
-		OctreeNode* floorTree = GetFloorTree();
-		if (floorTree == nullptr) {
-			OutputDebugStringA("cant find flooroctree\n");
-			g_Player.pos.y = PLAYER_OFFSET_Y;
-			g_Player.isGround = TRUE;
-			g_Player.verticalSpeed = 0.0f;
-			return;
-
-		}
 		
-		XMFLOAT3 footMin = newPos;
-		XMFLOAT3 footMax = newPos;
-		float footSize = g_Player.size;
-
-		footMin.x -= footSize;
-		footMin.z -= footSize;
-		footMin.y -= 0.2f;  
-
-		footMax.x += footSize;
-		footMax.z += footSize;
-		footMax.y += 0.1f;  
-
-		bool onGround = AABBHitOctree(GetFloorTree(), GetFloorTriangles(), footMin, footMax, 0, 6, 1);
-
-		if (onGround && g_Player.verticalSpeed <= 0.0f) {
-			newPos.y = g_Player.pos.y; 
+		float groundY;
+		if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && g_Player.verticalSpeed <= 0.0f)
+		{
+			newPos.y = groundY;
 			g_Player.verticalSpeed = 0.0f;
 			g_Player.isGround = TRUE;
 		}
-		else {
+		else
+		{
 			g_Player.isGround = FALSE;
 		}
 		g_Player.pos = newPos;
-	
-		
 		
 		// 弾発射処理（共通関数使用） 
 		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
@@ -313,6 +293,7 @@ void UpdatePlayer(void)
 		g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.spd;
 		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.spd;
 	}
+
 
 
 	// レイキャストして足元の高さを求める
@@ -391,6 +372,9 @@ void DrawPlayer(void)
 	mtxScl = XMMatrixScaling(g_Player.scl.x, g_Player.scl.y, g_Player.scl.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
+	XMMATRIX mtxFootOffset = XMMatrixTranslation(0.0f, -PLAYER_OFFSET_Y, 0.0f);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxFootOffset);
+
 	// 回転を反映
 	mtxRot = XMMatrixRotationRollPitchYaw(g_Player.rot.x, g_Player.rot.y + XM_PI, g_Player.rot.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
@@ -434,3 +418,23 @@ PLAYER *GetPlayer(void)
 	return &g_Player;
 }
 
+bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
+{
+	const auto& tris = GetFloorTriangles();
+
+	XMFLOAT3 rayStart = pos;
+	rayStart.y += 50.0f;
+	XMFLOAT3 rayEnd = pos;
+	rayEnd.y -= 100.0f;
+
+	XMFLOAT3 hit, normal;
+	for (const auto& tri : tris)
+	{
+		if (RayCast(tri.v0, tri.v1, tri.v2, rayStart, rayEnd, &hit, &normal))
+		{
+			groundY = hit.y;
+			return true;
+		}
+	}
+	return false;
+}

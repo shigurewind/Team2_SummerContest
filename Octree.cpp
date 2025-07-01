@@ -7,6 +7,7 @@
 
 using namespace DirectX;
 
+
 static void CalcTriangleBounds(const TriangleData& tri, XMFLOAT3& minOut, XMFLOAT3& maxOut)
 {
 	minOut.x = std::min(std::min(tri.v0.x, tri.v1.x), tri.v2.x);
