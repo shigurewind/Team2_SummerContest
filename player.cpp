@@ -16,6 +16,8 @@
 #include "meshfield.h"
 #include "overlay2D.h"
 #include "enemy.h"
+#include "FBXmodel.h"
+#include "collision.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -42,6 +44,7 @@
 // グローバル変数
 //*****************************************************************************
 static PLAYER		g_Player;						// プレイヤー
+AABB playerAABB;
 
 //static PLAYER		g_Parts[PLAYER_PARTS_MAX];		// プレイヤーのパーツ用
 
@@ -101,8 +104,7 @@ HRESULT InitPlayer(void)
 	g_Player.load = TRUE;
 	LoadModel(MODEL_PLAYER, &g_Player.model);
 
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y + 50.0f, -50.0f);
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y, -50.0f);
+	g_Player.pos = XMFLOAT3(100.0f, PLAYER_OFFSET_Y + 50.0f, -90.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -168,37 +170,57 @@ void UninitPlayer(void)
 void UpdatePlayer(void)
 {
 	CAMERA* cam = GetCamera();
+	float size = g_Player.size;
+	playerAABB.min = { g_Player.pos.x - size, g_Player.pos.y - size, g_Player.pos.z - size };
+	playerAABB.max = { g_Player.pos.x + size, g_Player.pos.y + size, g_Player.pos.z + size };
 
+	auto& wallTris = GetFBXTestModel()->wallTriangles;
+	auto& floorTris = GetFBXTestModel()->floorTriangles;
 	if (meleeCooldown > 0.0f) {
 		meleeCooldown -= 1.0f / 60.0f;  
 	}
-
+	//koko
 	if (g_Player.alive)
 	{
 		g_Player.spd *= 0.7f;
-
+		XMFLOAT3 nextPos = g_Player.pos;
 		// 移動処理
 		if (GetKeyboardPress(DIK_W)) {
-			g_Player.pos.x += sinf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z += cosf(cam->rot.y) * VALUE_MOVE;
+			nextPos.x += sinf(cam->rot.y) * VALUE_MOVE;
+			nextPos.z += cosf(cam->rot.y) * VALUE_MOVE;
 		}
 		if (GetKeyboardPress(DIK_S)) {
-			g_Player.pos.x -= sinf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z -= cosf(cam->rot.y) * VALUE_MOVE;
+			nextPos.x -= sinf(cam->rot.y) * VALUE_MOVE;
+			nextPos.z -= cosf(cam->rot.y) * VALUE_MOVE;
 		}
 		if (GetKeyboardPress(DIK_A)) {
-			g_Player.pos.x -= cosf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z += sinf(cam->rot.y) * VALUE_MOVE;
+			nextPos.x -= cosf(cam->rot.y) * VALUE_MOVE;
+			nextPos.z += sinf(cam->rot.y) * VALUE_MOVE;
 		}
 		if (GetKeyboardPress(DIK_D)) {
-
-			g_Player.pos.x += cosf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z -= sinf(cam->rot.y) * VALUE_MOVE;
+			nextPos.x += cosf(cam->rot.y) * VALUE_MOVE;
+			nextPos.z -= sinf(cam->rot.y) * VALUE_MOVE;
 		}
 		//正しい向き方向処理
 		//g_Player.rot.y = cam->rot.y + 3.14f;
+		AABB nextAABB;
+		nextAABB.min = { nextPos.x - size, nextPos.y - size, nextPos.z - size };
+		nextAABB.max = { nextPos.x + size, nextPos.y + size, nextPos.z + size };
 
+		bool blocked = false;
+		for (const auto& tri : wallTris)
+		{
+			if (AABBvsTriangle(nextAABB.min, nextAABB.max, tri.v0, tri.v1, tri.v2))
+			{
+				blocked = true;
+				break;
+			}
+		}
 
+		if (!blocked)
+		{
+			g_Player.pos = nextPos;
+		}
 		//Jump
 		if (GetKeyboardTrigger(DIK_SPACE) && g_Player.isGround)
 		{
@@ -207,10 +229,11 @@ void UpdatePlayer(void)
 		}
 
 		//重力
-		g_Player.verticalSpeed -= gravity;
-		if (g_Player.verticalSpeed < (g_Player.maxFallSpeed * -1.0f))
-		{
-			g_Player.verticalSpeed = g_Player.maxFallSpeed * -1.0f;
+		if (!g_Player.isGround) {
+			g_Player.verticalSpeed -= gravity;
+			if (g_Player.verticalSpeed < (g_Player.maxFallSpeed * -1.0f)) {
+				g_Player.verticalSpeed = g_Player.maxFallSpeed * -1.0f;
+			}
 		}
 
 		//地面
@@ -321,6 +344,9 @@ void UpdatePlayer(void)
 		g_Player.spd = 0.0f;
 		roty = 0.0f;
 	}*/
+	PrintDebugProc("Player isGround: %s\n", g_Player.isGround ? "TRUE" : "FALSE");
+	PrintDebugProc("VerticalSpeed: %f\n", g_Player.verticalSpeed);
+
 #endif
 
 
@@ -353,6 +379,51 @@ void UpdatePlayer(void)
 	//{
 	//	SetBullet(g_Player.pos, g_Player.rot);
 	//}
+	//flor
+	XMFLOAT3 HitPosition;
+	XMFLOAT3 Normal;
+
+	XMFLOAT3 start = g_Player.pos;
+	start.y += 3.0f;
+	XMFLOAT3 end = g_Player.pos;
+	end.y -= 6.0f;
+
+	BOOL hit = FALSE;
+	float nearestDist = FLT_MAX;
+
+
+	for (const auto& tri : floorTris)
+	{
+		XMFLOAT3 tempHit, tempNormal;
+		if (RayCast(tri.v0, tri.v1, tri.v2, start, end, &tempHit, &tempNormal))
+		{
+			float dist = fabsf(start.y - tempHit.y);
+			if (dist < nearestDist)
+			{
+				nearestDist = dist;
+				HitPosition = tempHit;
+				Normal = tempNormal;
+				hit = TRUE;
+			}
+		}
+	}
+
+	if (hit) {
+		float groundY = HitPosition.y + PLAYER_OFFSET_Y;
+		if (g_Player.verticalSpeed <= 0.0f && g_Player.pos.y <= groundY) {
+			g_Player.pos.y = groundY;
+			g_Player.isGround = TRUE;
+			g_Player.verticalSpeed = 0.0f;
+		}
+		else {
+			g_Player.isGround = FALSE;
+		}
+	}
+	else {
+		g_Player.isGround = FALSE;
+	}
+	
+
 
 
 	// 影もプレイヤーの位置に合わせる
@@ -380,7 +451,7 @@ void UpdatePlayer(void)
 
 
 
-
+	
 
 
 #ifdef _DEBUG

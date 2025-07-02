@@ -67,6 +67,10 @@ struct PLAYER
 	float				HP_MAX;
 };
 
+struct AABB {
+	XMFLOAT3 min;
+	XMFLOAT3 max;
+};
 
 
 //*****************************************************************************

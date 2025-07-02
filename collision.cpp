@@ -216,3 +216,48 @@ BOOL CheckSphereAABBCollision(XMFLOAT3 spherePos, float sphereRadius,
 
 	return (dx * dx + dy * dy + dz * dz) <= (sphereRadius * sphereRadius);
 }
+
+BOOL AABBvsTriangle(XMFLOAT3 aabbMin, XMFLOAT3 aabbMax, XMFLOAT3 p0, XMFLOAT3 p1, XMFLOAT3 p2)
+{
+	XMFLOAT3 center = {
+		(aabbMin.x + aabbMax.x) * 0.5f,
+		(aabbMin.y + aabbMax.y) * 0.5f,
+		(aabbMin.z + aabbMax.z) * 0.5f
+	};
+	XMFLOAT3 halfSize = {
+		(aabbMax.x - aabbMin.x) * 0.5f,
+		(aabbMax.y - aabbMin.y) * 0.5f,
+		(aabbMax.z - aabbMin.z) * 0.5f
+	};
+
+	XMFLOAT3 v0 = { p0.x - center.x, p0.y - center.y, p0.z - center.z };
+	XMFLOAT3 v1 = { p1.x - center.x, p1.y - center.y, p1.z - center.z };
+	XMFLOAT3 v2 = { p2.x - center.x, p2.y - center.y, p2.z - center.z };
+
+	XMVECTOR e0 = XMLoadFloat3(&v0);
+	XMVECTOR e1 = XMLoadFloat3(&v1);
+	XMVECTOR e2 = XMLoadFloat3(&v2);
+
+	XMVECTOR f0 = XMVectorSubtract(e1, e0);
+	XMVECTOR f1 = XMVectorSubtract(e2, e1);
+	XMVECTOR f2 = XMVectorSubtract(e0, e2);
+
+	XMVECTOR normal = XMVector3Cross(f0, f1);
+	normal = XMVector3Normalize(normal);
+
+	float d0 = XMVectorGetX(XMVector3Dot(normal, e0));
+	float d1 = XMVectorGetX(XMVector3Dot(normal, e1));
+	float d2 = XMVectorGetX(XMVector3Dot(normal, e2));
+	float triMin = min(d0, min(d1, d2));
+	float triMax = max(d0, max(d1, d2));
+
+	XMFLOAT3 n;
+	XMStoreFloat3(&n, normal);
+	float r = fabsf(n.x) * halfSize.x + fabsf(n.y) * halfSize.y + fabsf(n.z) * halfSize.z;
+
+	if (triMax < -r || triMin > r)
+		return FALSE;
+
+
+	return TRUE;
+}

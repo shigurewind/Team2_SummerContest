@@ -3,6 +3,11 @@
 #include <fbxsdk.h>
 #include "model.h"
 
+struct Triangle {
+	XMFLOAT3 v0;
+	XMFLOAT3 v1;
+	XMFLOAT3 v2;
+};
 
 
 //*****************************************************************************
@@ -39,7 +44,8 @@ struct FBXTESTMODEL
 
 	XMFLOAT3			UpVector;			// é©ï™Ç™óßÇ¡ÇƒÇ¢ÇÈèä
 
-
+	std::vector<Triangle> wallTriangles;
+	std::vector<Triangle> floorTriangles;
 };
 
 //*****************************************************************************
@@ -52,3 +58,7 @@ void DrawFBXTestModel(void);
 
 FBXTESTMODEL* GetFBXTestModel(void);
 
+BOOL RayHitFBXModel(AMODEL* model, XMFLOAT3 start, XMFLOAT3 end, XMFLOAT3* hitPos, XMFLOAT3* normal);
+
+
+void ExtractWallTrianglesFromFBX(FBXTESTMODEL* fbxModel);
