@@ -13,7 +13,7 @@ HRESULT InitFBXTestModel(void)
 	g_FBXTestModel.load = TRUE;
 
 	//g_FBXTestModel.model = ModelLoad("data/MODEL/model.fbx");	// FBXモデルの読み込み
-	g_FBXTestModel.model = ModelLoad("data/MODEL/stage1.fbx");	// FBXモデルの読み込み
+	g_FBXTestModel.model = ModelLoad("data/MODEL/FBX/map/map_tutorial.fbx");	// FBXモデルの読み込み
 
 	LoadShaderFromFile("Shader/testShader.hlsl", "VertexShaderPolygon", "PixelShaderPolygon", &g_shaderCustom);
 	g_FBXTestModel.shader = &g_shaderCustom;
@@ -21,7 +21,7 @@ HRESULT InitFBXTestModel(void)
 
 	g_FBXTestModel.pos = XMFLOAT3(-10.0f, 20.0f, -50.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_FBXTestModel.scl = XMFLOAT3(20.0f, 20.0f, 20.0f);
+	g_FBXTestModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
 
@@ -51,7 +51,7 @@ void UpdateFBXTestModel(void)
 
 void DrawFBXTestModel(void)
 {
-
+	
 
 	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld, quatMatrix;
 
@@ -82,6 +82,15 @@ void DrawFBXTestModel(void)
 
 	XMStoreFloat4x4(&g_FBXTestModel.mtxWorld, mtxWorld);
 
+	MATERIAL mat = {};
+	mat.Diffuse = XMFLOAT4(0.6f, 0.0f, 0.0f, 1.0f);
+	mat.Ambient = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	mat.Specular = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	mat.Emission = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	mat.Shininess = 16.0f;
+	mat.noTexSampling = 0;//重要：FBX全部0にする
+
+	SetMaterial(mat);
 
 	// 縁取りの設定
 	//SetFuchi(1);

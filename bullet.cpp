@@ -177,9 +177,9 @@ void DrawBullet(void)
             //material.Ambient = material.Diffuse; 
             //material.noTexSampling = 1;
             //SetMaterial(material); 
-
+            
             DrawModel(&g_Bullet[i].model);
-
+            
         }
     }
 }
