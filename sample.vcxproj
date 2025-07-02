@@ -436,6 +436,7 @@
     <ClInclude Include="Dependenceis\nlohmann\json_fwd.hpp" />
     <ClInclude Include="Dependenceis\nlohmann\ordered_map.hpp" />
     <ClInclude Include="DirectXTex.h" />
+    <ClInclude Include="dissolveTest.h" />
     <ClInclude Include="enemy.h" />
     <ClInclude Include="fade.h" />
     <ClInclude Include="FBXmodel.h" />
@@ -477,6 +478,7 @@
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="debugproc.cpp" />
     <ClCompile Include="debugUI.cpp" />
+    <ClCompile Include="dissolveTest.cpp" />
     <ClCompile Include="enemy.cpp" />
     <ClCompile Include="fade.cpp" />
     <ClCompile Include="FBXmodel.cpp" />

@@ -82,6 +82,14 @@ cbuffer CameraBuffer : register(b7)
     float4 Camera;
 }
 
+cbuffer ConstantBuffer : register(b8)
+{
+    float4 g_Diffuse;
+    float g_Dissolve; // dissolve値 (0.0 ~ 1.0)
+    
+    float3 padding;
+};
+
 
 
 //=============================================================================
@@ -118,6 +126,7 @@ void VertexShaderPolygon(in float4 inPosition : POSITION0,
 // グローバル変数
 //*****************************************************************************
 Texture2D g_Texture : register(t0);
+Texture2D g_DissolveMap : register(t1);
 SamplerState g_SamplerState : register(s0);
 
 
@@ -148,6 +157,8 @@ void PixelShaderPolygon(in float4 inPosition : SV_POSITION,
     {
         color = inDiffuse;
     }
+    
+    
 
     if (Light.Enable == 0)
     {
@@ -197,7 +208,22 @@ void PixelShaderPolygon(in float4 inPosition : SV_POSITION,
         color = outColor;
         color.a = inDiffuse.a * Material.Diffuse.a;
         
+        
+       
+        
     }
+    
+    
+     //ディゾルブ処理
+    if (g_Dissolve >= 0.0f)
+    {
+        float dissolveVal = g_DissolveMap.Sample(g_SamplerState, inTexCoord).r;
+        if (dissolveVal < g_Dissolve)
+            discard;
+    }
+    
+    
+    
 
 	//フォグ
     if (Fog.Enable == 1)
@@ -224,4 +250,7 @@ void PixelShaderPolygon(in float4 inPosition : SV_POSITION,
             outDiffuse.g = 0.0f;
         }
     }
+    
+    
+
 }

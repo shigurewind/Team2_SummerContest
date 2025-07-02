@@ -66,6 +66,15 @@ struct FUCHI
 	int			fill[3];
 };
 
+// ディゾルブ用定数バッファ構造体
+struct DISSOLVE_CBUFFER
+{
+	XMFLOAT4 g_Diffuse;
+	float g_Dissolve;
+	
+	float padding[3]; // 16byte アライメント
+};
+
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -118,6 +127,10 @@ static LIGHT_CBUFFER	g_Light;
 static FOG_CBUFFER		g_Fog;
 
 static FUCHI			g_Fuchi;
+
+//Dissolve用定数バッファ
+static ID3D11Buffer* g_DissolveBuffer = NULL;
+static DISSOLVE_CBUFFER g_Dissolve;
 
 static float g_ClearColor[4] = { 0.3f, 0.3f, 0.3f, 1.0f };	// 背景色
 
@@ -677,6 +690,13 @@ HRESULT InitRenderer(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	g_ImmediateContext->PSSetConstantBuffers(7, 1, &g_CameraBuffer);
 
 
+	// ディゾルブ用定数バッファ (b8)
+	hBufferDesc.ByteWidth = sizeof(DISSOLVE_CBUFFER);
+	g_D3DDevice->CreateBuffer(&hBufferDesc, NULL, &g_DissolveBuffer);
+	g_ImmediateContext->VSSetConstantBuffers(8, 1, &g_DissolveBuffer);
+	g_ImmediateContext->PSSetConstantBuffers(8, 1, &g_DissolveBuffer);
+
+
 	// 入力レイアウト設定
 	g_ImmediateContext->IASetInputLayout(g_VertexLayout);
 
@@ -836,4 +856,13 @@ void SetDefaultShader()
 	ctx->IASetInputLayout(GetDefaultInputLayout());
 	ctx->VSSetShader(GetDefaultVertexShader(), nullptr, 0);
 	ctx->PSSetShader(GetDefaultPixelShader(), nullptr, 0);
+}
+
+
+void SetDissolveValue(float dissolve, XMFLOAT4 color)
+{
+	g_Dissolve.g_Diffuse = color;
+	g_Dissolve.g_Dissolve = dissolve;
+	
+	GetDeviceContext()->UpdateSubresource(g_DissolveBuffer, 0, NULL, &g_Dissolve, 0, 0);
 }
