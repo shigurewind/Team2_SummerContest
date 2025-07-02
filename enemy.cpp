@@ -598,7 +598,7 @@ void GhostEnemy::Init()
     *material = {};
     material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-    pos = XMFLOAT3(0.0f, 0.0f, 20.0f);
+    pos = XMFLOAT3(0.0f, 0.0f, ENEMY_OFFSET_Y);
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
     moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // 現在の動き方向
@@ -607,7 +607,7 @@ void GhostEnemy::Init()
     currentFrame = 0;
     frameCounter = 0;
     frameInterval = 15;//change speed
-    maxFrames = 1;
+    maxFrames = 2;
 
     HP = 50;
 }
@@ -763,18 +763,42 @@ void GhostEnemy::NormalMovement()
         moveChangeTimer = 2.0f; // reset timer
 
         // 動き方向変わることはランダム設定
-        int dir = rand() % 4;
-        switch (dir) {
-        case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // 右
-        case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // 左
-        case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // 前（+ｚ）
-        case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // 後ろ（-ｚ）
+        int dir = rand() % 6;
+        switch (dir) 
+        {
+            case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // 右
+            case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // 左
+            case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // 前（+ｚ）
+            case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // 後ろ（-ｚ）
+            case 4: moveDir = XMFLOAT3(0.0f, 1.0f, 0.0f); break; // 上（+ｙ）
+            case 5: moveDir = XMFLOAT3(0.0f, -1.0f, 0.0f); break; // 下（-ｙ）
         }
     }
 
-    pos.x += moveDir.x * speed;
-    pos.y += moveDir.y * speed;
-    pos.z += moveDir.z * speed;
+    // 新しい位置を計算
+    XMFLOAT3 newPos = pos;
+    newPos.x += moveDir.x * speed;
+    newPos.y += moveDir.y * speed;
+    newPos.z += moveDir.z * speed;
+
+    // 範囲制限（例えば：XとZは -50.0f 〜 +50.0f）
+    const float minX = -200.0f;
+    const float maxX = 200.0f;
+    const float minZ = -100.0f;
+    const float maxZ = 100.0f;
+    const float minY = -50.0f;
+    const float maxY = 100.0f;
+
+    // 範囲内なら移動
+    if (newPos.x >= minX && newPos.x <= maxX &&
+        newPos.y >= minY && newPos.y <= maxY &&
+        newPos.z >= minZ && newPos.z <= maxZ ) {
+        pos = newPos;
+    }
+    else {
+        // 範囲外に出そうなら方向を変える
+        moveChangeTimer = 0.0f; // すぐ次の方向へ変更
+    }
 }
 
 void GhostEnemy::Attack()
