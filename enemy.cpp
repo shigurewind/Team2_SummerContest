@@ -16,10 +16,9 @@
 #include "input.h"
 #include "collision.h"
 #include "GameUI.h"
-
-
-
-
+#include "item.h"
+#include <cstdlib>
+#include <ctime>
 
 
 //*****************************************************************************
@@ -87,6 +86,7 @@ void SpiderEnemy::Init() {
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
     speed = 1.0f;
+    dropRate = 0.5f;
 
     currentFrame = 0;
     frameCounter = 0;
@@ -189,11 +189,14 @@ void SpiderEnemy::Update() {
         {
             bullet[i].use = false;
             HP -= 1;
-            if (HP <= 0) use = false;
+            if (HP <= 0)
+            {
+                use = false;
+                DropItems(pos, SPIDER);
+            }
         }
 
     }
-
 
 
 #ifdef _DEBUG
@@ -265,7 +268,6 @@ void SpiderEnemy::Draw() {
 
     GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
 
-    //�H�H�H
     SetAlphaTestEnable(FALSE);
     SetBlendState(BLEND_MODE_ALPHABLEND);
     SetWorldMatrix(&mtxWorld);
@@ -451,7 +453,70 @@ void EnemySpawner(XMFLOAT3 position, int type) {
     }
 }
 
+void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType)
+{
+    int itemCount = 0;
 
+    auto getRandomOffsetX = []() -> float {
+        return ((float)(rand() % 41) - 20.0f);
+        };
+
+    auto dropItemAtOffset = [&](int itemId) {
+        XMFLOAT3 dropPos = pos;
+        dropPos.x += getRandomOffsetX();
+        SetItem(dropPos, itemId);
+        };
+
+    float random = (float)rand() / RAND_MAX;
+    switch (enemyType)
+    {
+    case SPIDER:
+        dropItemAtOffset(ITEM_APPLE);  // Apple 100%
+        if (random < 0.5f)  // San 50%
+        {
+            dropItemAtOffset(ITEM_SAN);
+        }
+        if (random < 0.2f)  // fire 20%
+        {
+            dropItemAtOffset(PART_FIRE);
+        }
+        if (random < 0.2f)  // shutgun 20%
+        {
+            dropItemAtOffset(PART_SHUTGUN);
+        }
+        if (random < 0.5f)  // bullet 50%
+        {
+            dropItemAtOffset(ITEM_BULLET);
+        }
+        break;
+
+    case GHOST:
+        if (random < 0.5f)  // Apple 50%
+        {
+            dropItemAtOffset(ITEM_APPLE);
+        }
+        if (random < 0.2f)  // San 20%
+        {
+            dropItemAtOffset(ITEM_SAN);
+        }
+        if (random < 0.2f)  // fire 20%
+        {
+            dropItemAtOffset(PART_FIRE);
+        }
+        if (random < 0.2f)  // shutgun 20%
+        {
+            dropItemAtOffset(PART_SHUTGUN);
+        }
+        if (random < 0.5f)  // bullet 50%
+        {
+            dropItemAtOffset(ITEM_BULLET);
+        }
+        break;
+
+    default:
+        break;
+    }
+}
 
 //*****************************************************************************
 // 
@@ -598,10 +663,15 @@ void GhostEnemy::Update()
         {
             bullet[i].use = false;
             HP -= 1;
-            if (HP <= 0) use = false;
+            if (HP <= 0)
+            {
+                use = false;
+                DropItems(pos, GHOST);
+            }
         }
 
     }
+
 
 
 #ifdef _DEBUG
@@ -674,7 +744,6 @@ void GhostEnemy::Draw()
 
     GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
 
-    //�H�H�H
     SetAlphaTestEnable(FALSE);
     SetBlendState(BLEND_MODE_ALPHABLEND);
     SetWorldMatrix(&mtxWorld);
