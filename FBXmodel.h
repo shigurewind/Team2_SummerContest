@@ -2,6 +2,10 @@
 
 #include <fbxsdk.h>
 #include "model.h"
+#include "DirectXMath.h"
+#include "Octree.h"
+
+
 
 
 
@@ -42,6 +46,7 @@ struct FBXTESTMODEL
 
 };
 
+
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -52,3 +57,10 @@ void DrawFBXTestModel(void);
 
 FBXTESTMODEL* GetFBXTestModel(void);
 
+void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix);
+const std::vector<TriangleData>& GetTriangleList();
+
+OctreeNode* GetWallTree();
+OctreeNode* GetFloorTree();
+const std::vector<TriangleData>& GetFloorTriangles();
+const std::vector<TriangleData>& GetWallTriangles();

@@ -167,7 +167,7 @@ void UpdateGame(void)
 	}
 	// 地面処理の更新
 	//UpdateMeshField();
-
+	UpdateFBXTestModel();
 	// プレイヤーの更新処理
 	UpdatePlayer();
 
