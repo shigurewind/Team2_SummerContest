@@ -81,12 +81,12 @@ void ShowDebugUI()
     }
 
     //エネミーエディター
-    /*if (ImGui::CollapsingHeader(u8"エネミー配置エディター"))
+    if (ImGui::CollapsingHeader(u8"エネミー配置エディター"))
     {
         auto& enemies = GetEnemies();
+        static int selectedEnemyID = 0;
 
-        static int selectedEnemy = -1;
-
+        ImGui::InputInt(u8"追加エネミーID", &selectedEnemyID);
         for (int i = 0; i < enemies.size(); ++i)
         {
             BaseEnemy* e = enemies[i];
@@ -105,13 +105,12 @@ void ShowDebugUI()
             ImGui::PopID();
         }
 
+        const char* enemyTypes[] = { "SPIDER", "GHOST" };
+        ImGui::Combo(u8"追加エネミータイプ", &selectedEnemyID, enemyTypes, IM_ARRAYSIZE(enemyTypes));
+        static XMFLOAT3 newEnemyPos = { 0.0f, 0.0f, 0.0f };
+        ImGui::DragFloat3(u8"追加エネミー位置", (float*)&newEnemyPos, 0.1f);
         if (ImGui::Button(u8"エネミー追加")) {
-            ScarecrowEnemy* newEnemy = new ScarecrowEnemy();
-            newEnemy->Init();
-            newEnemy->SetUsed(true);
-            CAMERA* cam = GetCamera();
-            newEnemy->SetPosition(cam->pos);
-            GetEnemies().push_back(newEnemy);
+            EnemySpawner(newEnemyPos, selectedEnemyID);
         }
 
         if (ImGui::Button(u8"保存")) {
@@ -121,7 +120,7 @@ void ShowDebugUI()
         if (ImGui::Button(u8"読込")) {
             LoadEnemyData("enemy_data.json");
         }
-    }*/
+    }
 
 
     //アイテムエディター

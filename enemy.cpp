@@ -1,6 +1,6 @@
 ﻿//=============================================================================
 //
-// 
+// enemy.cpp
 // 
 //
 //=============================================================================
@@ -19,6 +19,10 @@
 #include "item.h"
 #include <cstdlib>
 #include <ctime>
+
+#include <fstream>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 
 //*****************************************************************************
@@ -86,7 +90,6 @@ void SpiderEnemy::Init() {
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
     speed = 1.0f;
-    dropRate = 0.5f;
 
     currentFrame = 0;
     frameCounter = 0;
@@ -805,3 +808,50 @@ void GhostEnemy::Attack()
 {
 }
 
+//*****************************************************************************
+// 
+//*****************************************************************************
+void SaveEnemyData(const std::string& filename)
+{
+    json j = json::array();
+    for (int i = 0; i < (int)g_enemies.size(); ++i)
+    {
+        if (g_enemies[i]->IsUsed())
+        {
+            XMFLOAT3 pos = g_enemies[i]->GetPosition();
+            XMFLOAT3 scl = g_enemies[i]->GetScale();
+
+            json enemyObj;
+            enemyObj["type"] = g_enemies[i]->GetType();
+            enemyObj["pos"] = { pos.x, pos.y, pos.z };
+            enemyObj["scl"] = { scl.x, scl.y, scl.z };
+            j.push_back(enemyObj);
+        }
+    }
+
+    std::ofstream file(filename);
+    file << j.dump(4);
+
+}
+
+void LoadEnemyData(const std::string& filename)
+{
+    std::ifstream file(filename);
+    if (!file) return;
+
+    json j;
+    file >> j;
+
+    for (int i = 0; i < (int)g_enemies.size(); ++i)
+        g_enemies[i]->SetUsed(false);
+
+    for (const auto& enemyObj : j)
+    {
+        int type = enemyObj["type"];
+        XMFLOAT3 pos(enemyObj["pos"][0], enemyObj["pos"][1], enemyObj["pos"][2]);
+        XMFLOAT3 scl(enemyObj["scl"][0], enemyObj["scl"][1], enemyObj["scl"][2]);
+        EnemySpawner(pos, type);
+        BaseEnemy* newEnemy = g_enemies.back();
+        newEnemy->SetScale(scl);
+    }
+}

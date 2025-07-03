@@ -1,9 +1,29 @@
+//=============================================================================
+//
+// enemy.h
+// 
+//
+//=============================================================================
+
 #pragma once
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <string>
 
 using namespace DirectX;
+
+//*****************************************************************************
+// 
+//*****************************************************************************
+
+enum ENEMY_TYPE
+{
+	SPIDER,
+	GHOST,
+
+	MAX
+};
 
 //*****************************************************************************
 // 
@@ -23,7 +43,7 @@ public:
 	void ChasingPlayer(float speed, float chaseRange);
 
 
-	bool IsUsed() const { return use; }
+	bool IsUsed() { return use; }
 	void SetUsed(bool b) { use = b; }
 
 	void SetPosition(const XMFLOAT3& p);
@@ -32,6 +52,7 @@ public:
 	void SetScale(const XMFLOAT3& s);
 	XMFLOAT3 GetScale() const;
 
+	virtual ENEMY_TYPE GetType() const = 0;
 
 protected:
 	XMFLOAT3 pos;
@@ -39,7 +60,6 @@ protected:
 	XMFLOAT4X4 mtxWorld;
 	bool use;
 	float minDistance;
-	float dropRate;
 	int HP, maxHP;
 
 };
@@ -58,6 +78,8 @@ public:
 
 	void NormalMovement() override;
 	void Attack() override;
+	ENEMY_TYPE GetType() const override { return SPIDER; }
+
 
 private:
 	ID3D11ShaderResourceView* texture;
@@ -103,6 +125,8 @@ public:
 
 	void NormalMovement() override;
 	void Attack() override;
+	ENEMY_TYPE GetType() const override { return GHOST; }
+
 
 
 private:
@@ -133,15 +157,6 @@ private:
 
 };
 
-enum ENEMY_TYPE
-{
-	SPIDER,
-	GHOST,
-
-	MAX
-};
-
-
 
 //*****************************************************************************
 // 
@@ -155,3 +170,5 @@ void UninitEnemy();
 
 void EnemySpawner(XMFLOAT3 position, int type);
 void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType);
+void SaveEnemyData(const std::string& filename);
+void LoadEnemyData(const std::string& filename);
