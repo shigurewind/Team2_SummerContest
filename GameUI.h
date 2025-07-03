@@ -31,3 +31,5 @@ void DrawAmmoUI(void);
 
 void ShowWebEffect(float time);
 
+void DrawHandUI(void);
+

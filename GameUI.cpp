@@ -16,7 +16,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(6)		// テクスチャの数
+#define TEXTURE_MAX					(7)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -27,16 +27,17 @@
 //*****************************************************************************
 // グローバル変数
 //*****************************************************************************
-static ID3D11Buffer				*g_VertexBuffer = NULL;		// 頂点情報
-static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
+static ID3D11Buffer* g_VertexBuffer = NULL;		// 頂点情報
+static ID3D11ShaderResourceView* g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
 
-static char *g_TexturName[TEXTURE_MAX] = {
+static char* g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/number16x32.png",
-	"data/TEXTURE/HP00.png",
-	"data/TEXTURE/HP01.png",
+	"data/2Dpicture/UI/HPbar.png",
+	"data/2Dpicture/UI/HPgauge.png",
 	"data/TEXTURE/revolver.png",
 	"data/TEXTURE/shotgun.png",
 	"data/2Dpicture/enemy/enemyWeb.png",
+	"data/2Dpicture/UI/hand.png",
 };
 
 
@@ -61,7 +62,7 @@ static float g_WebEffectTimer = 0.0f;
 //=============================================================================
 HRESULT InitScore(void)
 {
-	ID3D11Device *pDevice = GetDevice();
+	ID3D11Device* pDevice = GetDevice();
 
 	//テクスチャ生成
 	for (int i = 0; i < TEXTURE_MAX; i++)
@@ -87,10 +88,10 @@ HRESULT InitScore(void)
 
 
 	// プレイヤーの初期化
-	g_Use   = TRUE;
-	g_w     = TEXTURE_WIDTH;
-	g_h     = TEXTURE_HEIGHT;
-	g_Pos   = { 500.0f, 20.0f, 0.0f };
+	g_Use = TRUE;
+	g_w = TEXTURE_WIDTH;
+	g_h = TEXTURE_HEIGHT;
+	g_Pos = { 500.0f, 20.0f, 0.0f };
 	g_TexNo = 0;
 
 	g_Score = 0;	// スコアの初期化
@@ -139,7 +140,7 @@ void UpdateScore(void)
 #ifdef _DEBUG	// デバッグ情報を表示する
 	//char *str = GetDebugStr();
 	//sprintf(&str[strlen(str)], " PX:%.2f PY:%.2f", g_Pos.x, g_Pos.y);
-	
+
 #endif
 
 }
@@ -169,8 +170,8 @@ void DrawScore(void)
 	// テクスチャ設定
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_TexNo]);
 
-	
-	
+
+
 	PLAYER* player = GetPlayer();
 
 	//ケージのHPバー
@@ -217,9 +218,12 @@ void DrawScore(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 
-	
+
 	//弾数表示の呼び出し
 	DrawAmmoUI();
+
+	//右手UIざっくり描画
+	DrawHandUI();
 
 }
 
@@ -309,6 +313,23 @@ void DrawAmmoUI(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 }
+
+
+//=============================================================================
+// 右手のUI
+//=============================================================================
+void DrawHandUI(void)
+{
+	// テクスチャ設定
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[6]);
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSprite(g_VertexBuffer, 800.0f, 700.0f, 500.0f, 500.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+}
+
+
+
 
 
 //=============================================================================
