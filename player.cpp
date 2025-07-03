@@ -235,13 +235,22 @@ void UpdatePlayer(void)
 
 		newPos.y += g_Player.verticalSpeed;
 		//’n–Ê
-		
+		const float groundThreshold = 0.2f;
 		float groundY;
 		if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && g_Player.verticalSpeed <= 0.0f)
 		{
-			newPos.y = groundY;
-			g_Player.verticalSpeed = 0.0f;
-			g_Player.isGround = TRUE;
+			float targetY = groundY;
+			float distanceToGround = newPos.y - targetY;
+			if (distanceToGround <= groundThreshold)
+			{
+				newPos.y = targetY;
+				g_Player.verticalSpeed = 0.0f;
+				g_Player.isGround = TRUE;
+			}
+			else
+			{
+				g_Player.isGround = FALSE;
+			}
 		}
 		else
 		{

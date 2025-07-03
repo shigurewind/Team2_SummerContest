@@ -213,7 +213,7 @@ void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix)
 			XMFLOAT3 v[3];
 			for (int j = 0; j < 3; j++) {
 				aiVector3D vRaw = vertices[face.mIndices[j]];
-				XMVECTOR vLocal = XMVectorSet(vRaw.x, vRaw.y, vRaw.z, 1.0f);
+				XMVECTOR vLocal = XMVectorSet(vRaw.x, -vRaw.z, vRaw.y, 1.0f);
 				XMVECTOR vWorld = XMVector3Transform(vLocal, worldMatrix);
 				XMStoreFloat3(&v[j], vWorld);
 			}
