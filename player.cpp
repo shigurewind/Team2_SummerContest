@@ -364,20 +364,41 @@ void UpdatePlayer(void)
 
 
 
-	// ポイントライトのテスト
-	{
+	// Fキーでポイントライト
+	static bool isLightOn = false;
+
+	if (GetKeyboardTrigger(DIK_F)) {
+		isLightOn = !isLightOn;  // Fキーで切り替え
+	}
+
+	if (isLightOn) {
 		LIGHT* light = GetLightData(1);
-		XMFLOAT3 pos = g_Player.pos;
-		pos.y += 20.0f;
+
+		CAMERA* cam = GetCamera();
+		XMFLOAT3 pos = cam->pos;
+		XMFLOAT3 at = cam->at;
+
+		// カメラからプレイヤー方向へのベクトル
+		XMFLOAT3 dir = {
+			at.x - pos.x,
+			at.y - pos.y,
+			at.z - pos.z
+		};
 
 		light->Position = pos;
+		light->Direction = dir;  // 念のため
 		light->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		light->Ambient = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		light->Type = LIGHT_TYPE_POINT;
 		light->Enable = TRUE;
+
 		SetLightData(1, light);
 	}
-
+	else {
+		LIGHT* light = GetLightData(1);
+		light->Enable = FALSE;
+		SetLightData(1, light);
+	}
 
 
 
