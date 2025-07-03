@@ -67,6 +67,7 @@ struct FUCHI
 };
 
 // ディゾルブ用定数バッファ構造体
+//TEST0703
 struct DISSOLVE_CBUFFER
 {
 	XMFLOAT4 g_Diffuse;
@@ -689,7 +690,7 @@ HRESULT InitRenderer(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	g_ImmediateContext->VSSetConstantBuffers(7, 1, &g_CameraBuffer);
 	g_ImmediateContext->PSSetConstantBuffers(7, 1, &g_CameraBuffer);
 
-
+	//TEST0703
 	// ディゾルブ用定数バッファ (b8)
 	hBufferDesc.ByteWidth = sizeof(DISSOLVE_CBUFFER);
 	g_D3DDevice->CreateBuffer(&hBufferDesc, NULL, &g_DissolveBuffer);
@@ -858,7 +859,7 @@ void SetDefaultShader()
 	ctx->PSSetShader(GetDefaultPixelShader(), nullptr, 0);
 }
 
-
+//TEST0703
 void SetDissolveValue(float dissolve, XMFLOAT4 color)
 {
 	g_Dissolve.g_Diffuse = color;

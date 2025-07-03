@@ -125,6 +125,7 @@ void VertexShaderPolygon(in float4 inPosition : POSITION0,
 //*****************************************************************************
 // ƒOƒ[ƒoƒ‹•Ï”
 //*****************************************************************************
+//TEST0703
 Texture2D g_Texture : register(t0);
 Texture2D g_DissolveMap : register(t1);
 SamplerState g_SamplerState : register(s0);
