@@ -251,6 +251,7 @@ void UpdatePlayer(void)
 
 
 		newPos.y += g_Player.verticalSpeed;
+
 		//地面
 		const float groundThreshold = 0.2f;
 		float groundY;
@@ -275,6 +276,8 @@ void UpdatePlayer(void)
 		}
 		g_Player.pos = newPos;
 		
+
+
 		//近接攻撃
 
 		if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
@@ -323,34 +326,10 @@ void UpdatePlayer(void)
 
 		PLAYER* p = GetPlayer();
 
+
 		// 弾発射処理
 		int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &p->ammoNormal : &p->ammoFire;
-		if (IsMouseLeftTriggered() && *currentAmmo > 0)
-		const float groundThreshold = 0.2f;
-		float groundY;
-		if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && g_Player.verticalSpeed <= 0.0f)
-		{
-			float targetY = groundY;
-			float distanceToGround = newPos.y - targetY;
-			if (distanceToGround <= groundThreshold)
-			{
-				newPos.y = targetY;
-				g_Player.verticalSpeed = 0.0f;
-				g_Player.isGround = TRUE;
-			}
-			else
-			{
-				g_Player.isGround = FALSE;
-			}
-		}
-		else
-		{
-			g_Player.isGround = FALSE;
-		}
-		g_Player.pos = newPos;
-		
-		// 弾発射処理（共通関数使用） 
-		if (IsMouseLeftTriggered() && g_Player.ammo > 0)
+		if (IsMouseLeftTriggered() && currentAmmo > 0)
 		{
 			XMFLOAT3 pos = GetGunMuzzlePosition();
 			XMFLOAT3 rot = GetGunMuzzleRotation();
@@ -361,9 +340,11 @@ void UpdatePlayer(void)
 			else {
 				SetShotgunBullet(currentBullet, pos, rot);
 			}
-			(*currentAmmo)--;
+			(currentAmmo)--;
 		}
-
+		
+		
+		
 
 		// Rキーでリロード処理
 		if (GetKeyboardTrigger(DIK_R))
