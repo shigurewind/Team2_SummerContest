@@ -28,6 +28,7 @@
 
 #include "FBXmodel.h"
 #include "item.h"
+#include "dissolveTest.h"
 
 
 //*****************************************************************************
@@ -88,6 +89,8 @@ HRESULT InitGame(void)
 
 	InitItem();
 
+	InitDissolveTest();
+
 	// BGMÄ¶
 	PlaySound(SOUND_LABEL_BGM_sample001);
 
@@ -125,6 +128,8 @@ void UninitGame(void)
 	UninitFBXTestModel();
 
 	UninitItem();
+
+	UninitDissolveTest();
 
 }
 
@@ -188,6 +193,8 @@ void UpdateGame(void)
 	UpdateFBXTestModel();
 
 	UpdateItem();
+
+	UpdateDissolveTest();
 }
 
 //=============================================================================
@@ -195,6 +202,8 @@ void UpdateGame(void)
 //=============================================================================
 void DrawGame0(void)
 {
+
+
 	// 3D‚Ì•¨‚ğ•`‰æ‚·‚éˆ—
 	// ’n–Ê‚Ì•`‰æˆ—
 	//DrawMeshField();
@@ -218,6 +227,8 @@ void DrawGame0(void)
 	DrawFBXTestModel();
 
 	DrawItem();
+
+	DrawDissolveTest();
 
 
 	// 2D‚Ì•¨‚ğ•`‰æ‚·‚éˆ—
