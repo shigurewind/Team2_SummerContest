@@ -28,6 +28,7 @@
 
 #include "FBXmodel.h"
 #include "item.h"
+#include "dissolveTest.h"
 
 
 //*****************************************************************************
@@ -88,6 +89,8 @@ HRESULT InitGame(void)
 
 	InitItem();
 
+	InitDissolveTest();
+
 	// BGM再生
 	PlaySound(SOUND_LABEL_BGM_sample001);
 
@@ -126,6 +129,8 @@ void UninitGame(void)
 
 	UninitItem();
 
+	UninitDissolveTest();
+
 }
 
 //=============================================================================
@@ -162,7 +167,7 @@ void UpdateGame(void)
 	}
 	// 地面処理の更新
 	//UpdateMeshField();
-
+	UpdateFBXTestModel();
 	// プレイヤーの更新処理
 	UpdatePlayer();
 
@@ -188,6 +193,8 @@ void UpdateGame(void)
 	UpdateFBXTestModel();
 
 	UpdateItem();
+
+	UpdateDissolveTest();
 }
 
 //=============================================================================
@@ -195,6 +202,8 @@ void UpdateGame(void)
 //=============================================================================
 void DrawGame0(void)
 {
+
+
 	// 3Dの物を描画する処理
 	// 地面の描画処理
 	//DrawMeshField();
@@ -218,6 +227,8 @@ void DrawGame0(void)
 	DrawFBXTestModel();
 
 	DrawItem();
+
+	DrawDissolveTest();
 
 
 	// 2Dの物を描画する処理

@@ -14,13 +14,16 @@
 #include "shadow.h"
 #include "debugproc.h"
 #include "meshfield.h"
+#include "FBXmodel.h"
+#include "Octree.h"
+#include "collision.h"
 #include "overlay2D.h"
 #include "enemy.h"
 
 //*****************************************************************************
-// マクロ定義
+// マクロ定義	
 //*****************************************************************************
-#define	MODEL_PLAYER		"data/MODEL/cone.obj"			// 読み込むモデル名
+#define	MODEL_PLAYER		"data/MODEL/player.obj"			// 読み込むモデル名
 
 
 #define	VALUE_MOVE			(2.0f)							// 移動量
@@ -88,7 +91,6 @@ static INTERPOLATION_DATA* g_MoveTblAdr[] =
 };
 
 
-
 int Min(int a, int b) {
 	return (a < b) ? a : b;
 }
@@ -101,8 +103,10 @@ HRESULT InitPlayer(void)
 	g_Player.load = TRUE;
 	LoadModel(MODEL_PLAYER, &g_Player.model);
 
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y + 50.0f, -50.0f);
-	g_Player.pos = XMFLOAT3(-10.0f, PLAYER_OFFSET_Y, -50.0f);
+	
+
+
+	g_Player.pos = XMFLOAT3(0.0f, PLAYER_OFFSET_Y+50.0f, 0.0f);
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
@@ -178,48 +182,102 @@ void UpdatePlayer(void)
 		g_Player.spd *= 0.7f;
 
 		// 移動処理
+		XMFLOAT3 move = {};
+		bool isMoving = false;
+
 		if (GetKeyboardPress(DIK_W)) {
-			g_Player.pos.x += sinf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z += cosf(cam->rot.y) * VALUE_MOVE;
+			move.x += sinf(cam->rot.y);
+			move.z += cosf(cam->rot.y);
+			isMoving = true;
 		}
 		if (GetKeyboardPress(DIK_S)) {
-			g_Player.pos.x -= sinf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z -= cosf(cam->rot.y) * VALUE_MOVE;
+			move.x -= sinf(cam->rot.y);
+			move.z -= cosf(cam->rot.y);
+			isMoving = true;
 		}
 		if (GetKeyboardPress(DIK_A)) {
-			g_Player.pos.x -= cosf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z += sinf(cam->rot.y) * VALUE_MOVE;
+			move.x -= cosf(cam->rot.y);
+			move.z += sinf(cam->rot.y);
+			isMoving = true;
 		}
-		if (GetKeyboardPress(DIK_D)) {
+		if(GetKeyboardPress(DIK_D)) {
+			move.x += cosf(cam->rot.y);
+			move.z -= sinf(cam->rot.y);
+			isMoving = true;
+		}
 
-			g_Player.pos.x += cosf(cam->rot.y) * VALUE_MOVE;
-			g_Player.pos.z -= sinf(cam->rot.y) * VALUE_MOVE;
+		XMFLOAT3 newPos = g_Player.pos;
+		if (isMoving) {
+			XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
+			XMFLOAT3 testPos = g_Player.pos;
+			testPos.x += XMVectorGetX(moveVec) * VALUE_MOVE;
+			testPos.z += XMVectorGetZ(moveVec) * VALUE_MOVE;
+
+			XMFLOAT3 wallBoxMin = testPos;
+			XMFLOAT3 wallBoxMax = testPos;
+			float halfSize = g_Player.size;
+
+			wallBoxMin.x -= halfSize;
+			wallBoxMin.y -= 0.1f;
+			wallBoxMin.z -= halfSize;
+
+			wallBoxMax.x += halfSize;
+			wallBoxMax.y += 0.1f;
+			wallBoxMax.z += halfSize;
+
+			if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), wallBoxMin, wallBoxMax, 0, 5, 5)) {
+				newPos.x = testPos.x;
+				newPos.z = testPos.z;
+			}
 		}
+
 		//正しい向き方向処理
 		//g_Player.rot.y = cam->rot.y + 3.14f;
 
-
+		
 		//Jump
-		if (GetKeyboardTrigger(DIK_SPACE) && g_Player.isGround)
-		{
+		if (GetKeyboardTrigger(DIK_SPACE) && g_Player.isGround) {
 			g_Player.verticalSpeed = g_Player.jumpPower;
 			g_Player.isGround = FALSE;
 		}
 
 		//重力
-		g_Player.verticalSpeed -= gravity;
-		if (g_Player.verticalSpeed < (g_Player.maxFallSpeed * -1.0f))
-		{
-			g_Player.verticalSpeed = g_Player.maxFallSpeed * -1.0f;
+		if (!g_Player.isGround) {
+			g_Player.verticalSpeed -= gravity;
+			if (g_Player.verticalSpeed < -g_Player.maxFallSpeed) {
+				g_Player.verticalSpeed = -g_Player.maxFallSpeed;
+			}
 		}
 
+
+		newPos.y += g_Player.verticalSpeed;
+
 		//地面
-		g_Player.pos.y += g_Player.verticalSpeed;
-		if (g_Player.pos.y < 0)
+		const float groundThreshold = 0.2f;
+		float groundY;
+		if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && g_Player.verticalSpeed <= 0.0f)
 		{
-			g_Player.pos.y = 0;
-			g_Player.isGround = TRUE;
+			float targetY = groundY;
+			float distanceToGround = newPos.y - targetY;
+			if (distanceToGround <= groundThreshold)
+			{
+				newPos.y = targetY;
+				g_Player.verticalSpeed = 0.0f;
+				g_Player.isGround = TRUE;
+			}
+			else
+			{
+				g_Player.isGround = FALSE;
+			}
 		}
+		else
+		{
+			g_Player.isGround = FALSE;
+		}
+		g_Player.pos = newPos;
+		
+
+
 		//近接攻撃
 
 		if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
@@ -268,9 +326,10 @@ void UpdatePlayer(void)
 
 		PLAYER* p = GetPlayer();
 
+
 		// 弾発射処理
 		int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &p->ammoNormal : &p->ammoFire;
-		if (IsMouseLeftTriggered() && *currentAmmo > 0)
+		if (IsMouseLeftTriggered() && currentAmmo > 0)
 		{
 			XMFLOAT3 pos = GetGunMuzzlePosition();
 			XMFLOAT3 rot = GetGunMuzzleRotation();
@@ -281,9 +340,11 @@ void UpdatePlayer(void)
 			else {
 				SetShotgunBullet(currentBullet, pos, rot);
 			}
-			(*currentAmmo)--;
+			(currentAmmo)--;
 		}
-
+		
+		
+		
 
 		// Rキーでリロード処理
 		if (GetKeyboardTrigger(DIK_R))
@@ -331,6 +392,7 @@ void UpdatePlayer(void)
 		g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.spd;
 		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.spd;
 	}
+
 
 
 	// レイキャストして足元の高さを求める
@@ -411,6 +473,9 @@ void DrawPlayer(void)
 	mtxScl = XMMatrixScaling(g_Player.scl.x, g_Player.scl.y, g_Player.scl.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
+	XMMATRIX mtxFootOffset = XMMatrixTranslation(0.0f, -PLAYER_OFFSET_Y, 0.0f);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxFootOffset);
+
 	// 回転を反映
 	mtxRot = XMMatrixRotationRollPitchYaw(g_Player.rot.x, g_Player.rot.y + XM_PI, g_Player.rot.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
@@ -426,7 +491,9 @@ void DrawPlayer(void)
 	// ワールドマトリックスの設定
 	SetWorldMatrix(&mtxWorld);
 
-	XMStoreFloat4x4(&g_Player.mtxWorld, mtxWorld);
+	XMFLOAT4X4 temp;
+	DirectX::XMStoreFloat4x4(&temp, mtxWorld);
+	g_Player.mtxWorld = temp;
 
 
 	// 縁取りの設定
@@ -460,4 +527,24 @@ WeaponType GetCurrentWeaponType(void)
 BulletType GetCurrentBulletType(void)
 {
 	return currentBullet;
+}
+bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
+{
+	const auto& tris = GetFloorTriangles();
+
+	XMFLOAT3 rayStart = pos;
+	rayStart.y += 50.0f;
+	XMFLOAT3 rayEnd = pos;
+	rayEnd.y -= 100.0f;
+
+	XMFLOAT3 hit, normal;
+	for (const auto& tri : tris)
+	{
+		if (RayCast(tri.v0, tri.v1, tri.v2, rayStart, rayEnd, &hit, &normal))
+		{
+			groundY = hit.y;
+			return true;
+		}
+	}
+	return false;
 }

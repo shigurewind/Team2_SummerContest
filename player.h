@@ -16,6 +16,7 @@
 #define	PLAYER_SIZE		(5.0f)				// “–‚½‚è”»’è‚Ì‘å‚«‚³
 
 
+
 //*****************************************************************************
 // \‘¢‘Ì’è‹`
 //*****************************************************************************
@@ -82,3 +83,4 @@ BulletType GetCurrentBulletType(void);
 
 
 PLAYER* GetPlayer(void);
+bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);

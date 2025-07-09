@@ -9,6 +9,8 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+#include "dissolveTest.h"
+
 
  // item.cppにあるアイテム配列
 #define MAX_ITEM (128)
@@ -157,6 +159,15 @@ void ShowDebugUI()
         if (ImGui::Button(u8"読込")) {
             LoadItemData("item_data.json");
         }
+    }
+
+	//Shaderエディター
+    if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
+    {
+		DissolveTest* dissolveTest = GetDissolveTest();
+		ImGui::Checkbox(u8"ディゾルブ有効", &dissolveTest->isDissolving);
+        ImGui::DragFloat(u8"ディゾルブ値", &dissolveTest->dissolve, 0.01f, 0.0f, 1.0f, "%.2f");
+        
     }
 
 

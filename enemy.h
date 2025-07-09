@@ -39,6 +39,7 @@ protected:
 	XMFLOAT4X4 mtxWorld;
 	bool use;
 	float minDistance;
+	float dropRate;
 	int HP, maxHP;
 
 };
@@ -86,7 +87,6 @@ private:
 	bool isAttacking;
 	float attackFrameTimer;
 
-	int id;
 
 
 };
@@ -154,3 +154,4 @@ void DrawEnemy();
 void UninitEnemy();
 
 void EnemySpawner(XMFLOAT3 position, int type);
+void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType);
