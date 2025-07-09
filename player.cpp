@@ -40,11 +40,13 @@
 // プロトタイプ宣言
 //*****************************************************************************
 
+const char* SAVE_FILE_PATH = "player_save.dat";
 
 //*****************************************************************************
 // グローバル変数
 //*****************************************************************************
 static PLAYER		g_Player;						// プレイヤー
+
 
 //static PLAYER		g_Parts[PLAYER_PARTS_MAX];		// プレイヤーのパーツ用
 
@@ -143,7 +145,7 @@ HRESULT InitPlayer(void)
 
 
 
-
+	LoadPlayerFromFile();
 
 	return S_OK;
 }
@@ -371,9 +373,23 @@ void UpdatePlayer(void)
 			g_Player.HP = g_Player.HP - 1;
 		}
 
+
+		if (g_Player.HP <= 0 && g_Player.alive)
+		{
+			g_Player.alive = false;
+			SavePlayerToFile();
+			// GameOver Continue
+		}
+
 	}
 
-
+	if (!g_Player.alive && GetKeyboardTrigger(DIK_C))
+	{
+		g_Player.HP = g_Player.HP_MAX;
+		g_Player.alive = true;
+		g_Player.pos = XMFLOAT3(0.0f, PLAYER_OFFSET_Y + 50.0f, 0.0f); 
+		LoadPlayerFromFile(); 
+	}
 
 #ifdef _DEBUG
 	/*if (GetKeyboardPress(DIK_R))
@@ -547,4 +563,32 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 		}
 	}
 	return false;
+}
+
+void SavePlayerToFile() {
+	PlayerSaveData data;
+	data.weapon = (int)GetCurrentWeaponType();
+	data.bullet = (int)GetCurrentBulletType();
+	data.ammoNormal = g_Player.ammoNormal;
+	data.ammoFire = g_Player.ammoFire;
+
+	std::ofstream out(SAVE_FILE_PATH, std::ios::binary);
+	if (out) {
+		out.write((char*)&data, sizeof(PlayerSaveData));
+		out.close();
+	}
+}
+void LoadPlayerFromFile() {
+	PlayerSaveData data;
+
+	std::ifstream in(SAVE_FILE_PATH, std::ios::binary);
+	if (in) {
+		in.read((char*)&data, sizeof(PlayerSaveData));
+		in.close();
+
+		currentWeapon = (WeaponType)data.weapon;
+		currentBullet = (BulletType)data.bullet;
+		g_Player.ammoNormal = data.ammoNormal;
+		g_Player.ammoFire = data.ammoFire;
+	}
 }

@@ -7,6 +7,7 @@
 #pragma once
 #include "model.h"
 #include "bullet.h"
+#include <fstream>
 
 //*****************************************************************************
 // マクロ定義
@@ -70,6 +71,13 @@ struct PLAYER
 
 
 
+struct PlayerSaveData {
+	int weapon;      
+	int bullet;       
+	int ammoNormal;
+	int ammoFire;
+};
+
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -84,3 +92,6 @@ BulletType GetCurrentBulletType(void);
 
 PLAYER* GetPlayer(void);
 bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);
+
+void SavePlayerToFile();
+void LoadPlayerFromFile();

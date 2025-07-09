@@ -148,6 +148,23 @@ void DrawOverlay2D()
         return; 
     }
 
+    if (!GetPlayer()->alive) {
+        UINT stride = sizeof(VERTEX_3D);
+        UINT offset = 0;
+        GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferOverlay, &stride, &offset);
+        SetWorldViewProjection2D();
+        GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+        float px = SCREEN_WIDTH / 2.0f;
+        float py = SCREEN_HEIGHT / 2.0f;
+        float pw = SCREEN_WIDTH;
+        float ph = SCREEN_HEIGHT;
+
+        SetSpriteColor(g_VertexBufferOverlay, px, py, pw, ph, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, 1));
+
+        GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexTutorial);
+        GetDeviceContext()->Draw(4, 0);
+    }
 }
 
 void PlayMeleeAnimation()
