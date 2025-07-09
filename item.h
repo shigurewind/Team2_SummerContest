@@ -75,5 +75,10 @@ ITEM_OBJ* GetItemOBJ();
 void SaveItemData(const std::string& filename);
 void LoadItemData(const std::string& filename);
 
+void UpdateHealInventory();
+void SwapHealItem();
+Item* GetCurrentHealItem();
+void UseCurrentHealItem();
+void DrawHealItemUI();
 
 

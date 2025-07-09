@@ -231,6 +231,7 @@ void DrawGame0(void)
 	DrawDissolveTest();
 
 
+
 	// 2D‚Ì•¨‚ğ•`‰æ‚·‚éˆ—
 	// Z”äŠr‚È‚µ
 	SetDepthEnable(FALSE);
@@ -241,6 +242,7 @@ void DrawGame0(void)
 	// ƒXƒRƒA‚Ì•`‰æˆ—
 	DrawScore();
 	DrawOverlay2D();
+	DrawHealItemUI();
 	
 
 

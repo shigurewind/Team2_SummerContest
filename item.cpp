@@ -4,12 +4,16 @@
 #include "camera.h"
 #include "collision.h"
 #include "player.h"
+#include "input.h"
+#include "sprite.h"
+#include <vector>
 
 #include <cstdlib> // for rand()
 #include <ctime>   // for time()
 
 #include <fstream>
 #include <nlohmann/json.hpp>
+
 using json = nlohmann::json;
 
 
@@ -46,6 +50,9 @@ static PLAYER* g_player = GetPlayer();
 
 HRESULT MakeVertexItem(void);
 
+
+static std::vector<Item> g_InventoryHealItems;
+static int g_CurrentHealItemIndex = 0;
 
 
 
@@ -98,7 +105,13 @@ HRESULT InitItem()
 	SetItem(XMFLOAT3(10.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
 	SetItem(XMFLOAT3(20.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
 
-
+	//=====================
+	// Inventory
+	//=====================
+	g_InventoryHealItems.clear();
+	g_InventoryHealItems.push_back(CreateItemFromID(ITEM_SAN));
+	g_InventoryHealItems.push_back(CreateItemFromID(ITEM_APPLE));
+	g_CurrentHealItemIndex = 0;
 
 	return S_OK;
 
@@ -168,6 +181,16 @@ void UpdateItem()
 
 
 		}
+	}
+
+	if (GetKeyboardTrigger(DIK_Q))
+	{
+		SwapHealItem();
+	}
+
+	if (GetKeyboardTrigger(DIK_F))
+	{
+		UseCurrentHealItem();
 	}
 }
 
@@ -367,4 +390,113 @@ void LoadItemData(const std::string& filename)
 			g_aItem[index].scl = XMFLOAT3(itemObj["scl"][0], itemObj["scl"][1], itemObj["scl"][2]);
 		}
 	}
+}
+
+
+//=============================================================================
+// 回復アイテム
+//=============================================================================
+void UpdateHealInventory()
+{
+	g_InventoryHealItems.clear();
+
+	for (int i = 0; i < MAX_ITEM; i++)
+	{
+		if (g_aItem[i].use)
+		{
+			Item& item = g_aItem[i].item;
+			if (item.category == ItemCategory::Consumable || item.category == ItemCategory::InstantEffect)
+			{
+				g_InventoryHealItems.push_back(item);
+			}
+		}
+	}
+
+	if (g_InventoryHealItems.empty())
+	{
+		g_CurrentHealItemIndex = -1;
+	}
+	else
+	{
+		if (g_CurrentHealItemIndex < 0 || g_CurrentHealItemIndex >= (int)g_InventoryHealItems.size())
+			g_CurrentHealItemIndex = 0;
+	}
+}
+
+void SwapHealItem()
+{
+	if (g_InventoryHealItems.empty())
+		return;
+
+	g_CurrentHealItemIndex++;
+	if (g_CurrentHealItemIndex >= (int)g_InventoryHealItems.size())
+	{
+		g_CurrentHealItemIndex = 0;
+	}
+
+	Item& selectedItem = g_InventoryHealItems[g_CurrentHealItemIndex];
+
+}
+
+Item* GetCurrentHealItem()
+{
+	if (g_InventoryHealItems.empty() || g_CurrentHealItemIndex < 0)
+		return nullptr;
+
+	return &g_InventoryHealItems[g_CurrentHealItemIndex];
+}
+
+void UseCurrentHealItem()
+{
+	Item* pItem = GetCurrentHealItem();
+	if (pItem == nullptr)
+		return;
+
+	if (pItem->category == ItemCategory::InstantEffect || pItem->category == ItemCategory::Consumable)
+	{
+		g_player->HP += 10.0f;
+
+		pItem->count--;
+		if (pItem->count <= 0)
+		{
+			g_InventoryHealItems.erase(g_InventoryHealItems.begin() + g_CurrentHealItemIndex);
+
+			if (g_CurrentHealItemIndex >= (int)g_InventoryHealItems.size())
+				g_CurrentHealItemIndex = (int)g_InventoryHealItems.size() - 1;
+		}
+
+	}
+}
+
+void DrawHealItemUI()
+{
+	if (g_InventoryHealItems.empty() || g_CurrentHealItemIndex < 0) return;
+
+	Item& selectedItem = g_InventoryHealItems[g_CurrentHealItemIndex];
+	ID3D11ShaderResourceView* tex = g_ItemTextures[selectedItem.id];
+	if (!tex) return;
+
+	UINT stride = sizeof(VERTEX_3D);
+	UINT offset = 0;
+	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
+
+	SetWorldViewProjection2D();
+
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	MATERIAL material;
+	ZeroMemory(&material, sizeof(material));
+	material.Diffuse = XMFLOAT4(1, 1, 1, 1);
+	SetMaterial(material);
+
+	GetDeviceContext()->PSSetShaderResources(0, 1, &tex);
+
+	float x = 50.0f;
+	float y = 500.0f;
+	float width = 64.0f;
+	float height = 64.0f;
+
+	SetSprite(g_VertexBuffer, x, y, width, height, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	GetDeviceContext()->Draw(4, 0);
 }
