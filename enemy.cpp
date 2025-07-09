@@ -112,7 +112,7 @@ void SpiderEnemy::Init() {
 
     minDistance = 100.0f;
 
-    HP = 1;
+    HP = 100;
 }
 
 void SpiderEnemy::Update() {
@@ -188,12 +188,17 @@ void SpiderEnemy::Update() {
         if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
         {
             bullet[i].use = false;
-            HP -= 1;
-            if (HP <= 0) use = false;
+            ReceiveDamage(10);
+
         }
 
     }
-
+    if (hitColorTimer > 0.0f) {
+        hitColorTimer -= 1.0f / 60.0f;
+        if (hitColorTimer <= 0.0f) {
+            hitColor = XMFLOAT4(1, 1, 1, 1);  
+        }
+    }
 
 
 #ifdef _DEBUG
@@ -265,11 +270,14 @@ void SpiderEnemy::Draw() {
 
     GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
 
-    //�H�H�H
     SetAlphaTestEnable(FALSE);
     SetBlendState(BLEND_MODE_ALPHABLEND);
     SetWorldMatrix(&mtxWorld);
-    SetMaterial(*material);
+
+    MATERIAL tempMat = *material;
+    tempMat.Diffuse = hitColor;
+    SetMaterial(tempMat);
+
     GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
 
 
@@ -597,12 +605,16 @@ void GhostEnemy::Update()
         if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
         {
             bullet[i].use = false;
-            HP -= 1;
-            if (HP <= 0) use = false;
+            ReceiveDamage(10);
         }
 
     }
-
+    if (hitColorTimer > 0.0f) {
+        hitColorTimer -= 1.0f / 60.0f;
+        if (hitColorTimer <= 0.0f) {
+            hitColor = XMFLOAT4(1, 1, 1, 1);
+        }
+    }
 
 #ifdef _DEBUG
 
@@ -674,11 +686,14 @@ void GhostEnemy::Draw()
 
     GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
 
-    //�H�H�H
     SetAlphaTestEnable(FALSE);
     SetBlendState(BLEND_MODE_ALPHABLEND);
     SetWorldMatrix(&mtxWorld);
-    SetMaterial(*material);
+
+    MATERIAL tempMat = *material;
+    tempMat.Diffuse = hitColor; 
+    SetMaterial(tempMat);
+
     GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
 
 
@@ -712,3 +727,21 @@ void GhostEnemy::Attack()
 {
 }
 
+
+
+
+
+
+
+//enemyhitreaction
+
+void BaseEnemy::ReceiveDamage(int dmg) {
+    HP -= dmg;
+    if (HP <= 0) {
+        use = false;
+    }
+    else {
+        hitColor = XMFLOAT4(1.5f, 0.5f, 0.5f, 1.0f);  
+        hitColorTimer = 0.2f;
+    }
+}

@@ -32,6 +32,7 @@ public:
 	void SetScale(const XMFLOAT3& s);
 	XMFLOAT3 GetScale() const;
 
+	virtual void ReceiveDamage(int dmg = 1);
 
 protected:
 	XMFLOAT3 pos;
@@ -40,6 +41,8 @@ protected:
 	bool use;
 	float minDistance;
 	int HP, maxHP;
+	XMFLOAT4 hitColor = XMFLOAT4(1, 1, 1, 1);
+	float hitColorTimer = 0.0f;
 
 };
 

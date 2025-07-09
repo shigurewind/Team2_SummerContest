@@ -239,7 +239,7 @@ void UpdatePlayer(void)
 
 				if (distance > 100.0f) continue;
 
-				enemy->SetUsed(false);  
+				enemy->ReceiveDamage(5);
 			}
 		}
 
