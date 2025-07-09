@@ -42,7 +42,7 @@ void InitLight(void)
 		g_Light[i].Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
 		g_Light[i].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		g_Light[i].Ambient = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
-		g_Light[i].Attenuation = 200.0f;	// 減衰距離
+		g_Light[i].Attenuation = 500.0f;	// 減衰距離
 		g_Light[i].Type = LIGHT_TYPE_NONE;	// ライトのタイプ
 		g_Light[i].Enable = FALSE;			// ON / OFF
 		SetLight(i, &g_Light[i]);

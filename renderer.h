@@ -48,10 +48,10 @@ enum CULL_MODE
 // 頂点構造体
 struct VERTEX_3D
 {
-    XMFLOAT3	Position;
-    XMFLOAT3	Normal;
-    XMFLOAT4	Diffuse;
-    XMFLOAT2	TexCoord;
+	XMFLOAT3	Position;
+	XMFLOAT3	Normal;
+	XMFLOAT4	Diffuse;
+	XMFLOAT2	TexCoord;
 };
 
 // マテリアル構造体
@@ -93,20 +93,20 @@ void UninitRenderer(void);
 void Clear(void);
 void Present(void);
 
-ID3D11Device *GetDevice( void );
-ID3D11DeviceContext *GetDeviceContext( void );
+ID3D11Device* GetDevice(void);
+ID3D11DeviceContext* GetDeviceContext(void);
 
-void SetDepthEnable( BOOL Enable );
+void SetDepthEnable(BOOL Enable);
 void SetBlendState(BLEND_MODE bm);
 void SetCullingMode(CULL_MODE cm);
 void SetAlphaTestEnable(BOOL flag);
 
-void SetWorldViewProjection2D( void );
-void SetWorldMatrix( XMMATRIX *WorldMatrix );
-void SetViewMatrix( XMMATRIX *ViewMatrix );
-void SetProjectionMatrix( XMMATRIX *ProjectionMatrix );
+void SetWorldViewProjection2D(void);
+void SetWorldMatrix(XMMATRIX* WorldMatrix);
+void SetViewMatrix(XMMATRIX* ViewMatrix);
+void SetProjectionMatrix(XMMATRIX* ProjectionMatrix);
 
-void SetMaterial( MATERIAL material );
+void SetMaterial(MATERIAL material);
 
 void SetLightEnable(BOOL flag);
 void SetLight(int index, LIGHT* light);
@@ -127,4 +127,3 @@ ID3D11PixelShader* GetDefaultPixelShader();
 ID3D11InputLayout* GetDefaultInputLayout();
 
 void SetDefaultShader();
-
