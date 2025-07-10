@@ -226,10 +226,9 @@ void DrawGame0(void)
 
 	DrawFBXTestModel();
 
-	DrawItem();
-
 	DrawDissolveTest();
 
+	DrawItem();
 
 
 	// 2Dの物を描画する処理
@@ -242,8 +241,9 @@ void DrawGame0(void)
 	// スコアの描画処理
 	DrawScore();
 	DrawOverlay2D();
-	DrawHealItemUI();
 	
+	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
 
 
 	// ライティングを有効に

@@ -10,13 +10,15 @@
 #include "sprite.h"
 #include "player.h"
 #include "bullet.h"
+#include "item.h"
+#include "itemDatabase.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(6)		// テクスチャの数
+#define TEXTURE_MAX					(7)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -37,6 +39,7 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/revolver.png",
 	"data/TEXTURE/shotgun.png",
 	"data/2Dpicture/enemy/enemyWeb.png",
+	"data/TEXTURE/number.png",
 };
 
 
@@ -54,6 +57,7 @@ int Min2(int a, int b) {
 }
 
 static float g_WebEffectTimer = 0.0f;
+
 
 
 //=============================================================================
@@ -165,10 +169,6 @@ void DrawScore(void)
 	ZeroMemory(&material, sizeof(material));
 	material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	SetMaterial(material);
-
-	// テクスチャ設定
-	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_TexNo]);
-
 	
 	
 	PLAYER* player = GetPlayer();
@@ -217,6 +217,56 @@ void DrawScore(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 
+	{
+		if (g_InventoryHealItems.empty() || g_CurrentHealItemIndex < 0) return;
+
+		Item& selectedItem = g_InventoryHealItems[g_CurrentHealItemIndex];
+		ID3D11ShaderResourceView* tex = g_ItemTextures[selectedItem.id];
+		if (!tex) return;
+
+		float x = 70.0f;
+		float y = 650.0f;
+		float width = 90.0f;
+		float height = 90.0f;
+
+		// テクスチャ設定（アイテム）
+		GetDeviceContext()->PSSetShaderResources(0, 1, &tex);
+
+		// アイテムアイコン描画
+		SetSprite(g_VertexBuffer, x, y, width, height, 0.0f, 0.0f, 1.0f, 1.0f);
+		GetDeviceContext()->Draw(4, 0);
+
+		// 数字（数量）描画
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[6]);
+
+		float digitW = 30.0f;
+		float digitH = 40.0f;
+		float baseX = x - 10.0f;
+		float baseY = y + 50.0f;
+
+		// 数字背景など1桁目
+		SetSprite(g_VertexBuffer, baseX, baseY, digitW, digitH, 0.0f, 0.0f, 1.0f / 10.0f, 1.0f);
+		GetDeviceContext()->Draw(4, 0);
+
+		int number = selectedItem.count;
+		std::vector<int> digits;
+
+		if (number == 0) digits.push_back(0);
+		else {
+			while (number > 0) {
+				digits.push_back(number % 10);
+				number /= 10;
+			}
+		}
+
+		for (int i = digits.size() - 1; i >= 0; --i)
+		{
+			int digit = digits[i];
+			float tx = digit * (1.0f / 10.0f);
+			SetSprite(g_VertexBuffer, baseX + digitW + 4.0f + (digits.size() - 1 - i) * digitW, baseY, digitW, digitH, tx, 0.0f, 1.0f / 10.0f, 1.0f);
+			GetDeviceContext()->Draw(4, 0);
+		}
+	}
 	
 	//弾数表示の呼び出し
 	DrawAmmoUI();

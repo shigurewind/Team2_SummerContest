@@ -58,6 +58,12 @@ enum ItemID
 	ITEM_ID_COUNT//ItemIDの数
 };
 
+#define ITEM_ID_MAX ITEM_ID_COUNT // アイテムIDの最大値
+extern ID3D11ShaderResourceView* g_ItemTextures[ITEM_ID_MAX];
+extern std::vector<Item> g_InventoryHealItems;
+extern int g_CurrentHealItemIndex;
+
+
 
 int SetItem(XMFLOAT3 pos, int itemID);
 
@@ -75,7 +81,7 @@ ITEM_OBJ* GetItemOBJ();
 void SaveItemData(const std::string& filename);
 void LoadItemData(const std::string& filename);
 
-void UpdateHealInventory();
+void AddItemToInventory(const Item& item);
 void SwapHealItem();
 Item* GetCurrentHealItem();
 void UseCurrentHealItem();

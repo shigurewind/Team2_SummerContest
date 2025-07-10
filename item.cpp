@@ -18,7 +18,6 @@ using json = nlohmann::json;
 
 
 #define MAX_ITEM (128)
-#define ITEM_ID_MAX ITEM_ID_COUNT // アイテムIDの最大値
 
 #define ITEM_FLOAT_OFFSET (1.0f)
 #define ITEM_FLOAT_FREQUENCE (3.0f)
@@ -29,7 +28,7 @@ using json = nlohmann::json;
 
 #define ITEM_SIZE (20.0f)
 
-
+//static ID3D11ShaderResourceView* g_TextureNumber = NULL;
 
 
 
@@ -40,7 +39,7 @@ static ItemDatabase			g_ItemDB;
 static BOOL					g_bAlpaTest;		// アルファテストON/OFF
 
 static ID3D11Buffer* g_VertexBuffer = NULL;	// 頂点バッファ
-static ID3D11ShaderResourceView* g_ItemTextures[ITEM_ID_MAX]; // アイテム用テクスチャ（ItemID最大値）
+ID3D11ShaderResourceView* g_ItemTextures[ITEM_ID_MAX] = { nullptr };
 
 static float g_ItemGlobalTime = 0.0f;
 
@@ -50,10 +49,8 @@ static PLAYER* g_player = GetPlayer();
 
 HRESULT MakeVertexItem(void);
 
-
-static std::vector<Item> g_InventoryHealItems;
-static int g_CurrentHealItemIndex = 0;
-
+std::vector<Item> g_InventoryHealItems;
+int g_CurrentHealItemIndex = 0;
 
 
 
@@ -79,6 +76,7 @@ int SetItem(XMFLOAT3 pos, int itemID)
 
 HRESULT InitItem()
 {
+	//D3DX11CreateShaderResourceViewFromFile(GetDevice(), "data/TEXTURE/number.png", NULL, NULL, &g_TextureNumber, NULL);
 
 	srand((unsigned int)time(nullptr));
 
@@ -105,13 +103,12 @@ HRESULT InitItem()
 	SetItem(XMFLOAT3(10.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
 	SetItem(XMFLOAT3(20.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
 
-	//=====================
-	// Inventory
-	//=====================
-	g_InventoryHealItems.clear();
-	g_InventoryHealItems.push_back(CreateItemFromID(ITEM_SAN));
-	g_InventoryHealItems.push_back(CreateItemFromID(ITEM_APPLE));
-	g_CurrentHealItemIndex = 0;
+	////=====================
+	//// Inventory
+	////=====================
+	//g_InventoryHealItems.clear();
+	//g_InventoryHealItems.push_back(CreateItemFromID(ITEM_APPLE));
+	//g_CurrentHealItemIndex = 0;
 
 	return S_OK;
 
@@ -164,13 +161,15 @@ void UpdateItem()
 					break;
 				case ItemCategory::Consumable:
 					//インベントリーに入れる
-
+					AddItemToInventory(g_aItem[i].item);
+					g_aItem[i].use = false;
 					break;
+
 				case ItemCategory::InstantEffect:
 					//相応の効果
 					//test
-					g_player->HP += 1.0f;
-					g_aItem[i].use = false;
+					//g_player->HP += 1.0f;
+					//g_aItem[i].use = false;
 
 					break;
 
@@ -264,8 +263,6 @@ void DrawItem()
 }
 
 
-
-//
 void InitItemTextures()
 {
 	for (int id = 0; id < ITEM_ID_MAX; ++id)
@@ -396,31 +393,20 @@ void LoadItemData(const std::string& filename)
 //=============================================================================
 // 回復アイテム
 //=============================================================================
-void UpdateHealInventory()
+void AddItemToInventory(const Item& item)
 {
-	g_InventoryHealItems.clear();
-
-	for (int i = 0; i < MAX_ITEM; i++)
+	for (Item& inv : g_InventoryHealItems)
 	{
-		if (g_aItem[i].use)
+		if (inv.id == item.id)
 		{
-			Item& item = g_aItem[i].item;
-			if (item.category == ItemCategory::Consumable || item.category == ItemCategory::InstantEffect)
-			{
-				g_InventoryHealItems.push_back(item);
-			}
+			inv.count += item.count;
+			return;
 		}
 	}
+	g_InventoryHealItems.push_back(item);
 
-	if (g_InventoryHealItems.empty())
-	{
-		g_CurrentHealItemIndex = -1;
-	}
-	else
-	{
-		if (g_CurrentHealItemIndex < 0 || g_CurrentHealItemIndex >= (int)g_InventoryHealItems.size())
-			g_CurrentHealItemIndex = 0;
-	}
+	if (g_CurrentHealItemIndex < 0)
+		g_CurrentHealItemIndex = 0;
 }
 
 void SwapHealItem()
@@ -452,9 +438,9 @@ void UseCurrentHealItem()
 	if (pItem == nullptr)
 		return;
 
-	if (pItem->category == ItemCategory::InstantEffect || pItem->category == ItemCategory::Consumable)
+	if (pItem->category == ItemCategory::Consumable)
 	{
-		g_player->HP += 10.0f;
+		g_player->HP += 1.0f;
 
 		pItem->count--;
 		if (pItem->count <= 0)
@@ -468,35 +454,4 @@ void UseCurrentHealItem()
 	}
 }
 
-void DrawHealItemUI()
-{
-	if (g_InventoryHealItems.empty() || g_CurrentHealItemIndex < 0) return;
 
-	Item& selectedItem = g_InventoryHealItems[g_CurrentHealItemIndex];
-	ID3D11ShaderResourceView* tex = g_ItemTextures[selectedItem.id];
-	if (!tex) return;
-
-	UINT stride = sizeof(VERTEX_3D);
-	UINT offset = 0;
-	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
-
-	SetWorldViewProjection2D();
-
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	MATERIAL material;
-	ZeroMemory(&material, sizeof(material));
-	material.Diffuse = XMFLOAT4(1, 1, 1, 1);
-	SetMaterial(material);
-
-	GetDeviceContext()->PSSetShaderResources(0, 1, &tex);
-
-	float x = 50.0f;
-	float y = 500.0f;
-	float width = 64.0f;
-	float height = 64.0f;
-
-	SetSprite(g_VertexBuffer, x, y, width, height, 0.0f, 0.0f, 1.0f, 1.0f);
-
-	GetDeviceContext()->Draw(4, 0);
-}
