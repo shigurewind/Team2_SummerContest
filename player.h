@@ -7,6 +7,7 @@
 #pragma once
 #include "model.h"
 #include "bullet.h"
+#include "object.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -20,31 +21,77 @@
 //*****************************************************************************
 // 構造体定義
 //*****************************************************************************
-struct PLAYER
+//struct PLAYER
+//{
+//	XMFLOAT4X4			mtxWorld;			// ワールドマトリックス
+//	XMFLOAT3			pos;				// モデルの位置
+//	XMFLOAT3			rot;				// モデルの向き(回転)
+//	XMFLOAT3			scl;				// モデルの大きさ(スケール)
+//
+//	float				spd;				// 移動スピード
+//	
+//	BOOL				load;
+//	DX11_MODEL			model;				// モデル情報
+//
+//	int					shadowIdx;			// 影のインデックス番号
+//
+//	BOOL				alive;
+//
+//	float				size;
+//
+//	// 階層アニメーション用のメンバー変数
+//	float				time;				// 線形補間用
+//	int					tblNo;				// 行動データのテーブル番号
+//	int					tblMax;				// そのテーブルのデータ数
+//
+//	// 親は、NULL、子供は親のアドレスを入れる
+//	PLAYER				*parent;			// 自分が親ならNULL、自分が子供なら親のplayerアドレス
+//
+//	// クォータニオン
+//	XMFLOAT4			Quaternion;
+//
+//	XMFLOAT3			UpVector;			// 自分が立っている所
+//
+//
+//	BOOL			isGround;	//地面チェック
+//	float			verticalSpeed;	//落とすSpeed
+//	float			maxFallSpeed;//最大落とすSpeed
+//	float			jumpPower;	//jumpのパワー
+//
+//
+//	// 弾数管理（種類ごと）
+//	int ammoNormal;
+//	int maxAmmoNormal;
+//
+//	int ammoFire;
+//	int maxAmmoFire;
+//	float				HP;
+//	float				HP_MAX;
+//};
+
+
+
+class PLAYER : public Object
 {
+public:
+	void Init();
+	void Update();
+	void Draw();
+
+	void HandleInput();
+	void HandleShooting();
+	void HandleReload();
+	void HandleJump();
+	void HandleGroundCheck();
+
+
+
 	XMFLOAT4X4			mtxWorld;			// ワールドマトリックス
-	XMFLOAT3			pos;				// モデルの位置
 	XMFLOAT3			rot;				// モデルの向き(回転)
 	XMFLOAT3			scl;				// モデルの大きさ(スケール)
 
-	float				spd;				// 移動スピード
-	
 	BOOL				load;
 	DX11_MODEL			model;				// モデル情報
-
-	int					shadowIdx;			// 影のインデックス番号
-
-	BOOL				alive;
-
-	float				size;
-
-	// 階層アニメーション用のメンバー変数
-	float				time;				// 線形補間用
-	int					tblNo;				// 行動データのテーブル番号
-	int					tblMax;				// そのテーブルのデータ数
-
-	// 親は、NULL、子供は親のアドレスを入れる
-	PLAYER				*parent;			// 自分が親ならNULL、自分が子供なら親のplayerアドレス
 
 	// クォータニオン
 	XMFLOAT4			Quaternion;
@@ -52,22 +99,21 @@ struct PLAYER
 	XMFLOAT3			UpVector;			// 自分が立っている所
 
 
-	BOOL			isGround;	//地面チェック
-	float			verticalSpeed;	//落とすSpeed
-	float			maxFallSpeed;//最大落とすSpeed
+	float HP, HP_MAX;
+	int ammoNormal, maxAmmoNormal;
+	int ammoFire, maxAmmoFire;
+
+	float			size;				// 当たり判定の大きさ
+	float			speed;				// 移動スピード
 	float			jumpPower;	//jumpのパワー
 
 
-	// 弾数管理（種類ごと）
-	int ammoNormal;
-	int maxAmmoNormal;
+	int shadowIdx;
+	bool alive;
 
-	int ammoFire;
-	int maxAmmoFire;
-	float				HP;
-	float				HP_MAX;
+	WeaponType currentWeapon;
+	BulletType currentBullet;
 };
-
 
 
 //*****************************************************************************

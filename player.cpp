@@ -44,7 +44,7 @@
 //*****************************************************************************
 // グローバル変数
 //*****************************************************************************
-static PLAYER		g_Player;						// プレイヤー
+//static PLAYER		g_Player;						// プレイヤー
 
 //static PLAYER		g_Parts[PLAYER_PARTS_MAX];		// プレイヤーのパーツ用
 
@@ -65,30 +65,10 @@ static WeaponType currentWeapon = WEAPON_REVOLVER;
 static BulletType currentBullet = BULLET_NORMAL;
 
 
-// プレイヤーの階層アニメーションデータ
 
 
-// プレイヤーの頭を左右に動かしているアニメデータ
-static INTERPOLATION_DATA move_tbl_left[] = {	// pos, rot, scl, frame
-	{ XMFLOAT3(-20.0f, 10.0f, 0.0f), XMFLOAT3(XM_PI / 2, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 240 },
-	{ XMFLOAT3(-20.0f, 10.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),      XMFLOAT3(1.0f, 1.0f, 1.0f), 120 },
-
-};
 
 
-static INTERPOLATION_DATA move_tbl_right[] = {	// pos, rot, scl, frame
-	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),      XMFLOAT3(1.0f, 1.0f, 1.0f), 120 },
-	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(XM_PI / 2, 0.0f, 0.0f),   XMFLOAT3(1.0f, 1.0f, 1.0f), 240 },
-
-};
-
-
-static INTERPOLATION_DATA* g_MoveTblAdr[] =
-{
-	move_tbl_left,
-	move_tbl_right,
-
-};
 
 
 int Min(int a, int b) {
@@ -110,7 +90,7 @@ HRESULT InitPlayer(void)
 	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
-	g_Player.spd = 0.0f;			// 移動スピードクリア
+	g_Player.speed = 0.0f;			// 移動スピードクリア
 
 	g_Player.alive = TRUE;			// TRUE:生きてる
 	g_Player.size = PLAYER_SIZE;	// 当たり判定の大きさ
@@ -146,6 +126,27 @@ HRESULT InitPlayer(void)
 
 
 	return S_OK;
+}
+
+void PLAYER::Init() 
+{
+
+
+	pos = XMFLOAT3(0.0f, PLAYER_OFFSET_Y + 50.0f, 0.0f);
+	rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+
+	speed = 0.0f;			// 移動スピードクリア
+
+	alive = TRUE;			// TRUE:生きてる
+	size = PLAYER_SIZE;	// 当たり判定の大きさ
+
+	ammoNormal = 0;		//最初に装填されてる弾数
+	maxAmmoNormal = 30;	//今持ってる弾数全部
+
+	ammoFire = 0;		//最初に装填されてる弾数
+	maxAmmoFire = 20;	//今持ってる弾数全部
+
 }
 
 //=============================================================================
