@@ -44,7 +44,7 @@
 //*****************************************************************************
 // グローバル変数
 //*****************************************************************************
-//static PLAYER		g_Player;						// プレイヤー
+PLAYER	g_Player;						// プレイヤー
 
 //static PLAYER		g_Parts[PLAYER_PARTS_MAX];		// プレイヤーのパーツ用
 
@@ -53,7 +53,7 @@ static float		roty = 0.0f;
 static LIGHT		g_Light;
 
 //重力
-static float gravity = 0.5f;
+//static float gravity = 0.5f;
 //近接攻撃クールダウン
 static float meleeCooldown = 0.0f;
 //チュートリアル判定用
@@ -80,46 +80,8 @@ int Min(int a, int b) {
 //=============================================================================
 HRESULT InitPlayer(void)
 {
-	g_Player.load = TRUE;
-	LoadModel(MODEL_PLAYER, &g_Player.model);
 
-	
-
-
-	g_Player.pos = XMFLOAT3(0.0f, PLAYER_OFFSET_Y+50.0f, 0.0f);
-	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-
-	g_Player.speed = 0.0f;			// 移動スピードクリア
-
-	g_Player.alive = TRUE;			// TRUE:生きてる
-	g_Player.size = PLAYER_SIZE;	// 当たり判定の大きさ
-
-	g_Player.ammoNormal    = 0;		//最初に装填されてる弾数
-	g_Player.maxAmmoNormal = 30;	//今持ってる弾数全部
-
-	g_Player.ammoFire      = 0;		//最初に装填されてる弾数
-	g_Player.maxAmmoFire   = 20;	//今持ってる弾数全部
-
-	// ここでプレイヤー用の影を作成している
-	XMFLOAT3 pos = g_Player.pos;
-	pos.y -= (PLAYER_OFFSET_Y - 0.1f);
-	g_Player.shadowIdx = CreateShadow(pos, PLAYER_SHADOW_SIZE, PLAYER_SHADOW_SIZE);
-	//          ↑
-	//        このメンバー変数が生成した影のIndex番号
-
-	// キーを押した時のプレイヤーの向き
-	roty = 0.0f;
-
-
-
-
-	g_Player.isGround = FALSE;
-	g_Player.maxFallSpeed = 6.0f;
-	g_Player.jumpPower = 8.0f;
-
-	g_Player.HP = g_Player.HP_MAX = 5;
-
+	g_Player.Init();
 
 
 
@@ -128,24 +90,41 @@ HRESULT InitPlayer(void)
 	return S_OK;
 }
 
-void PLAYER::Init() 
+void PLAYER::Init()
 {
 
+	// 基本初期化
+	pos = { 0, PLAYER_OFFSET_Y + 50.0f, 0 };
+	rot = { 0, 0, 0 };
+	scl = { 1, 1, 1 };
+	velocity = { 0, 0, 0 };
+	speed = 0;
+	size = PLAYER_SIZE;
 
-	pos = XMFLOAT3(0.0f, PLAYER_OFFSET_Y + 50.0f, 0.0f);
-	rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	EnableGravity(true);
+	SetMaxFallSpeed(6.0f);
+	jumpPower = 8.0f;
 
-	speed = 0.0f;			// 移動スピードクリア
+	ammoNormal = 0;
+	maxAmmoNormal = 30;
+	ammoFire = 0;
+	maxAmmoFire = 20;
 
-	alive = TRUE;			// TRUE:生きてる
-	size = PLAYER_SIZE;	// 当たり判定の大きさ
+	HP = HP_MAX = 5;
+	alive = true;
 
-	ammoNormal = 0;		//最初に装填されてる弾数
-	maxAmmoNormal = 30;	//今持ってる弾数全部
+	meleeCDTime = 0.8f;
 
-	ammoFire = 0;		//最初に装填されてる弾数
-	maxAmmoFire = 20;	//今持ってる弾数全部
+	currentWeapon = WEAPON_REVOLVER;
+	currentBullet = BULLET_NORMAL;
+
+	load = TRUE;
+	LoadModel(MODEL_PLAYER, &model);
+
+	// 影
+	XMFLOAT3 shadowPos = pos;
+	shadowPos.y -= (PLAYER_OFFSET_Y - 0.1f);
+	shadowIdx = CreateShadow(shadowPos, PLAYER_SHADOW_SIZE, PLAYER_SHADOW_SIZE);
 
 }
 
@@ -164,7 +143,6 @@ void UninitPlayer(void)
 
 
 
-
 }
 
 //=============================================================================
@@ -172,135 +150,16 @@ void UninitPlayer(void)
 //=============================================================================
 void UpdatePlayer(void)
 {
-	CAMERA* cam = GetCamera();
+
 
 	if (meleeCooldown > 0.0f) {
-		meleeCooldown -= 1.0f / 60.0f;  
+		meleeCooldown -= 1.0f / 60.0f;
 	}
 
 	if (g_Player.alive)
 	{
-		g_Player.spd *= 0.7f;
-
-		// 移動処理
-		XMFLOAT3 move = {};
-		bool isMoving = false;
-
-		if (GetKeyboardPress(DIK_W)) {
-			move.x += sinf(cam->rot.y);
-			move.z += cosf(cam->rot.y);
-			isMoving = true;
-		}
-		if (GetKeyboardPress(DIK_S)) {
-			move.x -= sinf(cam->rot.y);
-			move.z -= cosf(cam->rot.y);
-			isMoving = true;
-		}
-		if (GetKeyboardPress(DIK_A)) {
-			move.x -= cosf(cam->rot.y);
-			move.z += sinf(cam->rot.y);
-			isMoving = true;
-		}
-		if(GetKeyboardPress(DIK_D)) {
-			move.x += cosf(cam->rot.y);
-			move.z -= sinf(cam->rot.y);
-			isMoving = true;
-		}
-
-		XMFLOAT3 newPos = g_Player.pos;
-		if (isMoving) {
-			XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
-			XMFLOAT3 testPos = g_Player.pos;
-			testPos.x += XMVectorGetX(moveVec) * VALUE_MOVE;
-			testPos.z += XMVectorGetZ(moveVec) * VALUE_MOVE;
-
-			XMFLOAT3 wallBoxMin = testPos;
-			XMFLOAT3 wallBoxMax = testPos;
-			float halfSize = g_Player.size;
-
-			wallBoxMin.x -= halfSize;
-			wallBoxMin.y -= 0.1f;
-			wallBoxMin.z -= halfSize;
-
-			wallBoxMax.x += halfSize;
-			wallBoxMax.y += 0.1f;
-			wallBoxMax.z += halfSize;
-
-			if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), wallBoxMin, wallBoxMax, 0, 5, 5)) {
-				newPos.x = testPos.x;
-				newPos.z = testPos.z;
-			}
-		}
-
-		//正しい向き方向処理
-		//g_Player.rot.y = cam->rot.y + 3.14f;
-
-		
-		//Jump
-		if (GetKeyboardTrigger(DIK_SPACE) && g_Player.isGround) {
-			g_Player.verticalSpeed = g_Player.jumpPower;
-			g_Player.isGround = FALSE;
-		}
-
-		//重力
-		if (!g_Player.isGround) {
-			g_Player.verticalSpeed -= gravity;
-			if (g_Player.verticalSpeed < -g_Player.maxFallSpeed) {
-				g_Player.verticalSpeed = -g_Player.maxFallSpeed;
-			}
-		}
 
 
-		newPos.y += g_Player.verticalSpeed;
-
-		//地面
-		const float groundThreshold = 0.2f;
-		float groundY;
-		if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && g_Player.verticalSpeed <= 0.0f)
-		{
-			float targetY = groundY;
-			float distanceToGround = newPos.y - targetY;
-			if (distanceToGround <= groundThreshold)
-			{
-				newPos.y = targetY;
-				g_Player.verticalSpeed = 0.0f;
-				g_Player.isGround = TRUE;
-			}
-			else
-			{
-				g_Player.isGround = FALSE;
-			}
-		}
-		else
-		{
-			g_Player.isGround = FALSE;
-		}
-		g_Player.pos = newPos;
-		
-
-
-		//近接攻撃
-
-		if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
-		{
-			meleeCooldown = 0.8f;
-			PlayMeleeAnimation();
-			//enemy 
-
-			auto& enemies = GetEnemies();
-			for (auto enemy : enemies) {
-				if (!enemy->IsUsed()) continue;
-
-				XMFLOAT3 ePos = enemy->GetPosition();
-				float dx = g_Player.pos.x - ePos.x;
-				float dz = g_Player.pos.z - ePos.z;
-				float distance = sqrtf(dx * dx + dz * dz);
-
-				if (distance > 100.0f) continue;
-
-				enemy->SetUsed(false);  
-			}
-		}
 
 		//特定の地域入るとゲームを停止
 		if (!tutorialTriggered &&
@@ -343,9 +202,9 @@ void UpdatePlayer(void)
 			}
 			(currentAmmo)--;
 		}
-		
-		
-		
+
+
+
 
 		// Rキーでリロード処理
 		if (GetKeyboardTrigger(DIK_R))
@@ -390,8 +249,10 @@ void UpdatePlayer(void)
 		// 押した方向にプレイヤーを向かせている所
 		g_Player.rot.y = roty + cam->rot.y;
 
-		g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.spd;
-		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.spd;
+		g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.speed;
+		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.speed;
+
+
 	}
 
 
@@ -419,7 +280,7 @@ void UpdatePlayer(void)
 
 
 	// 影もプレイヤーの位置に合わせる
-	XMFLOAT3 pos = g_Player.pos;
+	XMFLOAT3 pos = g_Player.GetPosition();
 	pos.y -= (PLAYER_OFFSET_Y - 0.1f);
 	SetPositionShadow(g_Player.shadowIdx, pos);
 
@@ -430,7 +291,7 @@ void UpdatePlayer(void)
 	// ポイントライトのテスト
 	{
 		LIGHT* light = GetLightData(1);
-		XMFLOAT3 pos = g_Player.pos;
+		XMFLOAT3 pos = g_Player.GetPosition();
 		pos.y += 20.0f;
 
 		light->Position = pos;
@@ -449,13 +310,150 @@ void UpdatePlayer(void)
 #ifdef _DEBUG
 	// デバッグ表示
 	PrintDebugProc("Player X:%f Y:%f Z:%f \n\n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
-	
+
 	PrintDebugProc("Rキーでリロード\n"
-				   "1キーで武器切り替え\n"
-				   "2キーで弾切り替え");
+		"1キーで武器切り替え\n"
+		"2キーで弾切り替え");
 #endif
 
 }
+
+
+void PLAYER::Update() {
+	HandleInput();          // W/A/S/D移動 & 方向制御
+	HandleJump();           // スペースキー処理
+	//UpdatePhysics();        // 重力 & 速度反映
+	HandleGroundCheck();    // 地面接地判定
+	HandleShooting();       // 弾発射
+	HandleReload();         // Rでリロード
+}
+
+//ジャンプ
+void PLAYER::HandleJump() {
+	if (GetKeyboardTrigger(DIK_SPACE) && isGround) {
+		velocity.y = jumpPower;
+		isGround = false;
+	}
+}
+
+//移動処理
+void PLAYER::HandleInput()
+{
+	//移動処理
+	CAMERA* cam = GetCamera();
+
+	g_Player.speed *= 0.7f;
+
+	// 移動処理
+	XMFLOAT3 move = {};
+	bool isMoving = false;
+
+	if (GetKeyboardPress(DIK_W)) {
+		move.x += sinf(cam->rot.y);
+		move.z += cosf(cam->rot.y);
+		isMoving = true;
+	}
+	if (GetKeyboardPress(DIK_S)) {
+		move.x -= sinf(cam->rot.y);
+		move.z -= cosf(cam->rot.y);
+		isMoving = true;
+	}
+	if (GetKeyboardPress(DIK_A)) {
+		move.x -= cosf(cam->rot.y);
+		move.z += sinf(cam->rot.y);
+		isMoving = true;
+	}
+	if (GetKeyboardPress(DIK_D)) {
+		move.x += cosf(cam->rot.y);
+		move.z -= sinf(cam->rot.y);
+		isMoving = true;
+	}
+
+	XMFLOAT3 newPos = g_Player.pos;
+	if (isMoving) {
+		XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
+		XMFLOAT3 testPos = g_Player.pos;
+		testPos.x += XMVectorGetX(moveVec) * VALUE_MOVE;
+		testPos.z += XMVectorGetZ(moveVec) * VALUE_MOVE;
+
+		XMFLOAT3 wallBoxMin = testPos;
+		XMFLOAT3 wallBoxMax = testPos;
+		float halfSize = g_Player.size;
+
+		wallBoxMin.x -= halfSize;
+		wallBoxMin.y -= 0.1f;
+		wallBoxMin.z -= halfSize;
+
+		wallBoxMax.x += halfSize;
+		wallBoxMax.y += 0.1f;
+		wallBoxMax.z += halfSize;
+
+		if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), wallBoxMin, wallBoxMax, 0, 5, 5)) {
+			newPos.x = testPos.x;
+			newPos.z = testPos.z;
+		}
+	}
+
+
+
+	//近接攻撃
+	if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
+	{
+		meleeCooldown = meleeCDTime;
+		PlayMeleeAnimation();
+		//enemy 
+
+		auto& enemies = GetEnemies();
+		for (auto enemy : enemies) {
+			if (!enemy->IsUsed()) continue;
+
+			XMFLOAT3 ePos = enemy->GetPosition();
+			float dx = g_Player.pos.x - ePos.x;
+			float dz = g_Player.pos.z - ePos.z;
+			float distance = sqrtf(dx * dx + dz * dz);
+
+			if (distance > 100.0f) continue;
+
+			enemy->SetUsed(false);
+		}
+	}
+}
+
+//接地判定
+void PLAYER::HandleGroundCheck()
+{
+
+
+	const float groundThreshold = 0.2f;
+	float groundY;
+	if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && g_Player.GetVelocity().y <= 0.0f)
+	{
+		float targetY = groundY;
+		float distanceToGround = newPos.y - targetY;
+		if (distanceToGround <= groundThreshold)
+		{
+			newPos.y = targetY;
+			g_Player.SetVelocity(XMFLOAT3(g_Player.GetVelocity().x, 0.0f, g_Player.GetVelocity().z));
+			g_Player.isGround = TRUE;
+		}
+		else
+		{
+			g_Player.isGround = FALSE;
+		}
+	}
+	else
+	{
+		g_Player.isGround = FALSE;
+	}
+
+
+	g_Player.pos = newPos;//TODO:Objectの移動処理衝突かも
+
+}
+
+
+
+
 
 //=============================================================================
 // 描画処理
@@ -517,7 +515,7 @@ void DrawPlayer(void)
 //=============================================================================
 PLAYER* GetPlayer(void)
 {
-	return &g_Player;
+	return *g_Player;
 }
 
 WeaponType GetCurrentWeaponType(void)

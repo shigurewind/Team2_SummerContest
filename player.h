@@ -87,6 +87,7 @@ public:
 
 
 	XMFLOAT4X4			mtxWorld;			// ワールドマトリックス
+	XMFLOAT3			newPos;				// モデルの次のフレーム予測位置
 	XMFLOAT3			rot;				// モデルの向き(回転)
 	XMFLOAT3			scl;				// モデルの大きさ(スケール)
 
@@ -103,17 +104,25 @@ public:
 	int ammoNormal, maxAmmoNormal;
 	int ammoFire, maxAmmoFire;
 
+	//移動関連
 	float			size;				// 当たり判定の大きさ
 	float			speed;				// 移動スピード
 	float			jumpPower;	//jumpのパワー
+
+	//攻撃
+	float meleeCDTime; // 近接攻撃のクールダウン時間
 
 
 	int shadowIdx;
 	bool alive;
 
+	//武器関連
 	WeaponType currentWeapon;
 	BulletType currentBullet;
 };
+
+
+//extern PLAYER g_Player;
 
 
 //*****************************************************************************
