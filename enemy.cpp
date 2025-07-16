@@ -87,7 +87,7 @@ void BaseEnemy::Update()
 }
 
 SpiderEnemy::SpiderEnemy() :
-    texture(nullptr), width(100.0f), height(100.0f)
+    texture(nullptr), width(30.0f), height(30.0f)
 {
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
@@ -599,7 +599,7 @@ void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 //*****************************************************************************
 
 GhostEnemy::GhostEnemy() :
-    texture(nullptr), width(100.0f), height(100.0f)
+    texture(nullptr), width(40.0f), height(40.0f)
 {
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
