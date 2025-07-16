@@ -601,23 +601,32 @@ void GhostEnemy::Init()
     pos = XMFLOAT3(0.0f, 0.0f, ENEMY_OFFSET_Y);
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
+    isAttacking = false;
     moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // 現在の動き方向
     moveChangeTimer = 2.0f;  // 向き変わるタイマー
     speed = 0.5f;			//エネミーのスピード
     currentFrame = 0;
     frameCounter = 0;
     frameInterval = 15;//change speed
-    maxFrames = 2;
+    maxFrames = 3;
 
     HP = 50;
 }
 
 void GhostEnemy::Update()
 {
-    frameCounter++;
-    if (frameCounter >= frameInterval) {
-        frameCounter = 0;
-        currentFrame = (currentFrame + 1) % maxFrames;
+    if (isAttacking)    //攻撃のアニメーション処理
+    {
+        currentFrame = 2;
+    }
+    else
+    {
+        // 移動のアニメーション処理
+        frameCounter++;
+        if (frameCounter >= frameInterval) {
+            frameCounter = 0;
+            currentFrame = (currentFrame + 1) % 2;
+        }
     }
 
 
