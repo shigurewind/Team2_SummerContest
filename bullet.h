@@ -35,7 +35,8 @@ struct BulletData {
 // ïêäÌéÌï  
 enum WeaponType {
     WEAPON_REVOLVER,
-    WEAPON_SHOTGUN
+    WEAPON_SHOTGUN,
+    WEAPON_ROCKET_LAUNCHER
 };
 
 // ïêäÌç\ë¢ëÃ 
@@ -61,6 +62,8 @@ struct BULLET {
     float fHeight;
     XMMATRIX mtxWorld;
 
+    WeaponType firedByWeapon;
+
     //XMFLOAT3 color;  // Å© íeÇÃêFÇï€éùÇ∑ÇÈÇΩÇﬂÇÃïœêî
 
 };
@@ -72,11 +75,14 @@ HRESULT InitBullet(void);
 void UninitBullet();
 void UpdateBullet(void);
 void DrawBullet(void);
-int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data);
-int SetBulletWithData(const BulletData& data, XMFLOAT3 pos, XMFLOAT3 rot);
+int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data, WeaponType firedBy); 
+int SetBulletWithData(const BulletData& data, XMFLOAT3 pos, XMFLOAT3 rot, WeaponType firedBy); 
 void SetRevolverBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot);
 void SetShotgunBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot);
+void SetRocketLauncherBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot);
+
 
 BULLET* GetBullet(void);
 Weapon* GetRevolver(void);
 Weapon* GetShotgun(void);
+Weapon* GetRocket_Launcher(void);

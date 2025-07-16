@@ -21,11 +21,13 @@
 //=============================================================================
 //                                  種類　　　　速さ  DMG  scl  lifetime    　　モデル　　　　　　　　RGB
 BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
-BulletData bulletData_Fire   = { BULLET_FIRE,     5.0f, 20, 1.0f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+BulletData bulletData_Fire   = { BULLET_FIRE,     8.0f, 20, 0.6f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/};
+
 
 // 武器インスタンス 
 Weapon g_Revolver;
 Weapon g_Shotgun;
+Weapon g_RocketLauncher;
 
 // 弾のインスタンス配列
 BULLET g_Bullet[MAX_BULLET];
@@ -49,6 +51,10 @@ HRESULT InitBullet(void)
     g_Shotgun.bulletData = &bulletData_Normal;
     g_Shotgun.clipSize   = 3;       //リロードできる弾数
 
+    g_RocketLauncher.weaponType = WEAPON_ROCKET_LAUNCHER;
+    g_RocketLauncher.bulletData = &bulletData_Normal;
+    g_RocketLauncher.clipSize = 1;
+
     return S_OK;
 }
 
@@ -67,7 +73,7 @@ void UninitBullet()
 //=============================================================================
 // 弾の発射（共通）
 //=============================================================================
-int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data)
+int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data, WeaponType firedBy)
 {
     for (int i = 0; i < MAX_BULLET; i++)
     {
@@ -82,6 +88,7 @@ int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data)
             g_Bullet[i].fWidth = 1.0f;
             g_Bullet[i].fHeight = 1.0f;
             g_Bullet[i].lifetime = data.lifetime;
+            g_Bullet[i].firedByWeapon = firedBy;
 
             //g_Bullet[i].color = data.color;
 
@@ -101,18 +108,17 @@ int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data)
 }
 
 //弾の情報（data）をもとに弾を発射する関数//
-int SetBulletWithData(const BulletData& data, XMFLOAT3 pos, XMFLOAT3 rot)
+int SetBulletWithData(const BulletData& data, XMFLOAT3 pos, XMFLOAT3 rot, WeaponType firedBy)
 {
-    return SetBullet(pos, rot, data);
+    return SetBullet(pos, rot, data, firedBy);
 }
-
 //=============================================================================
 // リボルバー弾の発射関数（分かりやすさのため） //追加箇所
 //=============================================================================
 void SetRevolverBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot)
 {
     const BulletData& data = (type == BULLET_NORMAL) ? bulletData_Normal : bulletData_Fire;
-    SetBullet(pos, rot, data);
+    SetBullet(pos, rot, data, WEAPON_REVOLVER);
 }
 //=============================================================================
 // ショットガン弾の発射関数（複数同時発射） //追加箇所
@@ -128,9 +134,19 @@ void SetShotgunBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot)
         randRot.x += XMConvertToRadians((float)(rand() % 11 - 5));   // -5～5度の縦方向ばらけ
         randRot.y += XMConvertToRadians((float)(rand() % 21 - 10));  // -10～10度の横方向ばらけ
 
-        SetBullet(pos, randRot, data);
+        SetBullet(pos, randRot, data, WEAPON_SHOTGUN);
     }
 }
+
+//=============================================================================
+// ロケットランチャーの発射
+//=============================================================================
+void SetRocketLauncherBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot)
+{
+    const BulletData& data = (type == BULLET_NORMAL) ? bulletData_Normal : bulletData_Fire;
+    SetBullet(pos, rot, data, WEAPON_ROCKET_LAUNCHER);
+}
+
 //=============================================================================
 // 弾の更新
 //=============================================================================
@@ -138,8 +154,17 @@ void UpdateBullet(void)
 {
     for (int i = 0; i < MAX_BULLET; i++)
     {
+        const float rocketGravity = -0.1f;
+
         if (g_Bullet[i].use)
         {
+
+
+            // ロケットランチャーの弾だけ重力をかける
+            if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
+            {
+                g_Bullet[i].vel.y += rocketGravity;
+            }
             g_Bullet[i].pos.x += g_Bullet[i].vel.x;
             g_Bullet[i].pos.y += g_Bullet[i].vel.y;
             g_Bullet[i].pos.z += g_Bullet[i].vel.z;
@@ -203,4 +228,9 @@ Weapon* GetRevolver()
 Weapon* GetShotgun()
 {
     return &g_Shotgun;
+}
+
+Weapon* GetRocket_Launcher()
+{
+    return &g_RocketLauncher;
 }

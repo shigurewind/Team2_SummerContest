@@ -16,7 +16,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(6)		// テクスチャの数
+#define TEXTURE_MAX					(7)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -37,6 +37,9 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/revolver.png",
 	"data/TEXTURE/shotgun.png",
 	"data/2Dpicture/enemy/enemyWeb.png",
+	"data/TEXTURE/rocket_launcher.png",
+
+
 };
 
 
@@ -229,18 +232,33 @@ void DrawScore(void)
 void DrawAmmoUI(void)
 {
 	PLAYER* player = GetPlayer();
-	Weapon* weapon = (GetCurrentWeaponType() == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
+	Weapon* weapon = nullptr;
+	int weaponTexNo = 0;
+
+	switch (GetCurrentWeaponType()) {
+	case WEAPON_REVOLVER:
+		weapon = GetRevolver();
+		weaponTexNo = 3;  // revolver.png
+		break;
+	case WEAPON_SHOTGUN:
+		weapon = GetShotgun();
+		weaponTexNo = 4;  // shotgun.png
+		break;
+	case WEAPON_ROCKET_LAUNCHER:
+		weapon = GetRocket_Launcher();  
+		weaponTexNo = 6;  // rocket_launcher.png
+		break;
+	}
 
 	// === 武器アイコン表示 ===
 	const float weaponIconX = 1025.0f;  //表示位置
 	const float weaponIconY = 610.0f;
 
-	int weaponTexNo = (GetCurrentWeaponType() == WEAPON_REVOLVER) ? 3 : 4;
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[weaponTexNo]);
 
 	SetSprite(g_VertexBuffer,
 		weaponIconX, weaponIconY,
-		60, 60,  // サイズ
+		90, 60,  // サイズ
 		0.0f, 0.0f, 1.0f, 1.0f
 	);
 	GetDeviceContext()->Draw(4, 0);

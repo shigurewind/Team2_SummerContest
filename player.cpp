@@ -316,20 +316,37 @@ void UpdatePlayer(void)
 		//キーボードの1　武器の切り替え
 		if (GetKeyboardTrigger(DIK_1))
 		{
-			currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
+			switch (currentWeapon)
+			{
+			case WEAPON_REVOLVER:
+				currentWeapon = WEAPON_SHOTGUN;
+				break;
+			case WEAPON_SHOTGUN:
+				currentWeapon = WEAPON_ROCKET_LAUNCHER;
+				break;
+			case WEAPON_ROCKET_LAUNCHER:
+				currentWeapon = WEAPON_REVOLVER;
+				break;
+			}
 		}
 		//キーボードの2　弾の切り替え
 		if (GetKeyboardTrigger(DIK_2))
 		{
-			currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
+			if (currentBullet == BULLET_NORMAL)
+			{
+				currentBullet = BULLET_FIRE;
+			}
+			else
+			{
+				currentBullet = BULLET_NORMAL;
+			}
 		}
-
 		PLAYER* p = GetPlayer();
 
 
 		// 弾発射処理
 		int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &p->ammoNormal : &p->ammoFire;
-		if (IsMouseLeftTriggered() && currentAmmo > 0)
+		if (IsMouseLeftTriggered() && *currentAmmo > 0)
 		{
 			XMFLOAT3 pos = GetGunMuzzlePosition();
 			XMFLOAT3 rot = GetGunMuzzleRotation();
@@ -337,10 +354,15 @@ void UpdatePlayer(void)
 			{
 				SetRevolverBullet(currentBullet, pos, rot);
 			}
-			else {
+			else if(currentWeapon == WEAPON_SHOTGUN)
+			{
 				SetShotgunBullet(currentBullet, pos, rot);
 			}
-			(currentAmmo)--;
+			else if (currentWeapon == WEAPON_ROCKET_LAUNCHER)
+			{
+				SetRocketLauncherBullet(currentBullet, pos, rot);
+			}
+			(*currentAmmo)--;
 		}
 		
 		
@@ -349,7 +371,20 @@ void UpdatePlayer(void)
 		// Rキーでリロード処理
 		if (GetKeyboardTrigger(DIK_R))
 		{
-			Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
+			Weapon* weapon = nullptr;
+			switch (currentWeapon)
+			{
+			case WEAPON_REVOLVER:
+				weapon = GetRevolver();
+				break;
+			case WEAPON_SHOTGUN:
+				weapon = GetShotgun();
+				break;
+			case WEAPON_ROCKET_LAUNCHER:
+				weapon = GetRocket_Launcher();
+				break;
+			}
+
 			int clipSize = weapon->clipSize;
 
 			int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
@@ -363,7 +398,6 @@ void UpdatePlayer(void)
 				*maxAmmo -= reload;
 			}
 		}
-
 
 		//test
 		if (GetKeyboardTrigger(DIK_H))
