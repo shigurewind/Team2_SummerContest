@@ -29,12 +29,12 @@ void ShowDebugUI()
     if (ImGui::CollapsingHeader(u8"プレイヤー制御"))
     {
         PLAYER* player = GetPlayer();
-        ImGui::DragFloat3(u8"プレイヤー位置", (float*)&player->pos, 0.5f);
+        ImGui::DragFloat3(u8"プレイヤー位置", (float*)&player->GetPosition(), 0.5f);
         
         ImGui::SliderFloat3(u8"プレイヤー回転", (float*)&player->rot, -XM_PI, XM_PI);
         
-		ImGui::SliderFloat(u8"移動速度", &player->spd, 0.0f, 20.0f);
-        ImGui::InputFloat(u8"速度入力", &player->spd, 0.1f, 1.0f, "%.2f");
+		ImGui::SliderFloat(u8"移動速度", &player->speed, 0.0f, 20.0f);
+        ImGui::InputFloat(u8"速度入力", &player->speed, 0.1f, 1.0f, "%.2f");
 
 	}
 
@@ -54,7 +54,7 @@ void ShowDebugUI()
         if (ImGui::SliderFloat(u8"カメラ距離(Playerから)", &cam->len, 10.0f, 500.0f))
         {
             PLAYER* player = GetPlayer();
-            cam->at = player->pos;
+            cam->at = player->GetPosition();
 
             cam->pos.x = cam->at.x - sinf(cam->rot.y) * cosf(cam->rot.x) * cam->len;
             cam->pos.y = cam->at.y - sinf(cam->rot.x) * cam->len;

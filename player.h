@@ -84,6 +84,8 @@ public:
 	void HandleJump();
 	void HandleGroundCheck();
 
+	void EventCheck();
+
 
 
 	XMFLOAT4X4			mtxWorld;			// ワールドマトリックス

@@ -161,68 +161,9 @@ void UpdatePlayer(void)
 
 
 
-		//特定の地域入るとゲームを停止
-		if (!tutorialTriggered &&
-			g_Player.pos.x > 50.0f && g_Player.pos.x < 100.0f &&
-			g_Player.pos.z > 50.0f && g_Player.pos.z < 100.0f)
-		{
-			SetTutorialShowing(true);
-			tutorialTriggered = true;
-		}
+		
 
 
-
-
-		//キーボードの1　武器の切り替え
-		if (GetKeyboardTrigger(DIK_1))
-		{
-			currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
-		}
-		//キーボードの2　弾の切り替え
-		if (GetKeyboardTrigger(DIK_2))
-		{
-			currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
-		}
-
-		PLAYER* p = GetPlayer();
-
-
-		// 弾発射処理
-		int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &p->ammoNormal : &p->ammoFire;
-		if (IsMouseLeftTriggered() && currentAmmo > 0)
-		{
-			XMFLOAT3 pos = GetGunMuzzlePosition();
-			XMFLOAT3 rot = GetGunMuzzleRotation();
-			if (currentWeapon == WEAPON_REVOLVER)
-			{
-				SetRevolverBullet(currentBullet, pos, rot);
-			}
-			else {
-				SetShotgunBullet(currentBullet, pos, rot);
-			}
-			(currentAmmo)--;
-		}
-
-
-
-
-		// Rキーでリロード処理
-		if (GetKeyboardTrigger(DIK_R))
-		{
-			Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
-			int clipSize = weapon->clipSize;
-
-			int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
-			int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
-
-			if (*ammo < clipSize && *maxAmmo > 0)
-			{
-				int need = clipSize - *ammo;
-				int reload = Min(need, *maxAmmo);
-				*ammo += reload;
-				*maxAmmo -= reload;
-			}
-		}
 
 
 		//test
@@ -309,7 +250,7 @@ void UpdatePlayer(void)
 
 #ifdef _DEBUG
 	// デバッグ表示
-	PrintDebugProc("Player X:%f Y:%f Z:%f \n\n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
+	//PrintDebugProc("Player X:%f Y:%f Z:%f \n\n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
 
 	PrintDebugProc("Rキーでリロード\n"
 		"1キーで武器切り替え\n"
@@ -339,7 +280,7 @@ void PLAYER::HandleJump() {
 //移動処理
 void PLAYER::HandleInput()
 {
-	//移動処理
+	//移動処理TODO：変更必要
 	CAMERA* cam = GetCamera();
 
 	g_Player.speed *= 0.7f;
@@ -417,6 +358,21 @@ void PLAYER::HandleInput()
 			enemy->SetUsed(false);
 		}
 	}
+
+
+	//武器切り替え
+	//キーボードの1　武器の切り替え
+	if (GetKeyboardTrigger(DIK_1))
+	{
+		currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
+	}
+	//キーボードの2　弾の切り替え
+	if (GetKeyboardTrigger(DIK_2))
+	{
+		currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
+	}
+
+
 }
 
 //接地判定
@@ -426,24 +382,24 @@ void PLAYER::HandleGroundCheck()
 
 	const float groundThreshold = 0.2f;
 	float groundY;
-	if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && g_Player.GetVelocity().y <= 0.0f)
+	if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && GetVelocity().y <= 0.0f)
 	{
 		float targetY = groundY;
 		float distanceToGround = newPos.y - targetY;
 		if (distanceToGround <= groundThreshold)
 		{
 			newPos.y = targetY;
-			g_Player.SetVelocity(XMFLOAT3(g_Player.GetVelocity().x, 0.0f, g_Player.GetVelocity().z));
-			g_Player.isGround = TRUE;
+			SetVelocity(XMFLOAT3(GetVelocity().x, 0.0f, GetVelocity().z));
+			isGround = TRUE;
 		}
 		else
 		{
-			g_Player.isGround = FALSE;
+			isGround = FALSE;
 		}
 	}
 	else
 	{
-		g_Player.isGround = FALSE;
+		isGround = FALSE;
 	}
 
 
@@ -451,7 +407,60 @@ void PLAYER::HandleGroundCheck()
 
 }
 
+void PLAYER::EventCheck()
+{
+	//特定の地域入るとゲームを停止
+	if (!tutorialTriggered &&
+		pos.x > 50.0f && pos.x < 100.0f &&
+		pos.z > 50.0f && pos.z < 100.0f)
+	{
+		SetTutorialShowing(true);
+		tutorialTriggered = true;
+	}
 
+}
+
+
+void PLAYER::HandleShooting()
+{
+	// 弾発射処理
+	int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
+	if (IsMouseLeftTriggered() && currentAmmo > 0)
+	{
+		XMFLOAT3 pos = GetGunMuzzlePosition();
+		XMFLOAT3 rot = GetGunMuzzleRotation();
+		if (currentWeapon == WEAPON_REVOLVER)
+		{
+			SetRevolverBullet(currentBullet, pos, rot);
+		}
+		else {
+			SetShotgunBullet(currentBullet, pos, rot);
+		}
+		(currentAmmo)--;
+	}
+}
+
+
+void PLAYER::HandleReload()
+{
+	// Rキーでリロード処理
+	if (GetKeyboardTrigger(DIK_R))
+	{
+		Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
+		int clipSize = weapon->clipSize;
+
+		int* ammo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
+		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &maxAmmoNormal : &maxAmmoFire;
+
+		if (*ammo < clipSize && *maxAmmo > 0)
+		{
+			int need = clipSize - *ammo;
+			int reload = Min(need, *maxAmmo);
+			*ammo += reload;
+			*maxAmmo -= reload;
+		}
+	}
+}
 
 
 
