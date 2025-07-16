@@ -14,7 +14,7 @@ public:
 	virtual ~BaseEnemy();
 
 	virtual void Init() = 0;
-	virtual void Update() = 0;
+	virtual void Update();
 	virtual void Draw() = 0;
 
 	virtual void NormalMovement() {}
@@ -31,6 +31,10 @@ public:
 
 	void SetScale(const XMFLOAT3& s);
 	XMFLOAT3 GetScale() const;
+
+	float verticalSpeed = 0.0f;
+	bool isGround = false;
+	float maxFallSpeed = 6.0f;
 
 
 protected:

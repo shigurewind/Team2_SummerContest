@@ -31,23 +31,17 @@ ID3D11Buffer* g_VertexBufferEnemy = nullptr;
 #define ENEMY_MAX (1)
 static BOOL g_bAlphaTestEnemy;
 
-#define ENEMY_OFFSET_Y  (-50.0f)
-
-static INTERPOLATION_DATA g_MoveTbl0[] = {
-    { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 20.0f),    XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, -100.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-    { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, -200.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-
-};
-
-INTERPOLATION_DATA* g_MoveTblAdr[] = {
-    g_MoveTbl0,
-};
-
-
 PLAYER* player = GetPlayer();
 BULLET* bullet = GetBullet();
+
+
+#define ENEMY_OFFSET_Y  (-100.0f)
+
+
+//重力
+static float gravity = 0.5f;
+
+
 
 //*****************************************************************************
 // 
@@ -56,6 +50,41 @@ BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 }
 BaseEnemy::~BaseEnemy() {}
+
+void BaseEnemy::Update()
+{
+    if (!isGround)
+    {
+        verticalSpeed -= gravity;
+        if (verticalSpeed < -maxFallSpeed)
+            verticalSpeed = -maxFallSpeed;
+    }
+
+    XMFLOAT3 newPos = pos;
+    newPos.y += verticalSpeed;
+
+    float groundY;
+    if (CheckPlayerGroundSimple(newPos, ENEMY_OFFSET_Y, groundY) && verticalSpeed <= 0.0f)
+    {
+        float threshold = 0.2f;
+        if ((newPos.y - groundY) <= threshold)
+        {
+            newPos.y = groundY;
+            verticalSpeed = 0.0f;
+            isGround = true;
+        }
+        else
+        {
+            isGround = false;
+        }
+    }
+    else
+    {
+        isGround = false;
+    }
+
+    pos = newPos;
+}
 
 SpiderEnemy::SpiderEnemy() :
     texture(nullptr), width(100.0f), height(100.0f)
@@ -82,7 +111,7 @@ void SpiderEnemy::Init() {
     *material = {};
     material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-    pos = XMFLOAT3(0.0f, -50.0f, 20.0f);
+    pos = XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 20.0f);
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
     speed = 1.0f;
@@ -92,10 +121,6 @@ void SpiderEnemy::Init() {
     frameCounter = 0;
     frameInterval = 15;//change speed
     maxFrames = 3;
-
-    tblNo = 0;
-    tblMax = _countof(g_MoveTbl0);
-    time = 0.0f;
 
     isAttacking = false;
     attackFrameTimer = 0.0f;
@@ -118,6 +143,7 @@ void SpiderEnemy::Init() {
 void SpiderEnemy::Update() {
     if (!use) return;
 
+    BaseEnemy::Update();
 
     if (isAttacking)    //攻撃のアニメーション処理
     {
@@ -339,8 +365,8 @@ void InitEnemy() {
     g_enemies.clear();
     for (int i = 0; i < ENEMY_MAX; ++i) {
 
-        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
-        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
+        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, ENEMY_OFFSET_Y, 20.0f), SPIDER);
+        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, ENEMY_OFFSET_Y, 20.0f), GHOST);
 
     }
 }
@@ -598,7 +624,7 @@ void GhostEnemy::Init()
     *material = {};
     material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-    pos = XMFLOAT3(0.0f, 0.0f, ENEMY_OFFSET_Y);
+    pos = XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 0.0f);
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
     moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // 現在の動き方向
@@ -614,6 +640,7 @@ void GhostEnemy::Init()
 
 void GhostEnemy::Update()
 {
+
     frameCounter++;
     if (frameCounter >= frameInterval) {
         frameCounter = 0;
@@ -622,6 +649,8 @@ void GhostEnemy::Update()
 
 
     if (!use) return;
+
+    BaseEnemy::Update();
 
     PLAYER* player = GetPlayer();
 
