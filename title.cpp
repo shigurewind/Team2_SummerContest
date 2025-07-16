@@ -17,10 +17,10 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(SCREEN_WIDTH)	// 背景サイズ
 #define TEXTURE_HEIGHT				(SCREEN_HEIGHT)	// 
-#define TEXTURE_MAX					(3)				// テクスチャの数
+#define TEXTURE_MAX					(4)				// テクスチャの数
 
-#define TEXTURE_WIDTH_LOGO			(480)			// ロゴサイズ
-#define TEXTURE_HEIGHT_LOGO			(80)			// 
+#define TEXTURE_WIDTH_LOGO			(800)			// ロゴサイズ
+#define TEXTURE_HEIGHT_LOGO			(400)			// 
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -34,9 +34,11 @@ static ID3D11Buffer				*g_VertexBuffer = NULL;		// 頂点情報
 static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
 
 static char *g_TexturName[TEXTURE_MAX] = {
-	"data/TEXTURE/bg000.jpg",
-	"data/TEXTURE/title_logo.png",
+	"data/TEXTURE/bg.png",
+	"data/TEXTURE/TITLE.png",
 	"data/TEXTURE/effect000.jpg",
+	"data/TEXTURE/GAME_START.png",
+
 };
 
 
@@ -44,7 +46,8 @@ static BOOL						g_Use;						// TRUE:使っている  FALSE:未使用
 static float					g_w, g_h;					// 幅と高さ
 static XMFLOAT3					g_Pos;						// ポリゴンの座標
 static int						g_TexNo;					// テクスチャ番号
-
+static XMFLOAT3					g_TitlePos;
+static XMFLOAT3					g_GameStartPos;
 float	alpha;
 BOOL	flag_alpha;
 
@@ -85,7 +88,9 @@ HRESULT InitTitle(void)
 	g_Use   = TRUE;
 	g_w     = TEXTURE_WIDTH;
 	g_h     = TEXTURE_HEIGHT;
-	g_Pos   = XMFLOAT3(g_w/2, g_h/2, 0.0f);
+	g_Pos          = XMFLOAT3(g_w/2, g_h/2, 0.0f);
+	g_TitlePos     = XMFLOAT3(SCREEN_WIDTH / 2, 150.0f, 0.0f); // タイトルだけ上へ
+	g_GameStartPos = XMFLOAT3(SCREEN_WIDTH / 2, 500.0f, 0.0f);
 	g_TexNo = 0;
 
 	alpha = 1.0f;
@@ -131,6 +136,10 @@ void UpdateTitle(void)
 
 	if (GetKeyboardTrigger(DIK_RETURN))
 	{// Enter押したら、ステージを切り替える
+		SetFade(FADE_OUT, MODE_GAME);
+	}
+	if (IsMouseLeftTriggered())
+	{//マウス
 		SetFade(FADE_OUT, MODE_GAME);
 	}
 	// ゲームパッドで入力処理
@@ -216,10 +225,19 @@ void DrawTitle(void)
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
 	//	SetSprite(g_VertexBuffer, g_Pos.x, g_Pos.y, TEXTURE_WIDTH_LOGO, TEXTURE_HEIGHT_LOGO, 0.0f, 0.0f, 1.0f, 1.0f);
-		SetSpriteColor(g_VertexBuffer, g_Pos.x, g_Pos.y, TEXTURE_WIDTH_LOGO, TEXTURE_HEIGHT_LOGO, 0.0f, 0.0f, 1.0f, 1.0f,
-						XMFLOAT4(1.0f, 1.0f, 1.0f, alpha));
-
+		SetSprite(g_VertexBuffer, g_TitlePos.x, g_TitlePos.y, TEXTURE_WIDTH_LOGO, TEXTURE_HEIGHT_LOGO, 0.0f, 0.0f, 1.0f, 1.0f);
 		// ポリゴン描画
+		GetDeviceContext()->Draw(4, 0);
+	}
+
+	// 「ゲームスタート」ボタン画像を描画
+	{
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[3]);
+
+		// サイズは仮に300×100とする（画像の実サイズに合わせて調整）
+		SetSpriteColor(g_VertexBuffer, g_GameStartPos.x, g_GameStartPos.y, 600.0f,300.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, alpha));
+
 		GetDeviceContext()->Draw(4, 0);
 	}
 
