@@ -635,6 +635,8 @@ void GhostEnemy::Init()
     frameInterval = 15;//change speed
     maxFrames = 3;
 
+    minDistance = 50.0f;
+
     HP = 50;
 }
 
