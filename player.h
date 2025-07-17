@@ -76,7 +76,7 @@ class PLAYER : public Object
 public:
 	void Init();
 	void Update();
-	void Draw();
+	//void Draw();
 
 	void HandleInput();
 	void HandleShooting();
@@ -124,7 +124,7 @@ public:
 };
 
 
-//extern PLAYER g_Player;
+extern PLAYER g_Player;
 
 
 //*****************************************************************************
@@ -139,5 +139,5 @@ WeaponType GetCurrentWeaponType(void);
 BulletType GetCurrentBulletType(void);
 
 
-PLAYER* GetPlayer(void);
+PLAYER GetPlayer(void);
 bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);

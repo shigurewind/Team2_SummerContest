@@ -159,14 +159,19 @@ void UpdatePlayer(void)
 	if (g_Player.alive)
 	{
 
+		g_Player.HandleInput();
+		g_Player.HandleShooting();
+		g_Player.HandleReload();
+		g_Player.HandleJump();
+		g_Player.HandleGroundCheck();
+		g_Player.EventCheck(); // イベントチェック
 
 
-		
 
 
 
 
-		//test
+		//HP減るtest
 		if (GetKeyboardTrigger(DIK_H))
 		{
 			g_Player.HP = g_Player.HP - 1;
@@ -177,47 +182,15 @@ void UpdatePlayer(void)
 
 
 #ifdef _DEBUG
-	/*if (GetKeyboardPress(DIK_R))
-	{
-		g_Player.pos.z = g_Player.pos.x = 0.0f;
-		g_Player.spd = 0.0f;
-		roty = 0.0f;
-	}*/
+
 #endif
 
 
-	{	// 押した方向にプレイヤーを移動させる
-		// 押した方向にプレイヤーを向かせている所
-		g_Player.rot.y = roty + cam->rot.y;
-
-		g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.speed;
-		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.speed;
-
-
-	}
 
 
 
-	// レイキャストして足元の高さを求める
-	//XMFLOAT3 HitPosition;		// 交点
-	//XMFLOAT3 Normal;			// ぶつかったポリゴンの法線ベクトル（向き）
-	//BOOL ans = RayHitField(g_Player.pos, &HitPosition, &Normal);
-	//if (ans)
-	//{
-	//	g_Player.pos.y = HitPosition.y + PLAYER_OFFSET_Y;
-	//}
-	//else
-	//{
-	//	g_Player.pos.y = PLAYER_OFFSET_Y;
-	//	Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	//}
 
 
-	//// 弾発射処理
-	//if (GetKeyboardTrigger(DIK_SPACE))
-	//{
-	//	SetBullet(g_Player.pos, g_Player.rot);
-	//}
 
 
 	// 影もプレイヤーの位置に合わせる
@@ -283,7 +256,7 @@ void PLAYER::HandleInput()
 	//移動処理TODO：変更必要
 	CAMERA* cam = GetCamera();
 
-	g_Player.speed *= 0.7f;
+	//g_Player.speed *= 0.7f;
 
 	// 移動処理
 	XMFLOAT3 move = {};
@@ -310,16 +283,16 @@ void PLAYER::HandleInput()
 		isMoving = true;
 	}
 
-	XMFLOAT3 newPos = g_Player.pos;
+	XMFLOAT3 newPos = pos;
 	if (isMoving) {
 		XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
-		XMFLOAT3 testPos = g_Player.pos;
-		testPos.x += XMVectorGetX(moveVec) * VALUE_MOVE;
-		testPos.z += XMVectorGetZ(moveVec) * VALUE_MOVE;
+		XMFLOAT3 testPos = pos;
+		testPos.x += XMVectorGetX(moveVec) * speed;
+		testPos.z += XMVectorGetZ(moveVec) * speed;
 
 		XMFLOAT3 wallBoxMin = testPos;
 		XMFLOAT3 wallBoxMax = testPos;
-		float halfSize = g_Player.size;
+		float halfSize = size;
 
 		wallBoxMin.x -= halfSize;
 		wallBoxMin.y -= 0.1f;
@@ -403,7 +376,7 @@ void PLAYER::HandleGroundCheck()
 	}
 
 
-	g_Player.pos = newPos;//TODO:Objectの移動処理衝突かも
+	pos = newPos;//TODO:Objectの移動処理衝突かも
 
 }
 
@@ -493,7 +466,7 @@ void DrawPlayer(void)
 	mtxWorld = XMMatrixMultiply(mtxWorld, quatMatrix);
 
 	// 移動を反映
-	mtxTranslate = XMMatrixTranslation(g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
+	mtxTranslate = XMMatrixTranslation(g_Player.GetPosition().x, g_Player.GetPosition().y, g_Player.GetPosition().z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
 	// ワールドマトリックスの設定
@@ -522,9 +495,9 @@ void DrawPlayer(void)
 //=============================================================================
 // プレイヤー情報を取得
 //=============================================================================
-PLAYER* GetPlayer(void)
+PLAYER GetPlayer(void)
 {
-	return *g_Player;
+	return g_Player;
 }
 
 WeaponType GetCurrentWeaponType(void)

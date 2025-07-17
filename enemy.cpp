@@ -38,7 +38,7 @@ static BOOL g_bAlphaTestEnemy;
 
 
 
-PLAYER* player = GetPlayer();
+//PLAYER* player = GetPlayer();
 BULLET* bullet = GetBullet();
 
 //*****************************************************************************
@@ -140,9 +140,9 @@ void SpiderEnemy::Update() {
 
 	// エネミーからプレイヤーまでのベクトル
 	XMFLOAT3 dir;
-	dir.x = player->pos.x - pos.x;
+	dir.x = g_Player.GetPosition().x - pos.x;
 	dir.y = 0.0f;
-	dir.z = player->pos.z - pos.z;
+	dir.z = g_Player.GetPosition().z - pos.z;
 
 
 
@@ -318,7 +318,7 @@ void SpiderEnemy::Attack()
 	if (attackCooldownTimer <= 0.0f && !isAttacking)
 	{
 		isAttacking = true;
-		player->HP -= 1;
+		g_Player.HP -= 1;
 		attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
 		currentFrame = 2;                     // 攻撃のフレームの描画
 		attackCooldownTimer = attackCooldown; // Reset cooldown
@@ -536,13 +536,13 @@ XMFLOAT3 BaseEnemy::GetScale() const {
 
 void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 {
-	PLAYER* player = GetPlayer();
+
 
 	// エネミーからプレイヤーまでのベクトル
 	XMFLOAT3 dir;
-	dir.x = player->pos.x - pos.x;
+	dir.x = g_Player.GetPosition().x - pos.x;
 	dir.y = 0.0f;
-	dir.z = player->pos.z - pos.z;
+	dir.z = g_Player.GetPosition().z - pos.z;
 
 	float distSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
 
@@ -621,13 +621,13 @@ void GhostEnemy::Update()
 
 	if (!use) return;
 
-	PLAYER* player = GetPlayer();
+
 
 	// エネミーからプレイヤーまでのベクトル
 	XMFLOAT3 dir;
-	dir.x = player->pos.x - pos.x;
-	dir.y = player->pos.y - pos.y;
-	dir.z = player->pos.z - pos.z;
+	dir.x = g_Player.GetPosition().x - pos.x;
+	dir.y = g_Player.GetPosition().y - pos.y;
+	dir.z = g_Player.GetPosition().z - pos.z;
 
 
 
