@@ -366,7 +366,7 @@ void InitEnemy() {
     for (int i = 0; i < ENEMY_MAX; ++i) {
 
         EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, ENEMY_OFFSET_Y, 20.0f), SPIDER);
-        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, ENEMY_OFFSET_Y, 20.0f), GHOST);
+        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -200.0, 20.0f), GHOST);
 
     }
 }
@@ -624,7 +624,7 @@ void GhostEnemy::Init()
     *material = {};
     material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-    pos = XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 0.0f);
+    pos = XMFLOAT3(0.0f, -200.0f, 0.0f);
     scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
     use = true;
     moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // 現在の動き方向
@@ -633,24 +633,32 @@ void GhostEnemy::Init()
     currentFrame = 0;
     frameCounter = 0;
     frameInterval = 15;//change speed
-    maxFrames = 2;
+    maxFrames = 3;
 
     HP = 50;
 }
 
 void GhostEnemy::Update()
 {
-
-    frameCounter++;
-    if (frameCounter >= frameInterval) {
-        frameCounter = 0;
-        currentFrame = (currentFrame + 1) % maxFrames;
-    }
-
-
     if (!use) return;
 
     BaseEnemy::Update();
+
+    if (isAttacking)    //攻撃のアニメーション処理
+    {
+        currentFrame = 2;
+        
+    }
+    else
+    {
+        // 移動のアニメーション処理
+        frameCounter++;
+        if (frameCounter >= frameInterval) {
+            frameCounter = 0;
+            currentFrame = (currentFrame + 1) % 2;
+        }
+    }
+
 
     PLAYER* player = GetPlayer();
 
@@ -674,6 +682,12 @@ void GhostEnemy::Update()
     if (distSq < range * range)
     {
         ChasingPlayer(speed, range);
+
+        if (!isAttacking && attackCooldownTimer <= 0.0f)
+        {
+            Attack();
+        }
+
     }
     else
     {
@@ -707,6 +721,7 @@ void GhostEnemy::Update()
 
     float dist = sqrtf(distSq);
     PrintDebugProc("Enemy2 HP: %d\n", HP);
+
 
 #endif
 
@@ -804,33 +819,60 @@ void GhostEnemy::NormalMovement()
         }
     }
 
+
+
     // 新しい位置を計算
     XMFLOAT3 newPos = pos;
     newPos.x += moveDir.x * speed;
     newPos.y += moveDir.y * speed;
     newPos.z += moveDir.z * speed;
 
-    // 範囲制限（例えば：XとZは -50.0f 〜 +50.0f）
-    const float minX = -200.0f;
-    const float maxX = 200.0f;
-    const float minZ = -100.0f;
-    const float maxZ = 100.0f;
-    const float minY = -50.0f;
-    const float maxY = 100.0f;
+    //float groundY;  
+    //const float minDist = 100.0f;
+    //const float maxDist = 200.0f;
+    //const float buffer = 5.0f;
+    //if (CheckPlayerGroundSimple(newPos, ENEMY_OFFSET_Y, groundY)) {
+    //    float distToGround = newPos.y - groundY;
+    //    if (distToGround < minDist + buffer) {
+    //        moveDir.y = fabs(moveDir.y);
+    //        //moveChangeTimer = 0.0f;
+    //    }
+    //    else if (distToGround > maxDist+ buffer) {
+    //        moveDir.y = -fabs(moveDir.y);
+    //       // moveChangeTimer = 0.0f;
+    //    }
+    //}
 
-    // 範囲内なら移動
+    //pos = newPos;
+
+    // 範囲内なら移動(X&Z)
+    const float minX = -200.0f, maxX = 200.0f;
+    const float minZ = -100.0f, maxZ = 100.0f;
+
     if (newPos.x >= minX && newPos.x <= maxX &&
-        newPos.y >= minY && newPos.y <= maxY &&
-        newPos.z >= minZ && newPos.z <= maxZ ) {
+        newPos.z >= minZ && newPos.z <= maxZ) 
+    {
         pos = newPos;
     }
-    else {
-        // 範囲外に出そうなら方向を変える
-        moveChangeTimer = 0.0f; // すぐ次の方向へ変更
+    else 
+    {
+        moveChangeTimer = 0.0f;
     }
+
+    //PrintDebugProc("Ghost Pos Y: %f, GroundY: %f, DistToGround: %f\n", newPos.y, groundY, newPos.y - groundY);
+
 }
 
 void GhostEnemy::Attack()
 {
+    if (attackCooldownTimer <= 0.0f && !isAttacking)
+    {
+        isAttacking = true;
+        player->HP -= 1;
+        //attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
+        //currentFrame = 2;                     // 攻撃のフレームの描画
+        //attackCooldownTimer = attackCooldown; // Reset cooldown
+    }
+
 }
 
