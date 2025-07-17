@@ -75,7 +75,7 @@ class PLAYER : public Object
 {
 public:
 	void Init();
-	void Update();
+	void OnUpdate();
 	//void Draw();
 
 	void HandleInput();

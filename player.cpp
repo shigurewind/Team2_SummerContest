@@ -98,7 +98,7 @@ void PLAYER::Init()
 	rot = { 0, 0, 0 };
 	scl = { 1, 1, 1 };
 	velocity = { 0, 0, 0 };
-	speed = 0;
+	speed = 2.0f;
 	size = PLAYER_SIZE;
 
 	EnableGravity(true);
@@ -159,12 +159,16 @@ void UpdatePlayer(void)
 	if (g_Player.alive)
 	{
 
-		g_Player.HandleInput();
+
+		/*g_Player.HandleInput();
 		g_Player.HandleShooting();
 		g_Player.HandleReload();
 		g_Player.HandleJump();
-		g_Player.HandleGroundCheck();
-		g_Player.EventCheck(); // イベントチェック
+		g_Player.HandleGroundCheck();*/
+
+		g_Player.OnUpdate(); // プレイヤーの更新処理
+
+		//g_Player.EventCheck(); // イベントチェック
 
 
 
@@ -233,13 +237,15 @@ void UpdatePlayer(void)
 }
 
 
-void PLAYER::Update() {
+void PLAYER::OnUpdate() {
 	HandleInput();          // W/A/S/D移動 & 方向制御
 	HandleJump();           // スペースキー処理
-	//UpdatePhysics();        // 重力 & 速度反映
+	//UpdatePhysics();       // 重力 & 速度反映
 	HandleGroundCheck();    // 地面接地判定
 	HandleShooting();       // 弾発射
 	HandleReload();         // Rでリロード
+
+	EventCheck();          // イベントチェック
 }
 
 //ジャンプ
@@ -352,6 +358,9 @@ void PLAYER::HandleInput()
 void PLAYER::HandleGroundCheck()
 {
 
+
+
+	newPos.y += velocity.y;// 速度を反映して新しい位置を計算
 
 	const float groundThreshold = 0.2f;
 	float groundY;
