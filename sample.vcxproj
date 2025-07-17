@@ -438,6 +438,7 @@
     <ClInclude Include="DirectXTex.h" />
     <ClInclude Include="dissolveTest.h" />
     <ClInclude Include="enemy.h" />
+    <ClInclude Include="enemy_bug.h" />
     <ClInclude Include="fade.h" />
     <ClInclude Include="FBXmodel.h" />
     <ClInclude Include="game.h" />
@@ -481,6 +482,7 @@
     <ClCompile Include="debugUI.cpp" />
     <ClCompile Include="dissolveTest.cpp" />
     <ClCompile Include="enemy.cpp" />
+    <ClCompile Include="enemy_bug.cpp" />
     <ClCompile Include="fade.cpp" />
     <ClCompile Include="FBXmodel.cpp" />
     <ClCompile Include="game.cpp" />

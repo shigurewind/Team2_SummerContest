@@ -149,6 +149,7 @@ enum ENEMY_TYPE
 {
 	SPIDER,
 	GHOST,
+	BUG,
 
 	MAX
 };

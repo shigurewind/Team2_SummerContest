@@ -6,6 +6,7 @@
 //=============================================================================
 #pragma once
 #include "enemy.h"
+#include "enemy_bug.h"
 #include "player.h"
 #include "bullet.h"
 #include "debugproc.h"
@@ -367,6 +368,7 @@ void InitEnemy() {
 
         EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, ENEMY_OFFSET_Y, 20.0f), SPIDER);
         EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -200.0, 20.0f), GHOST);
+        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -200.0, 20.0f), BUG);
 
     }
 }
@@ -468,6 +470,14 @@ void EnemySpawner(XMFLOAT3 position, int type) {
         ghost->SetUsed(true);
         ghost->SetPosition(position);
         newEnemy = ghost;
+        break;
+    }
+    case BUG: { // BugEnemy
+        BugEnemy* bug = new BugEnemy();
+        bug->Init();
+        bug->SetUsed(true);
+        bug->SetPosition(position);
+        newEnemy = bug;
         break;
     }
     default:
