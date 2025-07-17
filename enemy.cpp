@@ -717,7 +717,20 @@ void GhostEnemy::Update()
 
     }
 
+    if (isAttacking)
+    {
+        attackFrameTimer -= 1.0f / 60.0f;
+        if (attackFrameTimer <= 0.0f)
+        {
+            isAttacking = false;
+        }
+    }
 
+    if (attackCooldownTimer > 0.0f)
+    {
+        attackCooldownTimer -= 1.0f / 60.0f;
+        if (attackCooldownTimer < 0.0f) attackCooldownTimer = 0.0f;
+    }
 
 #ifdef _DEBUG
 
@@ -871,9 +884,9 @@ void GhostEnemy::Attack()
     {
         isAttacking = true;
         player->HP -= 1;
-        //attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
+        attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
         //currentFrame = 2;                     // 攻撃のフレームの描画
-        //attackCooldownTimer = attackCooldown; // Reset cooldown
+        attackCooldownTimer = attackCooldown; // Reset cooldown
 
         TriggerScreenRedFlash();
     }
