@@ -16,7 +16,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(6)		// テクスチャの数
+#define TEXTURE_MAX					(7)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -37,6 +37,7 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/revolver.png",
 	"data/TEXTURE/shotgun.png",
 	"data/2Dpicture/enemy/enemyWeb.png",
+	"data/TEXTURE/red_screen.png",
 };
 
 
@@ -54,6 +55,11 @@ int Min2(int a, int b) {
 }
 
 static float g_WebEffectTimer = 0.0f;
+
+static bool		isHurt = false;
+static float	hurtTimer = 0.0f;
+const float		HURT_FLASH_DURATION = 0.3f;
+
 
 
 //=============================================================================
@@ -135,6 +141,7 @@ void UpdateScore(void)
 		if (g_WebEffectTimer < 0.0f) g_WebEffectTimer = 0.0f;
 	}
 
+	
 
 #ifdef _DEBUG	// デバッグ情報を表示する
 	//char *str = GetDebugStr();
@@ -217,7 +224,35 @@ void DrawScore(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 
+	if (isHurt) {
+		hurtTimer += 1.0f / 60;
+
+		float alpha = 0.5f - (hurtTimer / HURT_FLASH_DURATION);
+		if (alpha < 0.0f) alpha = 0.0f;
+
+		float screenW = (float)SCREEN_WIDTH;
+		float screenH = (float)SCREEN_HEIGHT;
+
+		XMFLOAT4 redColor = XMFLOAT4(1.0f, 0.0f, 0.0f, alpha);
+
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[6]);
+
+		// １枚のポリゴンの頂点とテクスチャ座標を設定
+		SetSpriteColor(g_VertexBuffer,
+			screenW/2, screenH/2,
+			screenW, screenH,
+			0, 0, 1, 1,
+			redColor);
+
+		// ポリゴン描画
+		GetDeviceContext()->Draw(4, 0);
 	
+
+		if (hurtTimer >= HURT_FLASH_DURATION) {
+			isHurt = false;
+		}
+	}
+
 	//弾数表示の呼び出し
 	DrawAmmoUI();
 
@@ -332,9 +367,15 @@ int GetScore(void)
 }
 
 //=============================================================================
-// 蜘蛛のネット効果（画面に表示）を一定時間見せる関数
+// Enemy Effect
 //=============================================================================
 void ShowWebEffect(float time)
 {
 	g_WebEffectTimer = time; // time 秒間、画面に蜘蛛のネットを表示
+}
+
+void TriggerScreenRedFlash()
+{
+	isHurt = true;
+	hurtTimer = 0.0f;
 }

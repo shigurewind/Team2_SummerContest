@@ -389,8 +389,8 @@ void UpdatePlayer(void)
 		// ‰Ÿ‚µ‚½•ûŒü‚ÉƒvƒŒƒCƒ„[‚ðŒü‚©‚¹‚Ä‚¢‚éŠ
 		g_Player.rot.y = roty + cam->rot.y;
 
-		g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.spd;
-		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.spd;
+		/*g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.spd;
+		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.spd;*/
 	}
 
 

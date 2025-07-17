@@ -874,6 +874,8 @@ void GhostEnemy::Attack()
         //attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
         //currentFrame = 2;                     // 攻撃のフレームの描画
         //attackCooldownTimer = attackCooldown; // Reset cooldown
+
+        TriggerScreenRedFlash();
     }
 
 }
