@@ -5,6 +5,8 @@
 
 using namespace DirectX;
 
+#include <chrono>
+
 //*****************************************************************************
 // 
 //*****************************************************************************
@@ -133,6 +135,12 @@ private:
 
 	bool isAttacking;
 	float attackFrameTimer;
+
+	float attackShakeTimer = 0.0f;
+	float shakeMagnitude = 3.0f;
+	float shakeOffsetX = 0.0f;
+	float shakeOffsetY = 0.0f;
+	float shakeOffsetZ = 0.0f;
 
 
 };

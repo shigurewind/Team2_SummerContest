@@ -41,7 +41,7 @@ BULLET* bullet = GetBullet();
 //重力
 static float gravity = 0.5f;
 
-
+static int frameCount = 0;
 
 //*****************************************************************************
 // 
@@ -646,6 +646,23 @@ void GhostEnemy::Update()
 
     BaseEnemy::Update();
 
+    if (attackShakeTimer > 0.0f)
+    {
+        attackShakeTimer -= 1.0f / 60.0f;
+
+        float time = (float)frameCount / 30.0f;
+        shakeOffsetX = sinf(time * 20.0f) * shakeMagnitude;
+        shakeOffsetY = cosf(time * 25.0f) * shakeMagnitude;
+        shakeOffsetZ = sinf(time * 30.0f) * shakeMagnitude;
+    }
+    else
+    {
+        shakeOffsetX = 0.0f;
+        shakeOffsetY = 0.0f;
+        shakeOffsetZ = 0.0f;
+    }
+
+
     if (isAttacking)    //攻撃のアニメーション処理
     {
         currentFrame = 2;
@@ -695,6 +712,30 @@ void GhostEnemy::Update()
     {
         NormalMovement();
 
+    }
+
+    if (distSq < range * range && (isAttacking || attackShakeTimer > 0.0f))
+    {
+        if (attackShakeTimer > 0.0f)
+        {
+            attackShakeTimer -= 1.0f / 60.0f;
+            float time = (float)frameCount / 30.0f;
+            shakeOffsetX = sinf(time * 20.0f) * shakeMagnitude;
+            shakeOffsetY = cosf(time * 25.0f) * shakeMagnitude;
+            shakeOffsetZ = sinf(time * 30.0f) * shakeMagnitude;
+        }
+        else
+        {
+            shakeOffsetX = 0.0f;
+            shakeOffsetY = 0.0f;
+            shakeOffsetZ = 0.0f;
+        }
+    }
+    else
+    {
+        shakeOffsetX = 0.0f;
+        shakeOffsetY = 0.0f;
+        shakeOffsetZ = 0.0f;
     }
 
     //弾と当たり判定？
@@ -771,7 +812,10 @@ void GhostEnemy::Draw()
     mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
 
     XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
-    XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+    XMMATRIX mtxTranslate = XMMatrixTranslation(
+        pos.x + shakeOffsetX,
+        pos.y + shakeOffsetY,
+        pos.z + shakeOffsetZ);
     mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
     mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
@@ -889,6 +933,8 @@ void GhostEnemy::Attack()
         attackCooldownTimer = attackCooldown; // Reset cooldown
 
         TriggerScreenRedFlash();
+
+        attackShakeTimer = 0.9f;
     }
 
 }
