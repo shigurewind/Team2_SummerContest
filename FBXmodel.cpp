@@ -37,7 +37,7 @@ HRESULT InitFBXTestModel(void)
 	g_FBXTestModel.shader = &g_shaderCustom;
 
 
-	g_FBXTestModel.pos = XMFLOAT3(0.0f, -200.0f, 0.0f);
+	g_FBXTestModel.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_FBXTestModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
