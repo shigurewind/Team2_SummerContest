@@ -10,6 +10,7 @@ Object::Object()
 {
 }
 
+//物理現象のシミュレーション
 void Object::Update() {
 	if (useGravity && !isGround) {
 		velocity.y -= gravity;

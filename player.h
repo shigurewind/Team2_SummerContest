@@ -78,18 +78,20 @@ public:
 	void OnUpdate();
 	//void Draw();
 
-	void HandleInput();
+	void HandleInput();//移動と他のInput処理
+	void ApplyCollision();//マップ当たり判定処理
+	void HandleGroundCheck();//地面チェック
+
 	void HandleShooting();
 	void HandleReload();
 	void HandleJump();
-	void HandleGroundCheck();
 
 	void EventCheck();
 
 
 
 	XMFLOAT4X4			mtxWorld;			// ワールドマトリックス
-	XMFLOAT3			newPos;				// モデルの次のフレーム予測位置
+	
 	XMFLOAT3			rot;				// モデルの向き(回転)
 	XMFLOAT3			scl;				// モデルの大きさ(スケール)
 
@@ -139,5 +141,5 @@ WeaponType GetCurrentWeaponType(void);
 BulletType GetCurrentBulletType(void);
 
 
-PLAYER GetPlayer(void);
+PLAYER* GetPlayer(void);
 bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);

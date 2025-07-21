@@ -240,8 +240,11 @@ void UpdatePlayer(void)
 void PLAYER::OnUpdate() {
 	HandleInput();          // W/A/S/D移動 & 方向制御
 	HandleJump();           // スペースキー処理
-	//UpdatePhysics();       // 重力 & 速度反映
+
+	ApplyCollision();      // 衝突判定と適用
+	Object::Update();
 	HandleGroundCheck();    // 地面接地判定
+
 	HandleShooting();       // 弾発射
 	HandleReload();         // Rでリロード
 
@@ -266,55 +269,33 @@ void PLAYER::HandleInput()
 
 	// 移動処理
 	XMFLOAT3 move = {};
-	bool isMoving = false;
+	//bool isMoving = false;
 
 	if (GetKeyboardPress(DIK_W)) {
 		move.x += sinf(cam->rot.y);
 		move.z += cosf(cam->rot.y);
-		isMoving = true;
+		//isMoving = true;
 	}
 	if (GetKeyboardPress(DIK_S)) {
 		move.x -= sinf(cam->rot.y);
 		move.z -= cosf(cam->rot.y);
-		isMoving = true;
+		//isMoving = true;
 	}
 	if (GetKeyboardPress(DIK_A)) {
 		move.x -= cosf(cam->rot.y);
 		move.z += sinf(cam->rot.y);
-		isMoving = true;
+		//isMoving = true;
 	}
 	if (GetKeyboardPress(DIK_D)) {
 		move.x += cosf(cam->rot.y);
 		move.z -= sinf(cam->rot.y);
-		isMoving = true;
+		//isMoving = true;
 	}
+	
+	velocity.x = move.x * speed;
+	velocity.z = move.z * speed;
 
-	XMFLOAT3 newPos = pos;
-	if (isMoving) {
-		XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
-		XMFLOAT3 testPos = pos;
-		testPos.x += XMVectorGetX(moveVec) * speed;
-		testPos.z += XMVectorGetZ(moveVec) * speed;
-
-		XMFLOAT3 wallBoxMin = testPos;
-		XMFLOAT3 wallBoxMax = testPos;
-		float halfSize = size;
-
-		wallBoxMin.x -= halfSize;
-		wallBoxMin.y -= 0.1f;
-		wallBoxMin.z -= halfSize;
-
-		wallBoxMax.x += halfSize;
-		wallBoxMax.y += 0.1f;
-		wallBoxMax.z += halfSize;
-
-		if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), wallBoxMin, wallBoxMax, 0, 5, 5)) {
-			newPos.x = testPos.x;
-			newPos.z = testPos.z;
-		}
-	}
-
-
+	
 
 	//近接攻撃
 	if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
@@ -354,23 +335,40 @@ void PLAYER::HandleInput()
 
 }
 
+
+void PLAYER::ApplyCollision()
+{
+	//次の位置を予測
+	XMFLOAT3 nextPos = pos;
+	nextPos.x += velocity.x;
+	nextPos.z += velocity.z;
+
+	//BOXの計算
+	float halfSize = size;
+	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
+	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
+
+	if (AABBHitOctree(GetWallTree(), GetWallTriangles(), min, max, 0, 5, 5))
+	{
+		velocity.x = 0;
+		velocity.z = 0;
+	}
+}
+
 //接地判定
 void PLAYER::HandleGroundCheck()
 {
 
 
-
-	newPos.y += velocity.y;// 速度を反映して新しい位置を計算
-
 	const float groundThreshold = 0.2f;
 	float groundY;
-	if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && GetVelocity().y <= 0.0f)
+	if (CheckPlayerGroundSimple(pos, PLAYER_OFFSET_Y, groundY) && GetVelocity().y <= 0.0f)
 	{
 		float targetY = groundY;
-		float distanceToGround = newPos.y - targetY;
+		float distanceToGround = pos.y - targetY;
 		if (distanceToGround <= groundThreshold)
 		{
-			newPos.y = targetY;
+			pos.y = targetY;
 			SetVelocity(XMFLOAT3(GetVelocity().x, 0.0f, GetVelocity().z));
 			isGround = TRUE;
 		}
@@ -385,7 +383,7 @@ void PLAYER::HandleGroundCheck()
 	}
 
 
-	pos = newPos;//TODO:Objectの移動処理衝突かも
+	
 
 }
 
@@ -504,9 +502,9 @@ void DrawPlayer(void)
 //=============================================================================
 // プレイヤー情報を取得
 //=============================================================================
-PLAYER GetPlayer(void)
+PLAYER* GetPlayer(void)
 {
-	return g_Player;
+	return &g_Player;
 }
 
 WeaponType GetCurrentWeaponType(void)
@@ -518,6 +516,8 @@ BulletType GetCurrentBulletType(void)
 {
 	return currentBullet;
 }
+
+
 bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 {
 	const auto& tris = GetFloorTriangles();
