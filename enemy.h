@@ -2,13 +2,15 @@
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include "Object.h"
 
 using namespace DirectX;
 
 //*****************************************************************************
 // 
 //*****************************************************************************
-class BaseEnemy {
+class BaseEnemy : public Object
+{
 public:
 	BaseEnemy();
 	virtual ~BaseEnemy();

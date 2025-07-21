@@ -40,7 +40,7 @@ static ID3D11ShaderResourceView* g_ItemTextures[ITEM_ID_MAX]; // ƒAƒCƒeƒ€—pƒeƒNƒ
 
 static float g_ItemGlobalTime = 0.0f;
 
-static PLAYER* g_player = GetPlayer();
+
 
 
 
@@ -137,7 +137,7 @@ void UpdateItem()
 
 
 			//Player‚Æ“–‚½‚è”»’è
-			if (CollisionBC(g_aItem[i].pos, g_player->pos, ITEM_SIZE, g_player->size))
+			if (CollisionBC(g_aItem[i].pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size))
 			{
 				switch (g_aItem[i].item.category)
 				{
@@ -156,7 +156,7 @@ void UpdateItem()
 				case ItemCategory::InstantEffect:
 					//‘Š‰ž‚ÌŒø‰Ê
 					//test
-					g_player->HP += 1.0f;
+					GetPlayer()->HP += 1.0f;
 					g_aItem[i].use = false;
 
 					break;

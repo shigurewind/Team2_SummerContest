@@ -44,7 +44,7 @@
 //*****************************************************************************
 // グローバル変数
 //*****************************************************************************
-static PLAYER		g_Player;						// プレイヤー
+PLAYER	g_Player;						// プレイヤー
 
 //static PLAYER		g_Parts[PLAYER_PARTS_MAX];		// プレイヤーのパーツ用
 
@@ -53,7 +53,7 @@ static float		roty = 0.0f;
 static LIGHT		g_Light;
 
 //重力
-static float gravity = 0.5f;
+//static float gravity = 0.5f;
 //近接攻撃クールダウン
 static float meleeCooldown = 0.0f;
 //チュートリアル判定用
@@ -65,30 +65,10 @@ static WeaponType currentWeapon = WEAPON_REVOLVER;
 static BulletType currentBullet = BULLET_NORMAL;
 
 
-// プレイヤーの階層アニメーションデータ
 
 
-// プレイヤーの頭を左右に動かしているアニメデータ
-static INTERPOLATION_DATA move_tbl_left[] = {	// pos, rot, scl, frame
-	{ XMFLOAT3(-20.0f, 10.0f, 0.0f), XMFLOAT3(XM_PI / 2, 0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), 240 },
-	{ XMFLOAT3(-20.0f, 10.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),      XMFLOAT3(1.0f, 1.0f, 1.0f), 120 },
-
-};
 
 
-static INTERPOLATION_DATA move_tbl_right[] = {	// pos, rot, scl, frame
-	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),      XMFLOAT3(1.0f, 1.0f, 1.0f), 120 },
-	{ XMFLOAT3(20.0f, 10.0f, 0.0f), XMFLOAT3(XM_PI / 2, 0.0f, 0.0f),   XMFLOAT3(1.0f, 1.0f, 1.0f), 240 },
-
-};
-
-
-static INTERPOLATION_DATA* g_MoveTblAdr[] =
-{
-	move_tbl_left,
-	move_tbl_right,
-
-};
 
 
 int Min(int a, int b) {
@@ -100,52 +80,52 @@ int Min(int a, int b) {
 //=============================================================================
 HRESULT InitPlayer(void)
 {
-	g_Player.load = TRUE;
-	LoadModel(MODEL_PLAYER, &g_Player.model);
 
-	
-
-
-	g_Player.pos = XMFLOAT3(0.0f, PLAYER_OFFSET_Y+50.0f, 0.0f);
-	g_Player.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_Player.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-
-	g_Player.spd = 0.0f;			// 移動スピードクリア
-
-	g_Player.alive = TRUE;			// TRUE:生きてる
-	g_Player.size = PLAYER_SIZE;	// 当たり判定の大きさ
-
-	g_Player.ammoNormal    = 0;		//最初に装填されてる弾数
-	g_Player.maxAmmoNormal = 30;	//今持ってる弾数全部
-
-	g_Player.ammoFire      = 0;		//最初に装填されてる弾数
-	g_Player.maxAmmoFire   = 20;	//今持ってる弾数全部
-
-	// ここでプレイヤー用の影を作成している
-	XMFLOAT3 pos = g_Player.pos;
-	pos.y -= (PLAYER_OFFSET_Y - 0.1f);
-	g_Player.shadowIdx = CreateShadow(pos, PLAYER_SHADOW_SIZE, PLAYER_SHADOW_SIZE);
-	//          ↑
-	//        このメンバー変数が生成した影のIndex番号
-
-	// キーを押した時のプレイヤーの向き
-	roty = 0.0f;
-
-
-
-
-	g_Player.isGround = FALSE;
-	g_Player.maxFallSpeed = 6.0f;
-	g_Player.jumpPower = 8.0f;
-
-	g_Player.HP = g_Player.HP_MAX = 5;
-
+	g_Player.Init();
 
 
 
 
 
 	return S_OK;
+}
+
+void PLAYER::Init()
+{
+
+	// 基本初期化
+	pos = { 0, PLAYER_OFFSET_Y + 50.0f, 0 };
+	rot = { 0, 0, 0 };
+	scl = { 1, 1, 1 };
+	velocity = { 0, 0, 0 };
+	speed = 2.0f;
+	size = PLAYER_SIZE;
+
+	EnableGravity(true);
+	SetMaxFallSpeed(6.0f);
+	jumpPower = 8.0f;
+
+	ammoNormal = 0;
+	maxAmmoNormal = 30;
+	ammoFire = 0;
+	maxAmmoFire = 20;
+
+	HP = HP_MAX = 5;
+	alive = true;
+
+	meleeCDTime = 0.8f;
+
+	currentWeapon = WEAPON_REVOLVER;
+	currentBullet = BULLET_NORMAL;
+
+	load = TRUE;
+	LoadModel(MODEL_PLAYER, &model);
+
+	// 影
+	XMFLOAT3 shadowPos = pos;
+	shadowPos.y -= (PLAYER_OFFSET_Y - 0.1f);
+	shadowIdx = CreateShadow(shadowPos, PLAYER_SHADOW_SIZE, PLAYER_SHADOW_SIZE);
+
 }
 
 //=============================================================================
@@ -163,7 +143,6 @@ void UninitPlayer(void)
 
 
 
-
 }
 
 //=============================================================================
@@ -171,201 +150,32 @@ void UninitPlayer(void)
 //=============================================================================
 void UpdatePlayer(void)
 {
-	CAMERA* cam = GetCamera();
+
 
 	if (meleeCooldown > 0.0f) {
-		meleeCooldown -= 1.0f / 60.0f;  
+		meleeCooldown -= 1.0f / 60.0f;
 	}
 
 	if (g_Player.alive)
 	{
-		g_Player.spd *= 0.7f;
-
-		// 移動処理
-		XMFLOAT3 move = {};
-		bool isMoving = false;
-
-		if (GetKeyboardPress(DIK_W)) {
-			move.x += sinf(cam->rot.y);
-			move.z += cosf(cam->rot.y);
-			isMoving = true;
-		}
-		if (GetKeyboardPress(DIK_S)) {
-			move.x -= sinf(cam->rot.y);
-			move.z -= cosf(cam->rot.y);
-			isMoving = true;
-		}
-		if (GetKeyboardPress(DIK_A)) {
-			move.x -= cosf(cam->rot.y);
-			move.z += sinf(cam->rot.y);
-			isMoving = true;
-		}
-		if(GetKeyboardPress(DIK_D)) {
-			move.x += cosf(cam->rot.y);
-			move.z -= sinf(cam->rot.y);
-			isMoving = true;
-		}
-
-		XMFLOAT3 newPos = g_Player.pos;
-		if (isMoving) {
-			XMVECTOR moveVec = XMVector3Normalize(XMLoadFloat3(&move));
-			XMFLOAT3 testPos = g_Player.pos;
-			testPos.x += XMVectorGetX(moveVec) * VALUE_MOVE;
-			testPos.z += XMVectorGetZ(moveVec) * VALUE_MOVE;
-
-			XMFLOAT3 wallBoxMin = testPos;
-			XMFLOAT3 wallBoxMax = testPos;
-			float halfSize = g_Player.size;
-
-			wallBoxMin.x -= halfSize;
-			wallBoxMin.y -= 0.1f;
-			wallBoxMin.z -= halfSize;
-
-			wallBoxMax.x += halfSize;
-			wallBoxMax.y += 0.1f;
-			wallBoxMax.z += halfSize;
-
-			if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), wallBoxMin, wallBoxMax, 0, 5, 5)) {
-				newPos.x = testPos.x;
-				newPos.z = testPos.z;
-			}
-		}
-
-		//正しい向き方向処理
-		//g_Player.rot.y = cam->rot.y + 3.14f;
-
-		
-		//Jump
-		if (GetKeyboardTrigger(DIK_SPACE) && g_Player.isGround) {
-			g_Player.verticalSpeed = g_Player.jumpPower;
-			g_Player.isGround = FALSE;
-		}
-
-		//重力
-		if (!g_Player.isGround) {
-			g_Player.verticalSpeed -= gravity;
-			if (g_Player.verticalSpeed < -g_Player.maxFallSpeed) {
-				g_Player.verticalSpeed = -g_Player.maxFallSpeed;
-			}
-		}
 
 
-		newPos.y += g_Player.verticalSpeed;
+		/*g_Player.HandleInput();
+		g_Player.HandleShooting();
+		g_Player.HandleReload();
+		g_Player.HandleJump();
+		g_Player.HandleGroundCheck();*/
 
-		//地面
-		const float groundThreshold = 0.2f;
-		float groundY;
-		if (CheckPlayerGroundSimple(newPos, PLAYER_OFFSET_Y, groundY) && g_Player.verticalSpeed <= 0.0f)
-		{
-			float targetY = groundY;
-			float distanceToGround = newPos.y - targetY;
-			if (distanceToGround <= groundThreshold)
-			{
-				newPos.y = targetY;
-				g_Player.verticalSpeed = 0.0f;
-				g_Player.isGround = TRUE;
-			}
-			else
-			{
-				g_Player.isGround = FALSE;
-			}
-		}
-		else
-		{
-			g_Player.isGround = FALSE;
-		}
-		g_Player.pos = newPos;
-		
+		g_Player.OnUpdate(); // プレイヤーの更新処理
 
-
-		//近接攻撃
-
-		if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
-		{
-			meleeCooldown = 0.8f;
-			PlayMeleeAnimation();
-			//enemy 
-
-			auto& enemies = GetEnemies();
-			for (auto enemy : enemies) {
-				if (!enemy->IsUsed()) continue;
-
-				XMFLOAT3 ePos = enemy->GetPosition();
-				float dx = g_Player.pos.x - ePos.x;
-				float dz = g_Player.pos.z - ePos.z;
-				float distance = sqrtf(dx * dx + dz * dz);
-
-				if (distance > 100.0f) continue;
-
-				enemy->SetUsed(false);  
-			}
-		}
-
-		//特定の地域入るとゲームを停止
-		if (!tutorialTriggered &&
-			g_Player.pos.x > 50.0f && g_Player.pos.x < 100.0f &&
-			g_Player.pos.z > 50.0f && g_Player.pos.z < 100.0f)
-		{
-			SetTutorialShowing(true);
-			tutorialTriggered = true;
-		}
+		//g_Player.EventCheck(); // イベントチェック
 
 
 
 
-		//キーボードの1　武器の切り替え
-		if (GetKeyboardTrigger(DIK_1))
-		{
-			currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
-		}
-		//キーボードの2　弾の切り替え
-		if (GetKeyboardTrigger(DIK_2))
-		{
-			currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
-		}
-
-		PLAYER* p = GetPlayer();
 
 
-		// 弾発射処理
-		int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &p->ammoNormal : &p->ammoFire;
-		if (IsMouseLeftTriggered() && currentAmmo > 0)
-		{
-			XMFLOAT3 pos = GetGunMuzzlePosition();
-			XMFLOAT3 rot = GetGunMuzzleRotation();
-			if (currentWeapon == WEAPON_REVOLVER)
-			{
-				SetRevolverBullet(currentBullet, pos, rot);
-			}
-			else {
-				SetShotgunBullet(currentBullet, pos, rot);
-			}
-			(currentAmmo)--;
-		}
-		
-		
-		
-
-		// Rキーでリロード処理
-		if (GetKeyboardTrigger(DIK_R))
-		{
-			Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
-			int clipSize = weapon->clipSize;
-
-			int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
-			int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
-
-			if (*ammo < clipSize && *maxAmmo > 0)
-			{
-				int need = clipSize - *ammo;
-				int reload = Min(need, *maxAmmo);
-				*ammo += reload;
-				*maxAmmo -= reload;
-			}
-		}
-
-
-		//test
+		//HP減るtest
 		if (GetKeyboardTrigger(DIK_H))
 		{
 			g_Player.HP = g_Player.HP - 1;
@@ -376,49 +186,19 @@ void UpdatePlayer(void)
 
 
 #ifdef _DEBUG
-	/*if (GetKeyboardPress(DIK_R))
-	{
-		g_Player.pos.z = g_Player.pos.x = 0.0f;
-		g_Player.spd = 0.0f;
-		roty = 0.0f;
-	}*/
+
 #endif
 
 
-	{	// 押した方向にプレイヤーを移動させる
-		// 押した方向にプレイヤーを向かせている所
-		g_Player.rot.y = roty + cam->rot.y;
-
-		g_Player.pos.x -= sinf(g_Player.rot.y) * g_Player.spd;
-		g_Player.pos.z -= cosf(g_Player.rot.y) * g_Player.spd;
-	}
 
 
 
-	// レイキャストして足元の高さを求める
-	//XMFLOAT3 HitPosition;		// 交点
-	//XMFLOAT3 Normal;			// ぶつかったポリゴンの法線ベクトル（向き）
-	//BOOL ans = RayHitField(g_Player.pos, &HitPosition, &Normal);
-	//if (ans)
-	//{
-	//	g_Player.pos.y = HitPosition.y + PLAYER_OFFSET_Y;
-	//}
-	//else
-	//{
-	//	g_Player.pos.y = PLAYER_OFFSET_Y;
-	//	Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	//}
 
 
-	//// 弾発射処理
-	//if (GetKeyboardTrigger(DIK_SPACE))
-	//{
-	//	SetBullet(g_Player.pos, g_Player.rot);
-	//}
 
 
 	// 影もプレイヤーの位置に合わせる
-	XMFLOAT3 pos = g_Player.pos;
+	XMFLOAT3 pos = g_Player.GetPosition();
 	pos.y -= (PLAYER_OFFSET_Y - 0.1f);
 	SetPositionShadow(g_Player.shadowIdx, pos);
 
@@ -429,7 +209,7 @@ void UpdatePlayer(void)
 	// ポイントライトのテスト
 	{
 		LIGHT* light = GetLightData(1);
-		XMFLOAT3 pos = g_Player.pos;
+		XMFLOAT3 pos = g_Player.GetPosition();
 		pos.y += 20.0f;
 
 		light->Position = pos;
@@ -447,14 +227,222 @@ void UpdatePlayer(void)
 
 #ifdef _DEBUG
 	// デバッグ表示
-	PrintDebugProc("Player X:%f Y:%f Z:%f \n\n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
-	
+	//PrintDebugProc("Player X:%f Y:%f Z:%f \n\n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
+
 	PrintDebugProc("Rキーでリロード\n"
-				   "1キーで武器切り替え\n"
-				   "2キーで弾切り替え");
+		"1キーで武器切り替え\n"
+		"2キーで弾切り替え");
 #endif
 
 }
+
+
+void PLAYER::OnUpdate() {
+	HandleInput();          // W/A/S/D移動 & 方向制御
+	HandleJump();           // スペースキー処理
+
+	ApplyCollision();      // 衝突判定と適用
+	Object::Update();
+	HandleGroundCheck();    // 地面接地判定
+
+	HandleShooting();       // 弾発射
+	HandleReload();         // Rでリロード
+
+	EventCheck();          // イベントチェック
+}
+
+//ジャンプ
+void PLAYER::HandleJump() {
+	if (GetKeyboardTrigger(DIK_SPACE) && isGround) {
+		velocity.y = jumpPower;
+		isGround = false;
+	}
+}
+
+//移動処理
+void PLAYER::HandleInput()
+{
+	//移動処理TODO：変更必要
+	CAMERA* cam = GetCamera();
+
+	//g_Player.speed *= 0.7f;
+
+	// 移動処理
+	XMFLOAT3 move = {};
+	//bool isMoving = false;
+
+	if (GetKeyboardPress(DIK_W)) {
+		move.x += sinf(cam->rot.y);
+		move.z += cosf(cam->rot.y);
+		//isMoving = true;
+	}
+	if (GetKeyboardPress(DIK_S)) {
+		move.x -= sinf(cam->rot.y);
+		move.z -= cosf(cam->rot.y);
+		//isMoving = true;
+	}
+	if (GetKeyboardPress(DIK_A)) {
+		move.x -= cosf(cam->rot.y);
+		move.z += sinf(cam->rot.y);
+		//isMoving = true;
+	}
+	if (GetKeyboardPress(DIK_D)) {
+		move.x += cosf(cam->rot.y);
+		move.z -= sinf(cam->rot.y);
+		//isMoving = true;
+	}
+	
+	velocity.x = move.x * speed;
+	velocity.z = move.z * speed;
+
+	
+
+	//近接攻撃
+	if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
+	{
+		meleeCooldown = meleeCDTime;
+		PlayMeleeAnimation();
+		//enemy 
+
+		auto& enemies = GetEnemies();
+		for (auto enemy : enemies) {
+			if (!enemy->IsUsed()) continue;
+
+			XMFLOAT3 ePos = enemy->GetPosition();
+			float dx = g_Player.pos.x - ePos.x;
+			float dz = g_Player.pos.z - ePos.z;
+			float distance = sqrtf(dx * dx + dz * dz);
+
+			if (distance > 100.0f) continue;
+
+			enemy->SetUsed(false);
+		}
+	}
+
+
+	//武器切り替え
+	//キーボードの1　武器の切り替え
+	if (GetKeyboardTrigger(DIK_1))
+	{
+		currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
+	}
+	//キーボードの2　弾の切り替え
+	if (GetKeyboardTrigger(DIK_2))
+	{
+		currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
+	}
+
+
+}
+
+
+void PLAYER::ApplyCollision()
+{
+	//次の位置を予測
+	XMFLOAT3 nextPos = pos;
+	nextPos.x += velocity.x;
+	nextPos.z += velocity.z;
+
+	//BOXの計算
+	float halfSize = size;
+	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
+	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
+
+	if (AABBHitOctree(GetWallTree(), GetWallTriangles(), min, max, 0, 5, 5))
+	{
+		velocity.x = 0;
+		velocity.z = 0;
+	}
+}
+
+//接地判定
+void PLAYER::HandleGroundCheck()
+{
+
+
+	const float groundThreshold = 0.2f;
+	float groundY;
+	if (CheckPlayerGroundSimple(pos, PLAYER_OFFSET_Y, groundY) && GetVelocity().y <= 0.0f)
+	{
+		float targetY = groundY;
+		float distanceToGround = pos.y - targetY;
+		if (distanceToGround <= groundThreshold)
+		{
+			pos.y = targetY;
+			SetVelocity(XMFLOAT3(GetVelocity().x, 0.0f, GetVelocity().z));
+			isGround = TRUE;
+		}
+		else
+		{
+			isGround = FALSE;
+		}
+	}
+	else
+	{
+		isGround = FALSE;
+	}
+
+
+	
+
+}
+
+void PLAYER::EventCheck()
+{
+	//特定の地域入るとゲームを停止
+	if (!tutorialTriggered &&
+		pos.x > 50.0f && pos.x < 100.0f &&
+		pos.z > 50.0f && pos.z < 100.0f)
+	{
+		SetTutorialShowing(true);
+		tutorialTriggered = true;
+	}
+
+}
+
+
+void PLAYER::HandleShooting()
+{
+	// 弾発射処理
+	int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
+	if (IsMouseLeftTriggered() && currentAmmo > 0)
+	{
+		XMFLOAT3 pos = GetGunMuzzlePosition();
+		XMFLOAT3 rot = GetGunMuzzleRotation();
+		if (currentWeapon == WEAPON_REVOLVER)
+		{
+			SetRevolverBullet(currentBullet, pos, rot);
+		}
+		else {
+			SetShotgunBullet(currentBullet, pos, rot);
+		}
+		(currentAmmo)--;
+	}
+}
+
+
+void PLAYER::HandleReload()
+{
+	// Rキーでリロード処理
+	if (GetKeyboardTrigger(DIK_R))
+	{
+		Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
+		int clipSize = weapon->clipSize;
+
+		int* ammo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
+		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &maxAmmoNormal : &maxAmmoFire;
+
+		if (*ammo < clipSize && *maxAmmo > 0)
+		{
+			int need = clipSize - *ammo;
+			int reload = Min(need, *maxAmmo);
+			*ammo += reload;
+			*maxAmmo -= reload;
+		}
+	}
+}
+
+
 
 //=============================================================================
 // 描画処理
@@ -485,7 +473,7 @@ void DrawPlayer(void)
 	mtxWorld = XMMatrixMultiply(mtxWorld, quatMatrix);
 
 	// 移動を反映
-	mtxTranslate = XMMatrixTranslation(g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
+	mtxTranslate = XMMatrixTranslation(g_Player.GetPosition().x, g_Player.GetPosition().y, g_Player.GetPosition().z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
 	// ワールドマトリックスの設定
@@ -528,6 +516,8 @@ BulletType GetCurrentBulletType(void)
 {
 	return currentBullet;
 }
+
+
 bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 {
 	const auto& tris = GetFloorTriangles();

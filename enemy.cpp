@@ -1,4 +1,4 @@
-ï»¿//=============================================================================
+//=============================================================================
 //
 // 
 // 
@@ -21,6 +21,8 @@
 #include <ctime>
 
 
+
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -33,357 +35,350 @@ static BOOL g_bAlphaTestEnemy;
 
 #define ENEMY_OFFSET_Y  (-50.0f)
 
-static INTERPOLATION_DATA g_MoveTbl0[] = {
-    { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, 20.0f),    XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, 0.0f), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-    { XMFLOAT3(-200.0f, ENEMY_OFFSET_Y, -100.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-    { XMFLOAT3(0.0f, ENEMY_OFFSET_Y, -200.0f),XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), 60 * 5 },
-
-};
-
-INTERPOLATION_DATA* g_MoveTblAdr[] = {
-    g_MoveTbl0,
-};
 
 
-PLAYER* player = GetPlayer();
+
+//PLAYER* player = GetPlayer();
 BULLET* bullet = GetBullet();
 
 //*****************************************************************************
 // 
 //*****************************************************************************
 BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
-    XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 }
 BaseEnemy::~BaseEnemy() {}
 
 SpiderEnemy::SpiderEnemy() :
-    texture(nullptr), width(100.0f), height(100.0f)
+	texture(nullptr), width(100.0f), height(100.0f)
 {
-    material = new MATERIAL{};
-    XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+	material = new MATERIAL{};
+	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 }
 SpiderEnemy::~SpiderEnemy() {
-    if (texture) {
-        texture->Release();
-        texture = nullptr;
-    }
-    delete material;
-    material = nullptr;
+	if (texture) {
+		texture->Release();
+		texture = nullptr;
+	}
+	delete material;
+	material = nullptr;
 }
 
 void SpiderEnemy::Init() {
-    D3DX11CreateShaderResourceViewFromFile(
-        GetDevice(),
-        "data/2Dpicture/enemy/enemy001.png",
-        NULL, NULL, &texture, NULL);
+	D3DX11CreateShaderResourceViewFromFile(
+		GetDevice(),
+		"data/2Dpicture/enemy/enemy001.png",
+		NULL, NULL, &texture, NULL);
 
 
-    *material = {};
-    material->Diffuse = XMFLOAT4(1, 1, 1, 1);
+	*material = {};
+	material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-    pos = XMFLOAT3(0.0f, -50.0f, 20.0f);
-    scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-    use = true;
-    speed = 1.0f;
-    dropRate = 0.5f;
+	pos = XMFLOAT3(0.0f, -50.0f, 20.0f);
+	scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	use = true;
+	speed = 1.0f;
+	dropRate = 0.5f;
 
-    currentFrame = 0;
-    frameCounter = 0;
-    frameInterval = 15;//change speed
-    maxFrames = 3;
+	currentFrame = 0;
+	frameCounter = 0;
+	frameInterval = 15;//change speed
+	maxFrames = 3;
 
-    tblNo = 0;
-    tblMax = _countof(g_MoveTbl0);
-    time = 0.0f;
+	tblNo = 0;
+	//tblMax = _countof(g_MoveTbl0);
+	time = 0.0f;
 
-    isAttacking = false;
-    attackFrameTimer = 0.0f;
-    attackCooldownTimer = 0.0f;
-    attackCooldown = 1.5f;  // 1.5 ç§’ã“ã¨ã«æ”»æ’ƒã™ã‚‹
+	isAttacking = false;
+	attackFrameTimer = 0.0f;
+	attackCooldownTimer = 0.0f;
+	attackCooldown = 1.5f;  // 1.5 •b‚±‚Æ‚ÉUŒ‚‚·‚é
 
-    moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // ç¾åœ¨ã®å‹•ãæ–¹å‘
-    moveChangeTimer = 2.0f;  // å‘ãå¤‰ã‚ã‚‹ã‚¿ã‚¤ãƒãƒ¼
-    speed = 0.5f;			//ã‚¨ãƒãƒŸãƒ¼ã®ã‚¹ãƒ”ãƒ¼ãƒ‰
-    currentFrame = 0;
-    frameCounter = 0;
-    frameInterval = 15;//change speed
+	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // Œ»İ‚Ì“®‚«•ûŒü
+	moveChangeTimer = 2.0f;  // Œü‚«•Ï‚í‚éƒ^ƒCƒ}[
+	speed = 0.5f;			//ƒGƒlƒ~[‚ÌƒXƒs[ƒh
+	currentFrame = 0;
+	frameCounter = 0;
+	frameInterval = 15;//change speed
 
 
-    minDistance = 100.0f;
+	minDistance = 100.0f;
 
-    HP = 1;
+	HP = 1;
+
+	EnableGravity(true);
+	SetMaxFallSpeed(6.0f);
 }
 
 void SpiderEnemy::Update() {
-    if (!use) return;
+	if (!use) return;
 
 
-    if (isAttacking)    //æ”»æ’ƒã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å‡¦ç†
-    {
-        attackFrameTimer -= 1.0f / 60.0f;
-        if (attackFrameTimer <= 0.0f) {
-            isAttacking = false;
-            frameCounter = 0;
-            currentFrame = 0;
-        }
-        else
-        {
-            currentFrame = 2;
-        }
-    }
-    else
-    {
-        // ç§»å‹•ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å‡¦ç†
-        frameCounter++;
-        if (frameCounter >= frameInterval) {
-            frameCounter = 0;
-            currentFrame = (currentFrame + 1) % 2;
-        }
-    }
+	if (isAttacking)    //UŒ‚‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ˆ—
+	{
+		attackFrameTimer -= 1.0f / 60.0f;
+		if (attackFrameTimer <= 0.0f) {
+			isAttacking = false;
+			frameCounter = 0;
+			currentFrame = 0;
+		}
+		else
+		{
+			currentFrame = 2;
+		}
+	}
+	else
+	{
+		// ˆÚ“®‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ˆ—
+		frameCounter++;
+		if (frameCounter >= frameInterval) {
+			frameCounter = 0;
+			currentFrame = (currentFrame + 1) % 2;
+		}
+	}
 
 
-    // ã‚¨ãƒãƒŸãƒ¼ã‹ã‚‰ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¾ã§ã®ãƒ™ã‚¯ãƒˆãƒ«
-    XMFLOAT3 dir;
-    dir.x = player->pos.x - pos.x;
-    dir.y = 0.0f;
-    dir.z = player->pos.z - pos.z;
+	// ƒGƒlƒ~[‚©‚çƒvƒŒƒCƒ„[‚Ü‚Å‚ÌƒxƒNƒgƒ‹
+	XMFLOAT3 dir;
+	dir.x = GetPlayer()->GetPosition().x - pos.x;
+	dir.y = 0.0f;
+	dir.z = GetPlayer()->GetPosition().z - pos.z;
 
 
 
-    //// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®åº§æ¨™ã¾ã§ã®è¨ˆç®—
-    XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
+	//// ƒvƒŒƒCƒ„[‚ÌÀ•W‚Ü‚Å‚ÌŒvZ
+	XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
 
-    float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
-    float range = 200.0f; // ç™ºå°„ç¯„å›²
+	float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
+	float range = 200.0f; // ”­Ë”ÍˆÍ
 
-    attackCooldownTimer -= 1.0f / 60.0f;
-    if (attackCooldownTimer < 0.0f) attackCooldownTimer = 0.0f;
-
-
-    //ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’è¿½ã„ã‹ã‘ã‚‹è¡Œã†ç¯„å›²
-    if (distSq < range * range)
-    {
-        ChasingPlayer(speed, range);
-
-        if (!isAttacking && attackCooldownTimer <= 0.0f)
-        {
-            Attack();
-        }
-
-    }
-    else
-    {
-        NormalMovement();
-    }
+	attackCooldownTimer -= 1.0f / 60.0f;
+	if (attackCooldownTimer < 0.0f) attackCooldownTimer = 0.0f;
 
 
-    //å¼¾ã¨å½“ãŸã‚Šåˆ¤å®šï¼Ÿ
-    for (int i = 0; i < MAX_BULLET; i++)
-    {
-        if (!bullet[i].use) continue;
+	//ƒvƒŒƒCƒ„[‚ğ’Ç‚¢‚©‚¯‚és‚¤”ÍˆÍ
+	if (distSq < range * range)
+	{
+		ChasingPlayer(speed, range);
 
-        XMFLOAT3 enemyHalfSize = { width, height - 20.0f, 50.f }; //ã‚¨ãƒãƒŸãƒ¼ã®å½“ãŸã‚Šåˆ¤å®šã®ã‚µã‚¤ã‚º
+		if (!isAttacking && attackCooldownTimer <= 0.0f)
+		{
+			Attack();
+		}
 
-        if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
-        {
-            bullet[i].use = false;
-            HP -= 1;
-            if (HP <= 0)
-            {
-                use = false;
-                DropItems(pos, SPIDER);
-            }
-        }
+	}
+	else
+	{
+		NormalMovement();
+	}
 
-    }
+
+	//’e‚Æ“–‚½‚è”»’èH
+	for (int i = 0; i < MAX_BULLET; i++)
+	{
+		if (!bullet[i].use) continue;
+
+		XMFLOAT3 enemyHalfSize = { width, height - 20.0f, 50.f }; //ƒGƒlƒ~[‚Ì“–‚½‚è”»’è‚ÌƒTƒCƒY
+
+		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+		{
+			bullet[i].use = false;
+			HP -= 1;
+			if (HP <= 0)
+			{
+				use = false;
+				DropItems(pos, SPIDER);
+			}
+		}
+
+	}
 
 
 #ifdef _DEBUG
 
-    float dist = sqrtf(distSq);
-    PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n", pos.x, pos.y, pos.z);
+	float dist = sqrtf(distSq);
+	PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n", pos.x, pos.y, pos.z);
 
 #endif
 }
 
 void SpiderEnemy::Draw() {
 
-    if (!use || !texture || !g_VertexBufferEnemy) return;
+	if (!use || !texture || !g_VertexBufferEnemy) return;
 
 
-    SetLightEnable(FALSE);
+	SetLightEnable(FALSE);
 
-    UINT stride = sizeof(VERTEX_3D);
-    UINT offset = 0;
-    GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferEnemy, &stride, &offset);
-    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	UINT stride = sizeof(VERTEX_3D);
+	UINT offset = 0;
+	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferEnemy, &stride, &offset);
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-    CAMERA* cam = GetCamera();
-    XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
+	CAMERA* cam = GetCamera();
+	XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
 
-    XMMATRIX mtxWorld = XMMatrixIdentity();
-    mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
-    mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
-    mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
+	XMMATRIX mtxWorld = XMMatrixIdentity();
+	mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
+	mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
+	mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
 
-    mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
-    mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
-    mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
+	mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
+	mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
+	mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
 
-    mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
-    mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
-    mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
+	mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
+	mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
+	mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
 
-    XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
-    XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
-    mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
-    mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
-
-
-    D3D11_MAPPED_SUBRESOURCE msr;
-    GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-    VERTEX_3D* v = (VERTEX_3D*)msr.pData;
-
-    float w = width, h = height;
-    v[0].Position = XMFLOAT3(-w / 2, h, 0);
-    v[1].Position = XMFLOAT3(w / 2, h, 0);
-    v[2].Position = XMFLOAT3(-w / 2, 0, 0);
-    v[3].Position = XMFLOAT3(w / 2, 0, 0);
-
-    for (int i = 0; i < 4; ++i) {
-        v[i].Normal = XMFLOAT3(0, 0, -1);
-        v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
-    }
-
-    float tw = 1.0f / maxFrames;
-    float th = 1.0f;
-    float tx = currentFrame * tw;
-    float ty = 0.0f;
-
-    v[0].TexCoord = XMFLOAT2(tx, ty);
-    v[1].TexCoord = XMFLOAT2(tx + tw, ty);
-    v[2].TexCoord = XMFLOAT2(tx, ty + th);
-    v[3].TexCoord = XMFLOAT2(tx + tw, ty + th);
-
-    GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
-
-    SetAlphaTestEnable(FALSE);
-    SetBlendState(BLEND_MODE_ALPHABLEND);
-    SetWorldMatrix(&mtxWorld);
-    SetMaterial(*material);
-    GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+	XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
+	XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
 
-    GetDeviceContext()->Draw(4, 0);
+	D3D11_MAPPED_SUBRESOURCE msr;
+	GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+	VERTEX_3D* v = (VERTEX_3D*)msr.pData;
+
+	float w = width, h = height;
+	v[0].Position = XMFLOAT3(-w / 2, h, 0);
+	v[1].Position = XMFLOAT3(w / 2, h, 0);
+	v[2].Position = XMFLOAT3(-w / 2, 0, 0);
+	v[3].Position = XMFLOAT3(w / 2, 0, 0);
+
+	for (int i = 0; i < 4; ++i) {
+		v[i].Normal = XMFLOAT3(0, 0, -1);
+		v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
+	}
+
+	float tw = 1.0f / maxFrames;
+	float th = 1.0f;
+	float tx = currentFrame * tw;
+	float ty = 0.0f;
+
+	v[0].TexCoord = XMFLOAT2(tx, ty);
+	v[1].TexCoord = XMFLOAT2(tx + tw, ty);
+	v[2].TexCoord = XMFLOAT2(tx, ty + th);
+	v[3].TexCoord = XMFLOAT2(tx + tw, ty + th);
+
+	GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
+
+	SetAlphaTestEnable(FALSE);
+	SetBlendState(BLEND_MODE_ALPHABLEND);
+	SetWorldMatrix(&mtxWorld);
+	SetMaterial(*material);
+	GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+
+
+	GetDeviceContext()->Draw(4, 0);
 
 }
 void SpiderEnemy::NormalMovement()
 {
 
-    // å‹•ãæ–¹å‘å¤‰ã‚ã‚Šã‚¿ã‚¤ãƒãƒ¼
-    moveChangeTimer -= 1.0f / 60.0f; // 60fpsã“ã¨ã«å‹•ãæ–¹å‘å¤‰ã‚ã‚Š
-    if (moveChangeTimer <= 0.0f) {
-        moveChangeTimer = 2.0f; // reset timer
+	// “®‚«•ûŒü•Ï‚í‚èƒ^ƒCƒ}[
+	moveChangeTimer -= 1.0f / 60.0f; // 60fps‚±‚Æ‚É“®‚«•ûŒü•Ï‚í‚è
+	if (moveChangeTimer <= 0.0f) {
+		moveChangeTimer = 2.0f; // reset timer
 
-        // å‹•ãæ–¹å‘å¤‰ã‚ã‚‹ã“ã¨ã¯ãƒ©ãƒ³ãƒ€ãƒ è¨­å®š
-        int dir = rand() % 4;
-        switch (dir) {
-        case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // å³
-        case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // å·¦
-        case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // å‰ï¼ˆ+ï½šï¼‰
-        case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // å¾Œã‚ï¼ˆ-ï½šï¼‰
-        }
-    }
+		// “®‚«•ûŒü•Ï‚í‚é‚±‚Æ‚Íƒ‰ƒ“ƒ_ƒ€İ’è
+		int dir = rand() % 4;
+		switch (dir) {
+		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // ‰E
+		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // ¶
+		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // ‘Oi+‚šj
+		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // Œã‚ëi-‚šj
+		}
+	}
 
-    // æ–°ã—ã„ä½ç½®ã‚’è¨ˆç®—
-    XMFLOAT3 newPos = pos;
-    newPos.x += moveDir.x * speed;
-    newPos.y += moveDir.y * speed;
-    newPos.z += moveDir.z * speed;
+	// V‚µ‚¢ˆÊ’u‚ğŒvZ
+	XMFLOAT3 newPos = pos;
+	newPos.x += moveDir.x * speed;
+	newPos.y += moveDir.y * speed;
+	newPos.z += moveDir.z * speed;
 
-    // ç¯„å›²åˆ¶é™ï¼ˆä¾‹ãˆã°ï¼šXã¨Zã¯ -50.0f ã€œ +50.0fï¼‰
-    const float minX = -200.0f;
-    const float maxX = 200.0f;
-    const float minZ = -100.0f;
-    const float maxZ = 100.0f;
+	// ”ÍˆÍ§ŒÀi—á‚¦‚ÎFX‚ÆZ‚Í -50.0f ? +50.0fj
+	const float minX = -200.0f;
+	const float maxX = 200.0f;
+	const float minZ = -100.0f;
+	const float maxZ = 100.0f;
 
-    // ç¯„å›²å†…ãªã‚‰ç§»å‹•
-    if (newPos.x >= minX && newPos.x <= maxX &&
-        newPos.z >= minZ && newPos.z <= maxZ) {
-        pos = newPos;
-    }
-    else {
-        // ç¯„å›²å¤–ã«å‡ºãã†ãªã‚‰æ–¹å‘ã‚’å¤‰ãˆã‚‹
-        moveChangeTimer = 0.0f; // ã™ãæ¬¡ã®æ–¹å‘ã¸å¤‰æ›´
-    }
+	// ”ÍˆÍ“à‚È‚çˆÚ“®
+	if (newPos.x >= minX && newPos.x <= maxX &&
+		newPos.z >= minZ && newPos.z <= maxZ) {
+		pos = newPos;
+	}
+	else {
+		// ”ÍˆÍŠO‚Éo‚»‚¤‚È‚ç•ûŒü‚ğ•Ï‚¦‚é
+		moveChangeTimer = 0.0f; // ‚·‚®Ÿ‚Ì•ûŒü‚Ö•ÏX
+	}
 }
 void SpiderEnemy::Attack()
 {
-    if (attackCooldownTimer <= 0.0f && !isAttacking)
-    {
-        isAttacking = true;
-        player->HP -= 1;
-        attackFrameTimer = 0.5f;              // æ”»æ’ƒã®ãƒ•ãƒ¬ãƒ¼ãƒ ã®æç”»ã®æ™‚é–“
-        currentFrame = 2;                     // æ”»æ’ƒã®ãƒ•ãƒ¬ãƒ¼ãƒ ã®æç”»
-        attackCooldownTimer = attackCooldown; // Reset cooldown
+	if (attackCooldownTimer <= 0.0f && !isAttacking)
+	{
+		isAttacking = true;
+		GetPlayer()->HP -= 1;
+		attackFrameTimer = 0.5f;              // UŒ‚‚ÌƒtƒŒ[ƒ€‚Ì•`‰æ‚ÌŠÔ
+		currentFrame = 2;                     // UŒ‚‚ÌƒtƒŒ[ƒ€‚Ì•`‰æ
+		attackCooldownTimer = attackCooldown; // Reset cooldown
 
-        ShowWebEffect(0.5f);
-    }
+		ShowWebEffect(0.5f);
+	}
 }
 //*****************************************************************************
 // 
 //*****************************************************************************
 void InitEnemy() {
-    MakeVertexEnemy();
-    g_enemies.clear();
-    for (int i = 0; i < ENEMY_MAX; ++i) {
+	MakeVertexEnemy();
+	g_enemies.clear();
+	for (int i = 0; i < ENEMY_MAX; ++i) {
 
-        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
-        EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
+		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
+		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
-    }
+	}
 }
 
 void UpdateEnemy() {
-    for (auto enemy : g_enemies) {
-        if (enemy->IsUsed()) enemy->Update();
-    }
+	for (auto enemy : g_enemies) {
+		if (enemy->IsUsed()) enemy->Update();
+	}
 }
 
 void DrawEnemy() {
-    for (auto enemy : g_enemies) {
-        if (enemy->IsUsed()) enemy->Draw();
-    }
+	for (auto enemy : g_enemies) {
+		if (enemy->IsUsed()) enemy->Draw();
+	}
 
 
 #ifdef _DEBUG
-    for (auto enemy : g_enemies)
-    {
-        if (enemy->IsUsed())
-        {
-            XMFLOAT3 pos = enemy->GetPosition();
-            PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n", pos.x, pos.y, pos.z);
-            break;
-        }
-    }
+	for (auto enemy : g_enemies)
+	{
+		if (enemy->IsUsed())
+		{
+			XMFLOAT3 pos = enemy->GetPosition();
+			PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n", pos.x, pos.y, pos.z);
+			break;
+		}
+	}
 #endif
 }
 
 void UninitEnemy() {
-    for (auto enemy : g_enemies) {
-        delete enemy;
-    }
-    g_enemies.clear();
+	for (auto enemy : g_enemies) {
+		delete enemy;
+	}
+	g_enemies.clear();
 
-    if (g_VertexBufferEnemy) {
-        g_VertexBufferEnemy->Release();
-        g_VertexBufferEnemy = nullptr;
-    }
+	if (g_VertexBufferEnemy) {
+		g_VertexBufferEnemy->Release();
+		g_VertexBufferEnemy = nullptr;
+	}
 }
 
 std::vector<BaseEnemy*>& GetEnemies() {
-    return g_enemies;
+	return g_enemies;
 }
 
 //*****************************************************************************
@@ -391,131 +386,131 @@ std::vector<BaseEnemy*>& GetEnemies() {
 //*****************************************************************************
 
 HRESULT MakeVertexEnemy() {
-    D3D11_BUFFER_DESC bd = {};
-    bd.Usage = D3D11_USAGE_DYNAMIC;
-    bd.ByteWidth = sizeof(VERTEX_3D) * 4;
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	D3D11_BUFFER_DESC bd = {};
+	bd.Usage = D3D11_USAGE_DYNAMIC;
+	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    HRESULT hr = GetDevice()->CreateBuffer(&bd, nullptr, &g_VertexBufferEnemy);
-    if (FAILED(hr)) return hr;
+	HRESULT hr = GetDevice()->CreateBuffer(&bd, nullptr, &g_VertexBufferEnemy);
+	if (FAILED(hr)) return hr;
 
-    D3D11_MAPPED_SUBRESOURCE msr;
-    GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-    VERTEX_3D* v = (VERTEX_3D*)msr.pData;
+	D3D11_MAPPED_SUBRESOURCE msr;
+	GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+	VERTEX_3D* v = (VERTEX_3D*)msr.pData;
 
-    float w = 60.0f, h = 90.0f;
-    v[0].Position = XMFLOAT3(-w / 2, h, 0);
-    v[1].Position = XMFLOAT3(w / 2, h, 0);
-    v[2].Position = XMFLOAT3(-w / 2, 0, 0);
-    v[3].Position = XMFLOAT3(w / 2, 0, 0);
+	float w = 60.0f, h = 90.0f;
+	v[0].Position = XMFLOAT3(-w / 2, h, 0);
+	v[1].Position = XMFLOAT3(w / 2, h, 0);
+	v[2].Position = XMFLOAT3(-w / 2, 0, 0);
+	v[3].Position = XMFLOAT3(w / 2, 0, 0);
 
-    for (int i = 0; i < 4; ++i) {
-        v[i].Normal = XMFLOAT3(0, 0, -1);
-        v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
-    }
+	for (int i = 0; i < 4; ++i) {
+		v[i].Normal = XMFLOAT3(0, 0, -1);
+		v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
+	}
 
-    v[0].TexCoord = XMFLOAT2(0, 0);
-    v[1].TexCoord = XMFLOAT2(1, 0);
-    v[2].TexCoord = XMFLOAT2(0, 1);
-    v[3].TexCoord = XMFLOAT2(1, 1);
+	v[0].TexCoord = XMFLOAT2(0, 0);
+	v[1].TexCoord = XMFLOAT2(1, 0);
+	v[2].TexCoord = XMFLOAT2(0, 1);
+	v[3].TexCoord = XMFLOAT2(1, 1);
 
-    GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
-    return S_OK;
+	GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
+	return S_OK;
 }
 
 void EnemySpawner(XMFLOAT3 position, int type) {
-    BaseEnemy* newEnemy = nullptr;
+	BaseEnemy* newEnemy = nullptr;
 
-    switch (type) {
-    case SPIDER: { // SpiderEnemy
-        SpiderEnemy* spider = new SpiderEnemy();
-        spider->Init();
-        spider->SetUsed(true);
-        spider->SetPosition(position);
-        newEnemy = spider;
-        break;
-    }
-    case GHOST: { // GhostEnemy
-        GhostEnemy* ghost = new GhostEnemy();
-        ghost->Init();
-        ghost->SetUsed(true);
-        ghost->SetPosition(position);
-        newEnemy = ghost;
-        break;
-    }
-    default:
-        return;
-    }
+	switch (type) {
+	case SPIDER: { // SpiderEnemy
+		SpiderEnemy* spider = new SpiderEnemy();
+		spider->Init();
+		spider->SetUsed(true);
+		spider->SetPosition(position);
+		newEnemy = spider;
+		break;
+	}
+	case GHOST: { // GhostEnemy
+		GhostEnemy* ghost = new GhostEnemy();
+		ghost->Init();
+		ghost->SetUsed(true);
+		ghost->SetPosition(position);
+		newEnemy = ghost;
+		break;
+	}
+	default:
+		return;
+	}
 
-    if (newEnemy) {
-        g_enemies.push_back(newEnemy);
-    }
+	if (newEnemy) {
+		g_enemies.push_back(newEnemy);
+	}
 }
 
 void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType)
 {
-    int itemCount = 0;
+	int itemCount = 0;
 
-    auto getRandomOffsetX = []() -> float {
-        return ((float)(rand() % 41) - 20.0f);
-        };
+	auto getRandomOffsetX = []() -> float {
+		return ((float)(rand() % 41) - 20.0f);
+		};
 
-    auto dropItemAtOffset = [&](int itemId) {
-        XMFLOAT3 dropPos = pos;
-        dropPos.x += getRandomOffsetX();
-        SetItem(dropPos, itemId);
-        };
+	auto dropItemAtOffset = [&](int itemId) {
+		XMFLOAT3 dropPos = pos;
+		dropPos.x += getRandomOffsetX();
+		SetItem(dropPos, itemId);
+		};
 
-    float random = (float)rand() / RAND_MAX;
-    switch (enemyType)
-    {
-    case SPIDER:
-        dropItemAtOffset(ITEM_APPLE);  // Apple 100%
-        if (random < 0.5f)  // San 50%
-        {
-            dropItemAtOffset(ITEM_SAN);
-        }
-        if (random < 0.2f)  // fire 20%
-        {
-            dropItemAtOffset(PART_FIRE);
-        }
-        if (random < 0.2f)  // shutgun 20%
-        {
-            dropItemAtOffset(PART_SHUTGUN);
-        }
-        if (random < 0.5f)  // bullet 50%
-        {
-            dropItemAtOffset(ITEM_BULLET);
-        }
-        break;
+	float random = (float)rand() / RAND_MAX;
+	switch (enemyType)
+	{
+	case SPIDER:
+		dropItemAtOffset(ITEM_APPLE);  // Apple 100%
+		if (random < 0.5f)  // San 50%
+		{
+			dropItemAtOffset(ITEM_SAN);
+		}
+		if (random < 0.2f)  // fire 20%
+		{
+			dropItemAtOffset(PART_FIRE);
+		}
+		if (random < 0.2f)  // shutgun 20%
+		{
+			dropItemAtOffset(PART_SHUTGUN);
+		}
+		if (random < 0.5f)  // bullet 50%
+		{
+			dropItemAtOffset(ITEM_BULLET);
+		}
+		break;
 
-    case GHOST:
-        if (random < 0.5f)  // Apple 50%
-        {
-            dropItemAtOffset(ITEM_APPLE);
-        }
-        if (random < 0.2f)  // San 20%
-        {
-            dropItemAtOffset(ITEM_SAN);
-        }
-        if (random < 0.2f)  // fire 20%
-        {
-            dropItemAtOffset(PART_FIRE);
-        }
-        if (random < 0.2f)  // shutgun 20%
-        {
-            dropItemAtOffset(PART_SHUTGUN);
-        }
-        if (random < 0.5f)  // bullet 50%
-        {
-            dropItemAtOffset(ITEM_BULLET);
-        }
-        break;
+	case GHOST:
+		if (random < 0.5f)  // Apple 50%
+		{
+			dropItemAtOffset(ITEM_APPLE);
+		}
+		if (random < 0.2f)  // San 20%
+		{
+			dropItemAtOffset(ITEM_SAN);
+		}
+		if (random < 0.2f)  // fire 20%
+		{
+			dropItemAtOffset(PART_FIRE);
+		}
+		if (random < 0.2f)  // shutgun 20%
+		{
+			dropItemAtOffset(PART_SHUTGUN);
+		}
+		if (random < 0.5f)  // bullet 50%
+		{
+			dropItemAtOffset(ITEM_BULLET);
+		}
+		break;
 
-    default:
-        break;
-    }
+	default:
+		break;
+	}
 }
 
 //*****************************************************************************
@@ -524,46 +519,46 @@ void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType)
 
 
 void BaseEnemy::SetPosition(const XMFLOAT3& p) {
-    pos = p;
+	pos = p;
 }
 
 XMFLOAT3 BaseEnemy::GetPosition() const {
-    return pos;
+	return pos;
 }
 
 void BaseEnemy::SetScale(const XMFLOAT3& s) {
-    scl = s;
+	scl = s;
 }
 
 XMFLOAT3 BaseEnemy::GetScale() const {
-    return scl;
+	return scl;
 }
 
 void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 {
-    PLAYER* player = GetPlayer();
 
-    // ã‚¨ãƒãƒŸãƒ¼ã‹ã‚‰ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¾ã§ã®ãƒ™ã‚¯ãƒˆãƒ«
-    XMFLOAT3 dir;
-    dir.x = player->pos.x - pos.x;
-    dir.y = 0.0f;
-    dir.z = player->pos.z - pos.z;
 
-    float distSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
+	// ƒGƒlƒ~[‚©‚çƒvƒŒƒCƒ„[‚Ü‚Å‚ÌƒxƒNƒgƒ‹
+	XMFLOAT3 dir;
+	dir.x = GetPlayer()->GetPosition().x - pos.x;
+	dir.y = 0.0f;
+	dir.z = GetPlayer()->GetPosition().z - pos.z;
 
-    float maxSq = chaseRange * chaseRange;
-    float minSq = minDistance * minDistance;
+	float distSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
 
-    if (distSq < maxSq && distSq > minSq) {
-        // æ­£è¦åŒ–ãƒ™ã‚¯ãƒˆãƒ«
-        XMVECTOR vec = XMVector3Normalize(XMLoadFloat3(&dir));
-        XMStoreFloat3(&dir, vec);
+	float maxSq = chaseRange * chaseRange;
+	float minSq = minDistance * minDistance;
 
-        // ä½ç½®ã‚¢ãƒƒãƒ—ãƒ‡ãƒ¼ãƒˆ
-        pos.x += dir.x * speed;
-        pos.y += dir.y * speed;
-        pos.z += dir.z * speed;
-    }
+	if (distSq < maxSq && distSq > minSq) {
+		// ³‹K‰»ƒxƒNƒgƒ‹
+		XMVECTOR vec = XMVector3Normalize(XMLoadFloat3(&dir));
+		XMStoreFloat3(&dir, vec);
+
+		// ˆÊ’uƒAƒbƒvƒf[ƒg
+		pos.x += dir.x * speed;
+		pos.y += dir.y * speed;
+		pos.z += dir.z * speed;
+	}
 }
 
 
@@ -573,111 +568,114 @@ void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 //*****************************************************************************
 
 GhostEnemy::GhostEnemy() :
-    texture(nullptr), width(100.0f), height(100.0f)
+	texture(nullptr), width(100.0f), height(100.0f)
 {
-    material = new MATERIAL{};
-    XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+	material = new MATERIAL{};
+	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 }
 GhostEnemy::~GhostEnemy() {
-    if (texture) {
-        texture->Release();
-        texture = nullptr;
-    }
-    delete material;
-    material = nullptr;
+	if (texture) {
+		texture->Release();
+		texture = nullptr;
+	}
+	delete material;
+	material = nullptr;
 }
 
 void GhostEnemy::Init()
 {
-    D3DX11CreateShaderResourceViewFromFile(
-        GetDevice(),
-        "data/2Dpicture/enemy/ghost.png",
-        NULL, NULL, &texture, NULL);
+	D3DX11CreateShaderResourceViewFromFile(
+		GetDevice(),
+		"data/2Dpicture/enemy/ghost.png",
+		NULL, NULL, &texture, NULL);
 
 
-    *material = {};
-    material->Diffuse = XMFLOAT4(1, 1, 1, 1);
+	*material = {};
+	material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-    pos = XMFLOAT3(0.0f, 0.0f, ENEMY_OFFSET_Y);
-    scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-    use = true;
-    moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // ç¾åœ¨ã®å‹•ãæ–¹å‘
-    moveChangeTimer = 2.0f;  // å‘ãå¤‰ã‚ã‚‹ã‚¿ã‚¤ãƒãƒ¼
-    speed = 0.5f;			//ã‚¨ãƒãƒŸãƒ¼ã®ã‚¹ãƒ”ãƒ¼ãƒ‰
-    currentFrame = 0;
-    frameCounter = 0;
-    frameInterval = 15;//change speed
-    maxFrames = 2;
+	pos = XMFLOAT3(0.0f, 0.0f, ENEMY_OFFSET_Y);
+	scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	use = true;
+	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // Œ»İ‚Ì“®‚«•ûŒü
+	moveChangeTimer = 2.0f;  // Œü‚«•Ï‚í‚éƒ^ƒCƒ}[
+	speed = 0.5f;			//ƒGƒlƒ~[‚ÌƒXƒs[ƒh
+	currentFrame = 0;
+	frameCounter = 0;
+	frameInterval = 15;//change speed
+	maxFrames = 2;
 
-    HP = 50;
+	HP = 50;
+
+	//—H—ì‚Íd—Í‚¢‚ç‚È‚¢
+	EnableGravity(false);
 }
 
 void GhostEnemy::Update()
 {
-    frameCounter++;
-    if (frameCounter >= frameInterval) {
-        frameCounter = 0;
-        currentFrame = (currentFrame + 1) % maxFrames;
-    }
+	frameCounter++;
+	if (frameCounter >= frameInterval) {
+		frameCounter = 0;
+		currentFrame = (currentFrame + 1) % maxFrames;
+	}
 
 
-    if (!use) return;
-
-    PLAYER* player = GetPlayer();
-
-    // ã‚¨ãƒãƒŸãƒ¼ã‹ã‚‰ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¾ã§ã®ãƒ™ã‚¯ãƒˆãƒ«
-    XMFLOAT3 dir;
-    dir.x = player->pos.x - pos.x;
-    dir.y = player->pos.y - pos.y;
-    dir.z = player->pos.z - pos.z;
+	if (!use) return;
 
 
 
-    //// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®åº§æ¨™ã¾ã§ã®è¨ˆç®—
-    XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
+	// ƒGƒlƒ~[‚©‚çƒvƒŒƒCƒ„[‚Ü‚Å‚ÌƒxƒNƒgƒ‹
+	XMFLOAT3 dir;
+	dir.x = GetPlayer()->GetPosition().x - pos.x;
+	dir.y = GetPlayer()->GetPosition().y - pos.y;
+	dir.z = GetPlayer()->GetPosition().z - pos.z;
 
-    float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
-    float range = 100.0f; // ç™ºå°„ç¯„å›²
+
+
+	//// ƒvƒŒƒCƒ„[‚ÌÀ•W‚Ü‚Å‚ÌŒvZ
+	XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
+
+	float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
+	float range = 100.0f; // ”­Ë”ÍˆÍ
 
 
 
-    //æ”»æ’ƒè¡Œã†ç¯„å›²
-    if (distSq < range * range)
-    {
-        ChasingPlayer(speed, range);
-    }
-    else
-    {
-        NormalMovement();
+	//UŒ‚s‚¤”ÍˆÍ
+	if (distSq < range * range)
+	{
+		ChasingPlayer(speed, range);
+	}
+	else
+	{
+		NormalMovement();
 
-    }
+	}
 
-    //å¼¾ã¨å½“ãŸã‚Šåˆ¤å®šï¼Ÿ
-    for (int i = 0; i < MAX_BULLET; i++)
-    {
-        if (!bullet[i].use) continue;
+	//’e‚Æ“–‚½‚è”»’èH
+	for (int i = 0; i < MAX_BULLET; i++)
+	{
+		if (!bullet[i].use) continue;
 
-        XMFLOAT3 enemyHalfSize = { width / 2, height, 50.f }; //ã‚¨ãƒãƒŸãƒ¼ã®å½“ãŸã‚Šåˆ¤å®šã®ã‚µã‚¤ã‚º
+		XMFLOAT3 enemyHalfSize = { width / 2, height, 50.f }; //ƒGƒlƒ~[‚Ì“–‚½‚è”»’è‚ÌƒTƒCƒY
 
-        if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
-        {
-            bullet[i].use = false;
-            HP -= 1;
-            if (HP <= 0)
-            {
-                use = false;
-                DropItems(pos, GHOST);
-            }
-        }
+		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+		{
+			bullet[i].use = false;
+			HP -= 1;
+			if (HP <= 0)
+			{
+				use = false;
+				DropItems(pos, GHOST);
+			}
+		}
 
-    }
+	}
 
 
 
 #ifdef _DEBUG
 
-    float dist = sqrtf(distSq);
-    PrintDebugProc("Enemy2 HP: %d\n", HP);
+	float dist = sqrtf(distSq);
+	PrintDebugProc("Enemy2 HP: %d\n", HP);
 
 #endif
 
@@ -685,120 +683,120 @@ void GhostEnemy::Update()
 
 void GhostEnemy::Draw()
 {
-    if (!use || !texture || !g_VertexBufferEnemy) return;
+	if (!use || !texture || !g_VertexBufferEnemy) return;
 
 
-    SetLightEnable(FALSE);
+	SetLightEnable(FALSE);
 
-    UINT stride = sizeof(VERTEX_3D);
-    UINT offset = 0;
-    GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferEnemy, &stride, &offset);
-    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	UINT stride = sizeof(VERTEX_3D);
+	UINT offset = 0;
+	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferEnemy, &stride, &offset);
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-    CAMERA* cam = GetCamera();
-    XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
+	CAMERA* cam = GetCamera();
+	XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
 
-    XMMATRIX mtxWorld = XMMatrixIdentity();
-    mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
-    mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
-    mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
+	XMMATRIX mtxWorld = XMMatrixIdentity();
+	mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
+	mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
+	mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
 
-    mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
-    mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
-    mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
+	mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
+	mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
+	mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
 
-    mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
-    mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
-    mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
+	mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
+	mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
+	mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
 
-    XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
-    XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
-    mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
-    mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
-
-
-    D3D11_MAPPED_SUBRESOURCE msr;
-    GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-    VERTEX_3D* v = (VERTEX_3D*)msr.pData;
-
-    float w = width, h = height;
-    v[0].Position = XMFLOAT3(-w / 2, h, 0);
-    v[1].Position = XMFLOAT3(w / 2, h, 0);
-    v[2].Position = XMFLOAT3(-w / 2, 0, 0);
-    v[3].Position = XMFLOAT3(w / 2, 0, 0);
-
-    for (int i = 0; i < 4; ++i) {
-        v[i].Normal = XMFLOAT3(0, 0, -1);
-        v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
-    }
-
-    float tw = 1.0f / maxFrames;
-    float th = 1.0f;
-    float tx = currentFrame * tw;
-    float ty = 0.0f;
-
-    v[0].TexCoord = XMFLOAT2(tx, ty);
-    v[1].TexCoord = XMFLOAT2(tx + tw, ty);
-    v[2].TexCoord = XMFLOAT2(tx, ty + th);
-    v[3].TexCoord = XMFLOAT2(tx + tw, ty + th);
-
-    GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
-
-    SetAlphaTestEnable(FALSE);
-    SetBlendState(BLEND_MODE_ALPHABLEND);
-    SetWorldMatrix(&mtxWorld);
-    SetMaterial(*material);
-    GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+	XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
+	XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
+	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
 
-    GetDeviceContext()->Draw(4, 0);
+	D3D11_MAPPED_SUBRESOURCE msr;
+	GetDeviceContext()->Map(g_VertexBufferEnemy, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+	VERTEX_3D* v = (VERTEX_3D*)msr.pData;
+
+	float w = width, h = height;
+	v[0].Position = XMFLOAT3(-w / 2, h, 0);
+	v[1].Position = XMFLOAT3(w / 2, h, 0);
+	v[2].Position = XMFLOAT3(-w / 2, 0, 0);
+	v[3].Position = XMFLOAT3(w / 2, 0, 0);
+
+	for (int i = 0; i < 4; ++i) {
+		v[i].Normal = XMFLOAT3(0, 0, -1);
+		v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
+	}
+
+	float tw = 1.0f / maxFrames;
+	float th = 1.0f;
+	float tx = currentFrame * tw;
+	float ty = 0.0f;
+
+	v[0].TexCoord = XMFLOAT2(tx, ty);
+	v[1].TexCoord = XMFLOAT2(tx + tw, ty);
+	v[2].TexCoord = XMFLOAT2(tx, ty + th);
+	v[3].TexCoord = XMFLOAT2(tx + tw, ty + th);
+
+	GetDeviceContext()->Unmap(g_VertexBufferEnemy, 0);
+
+	SetAlphaTestEnable(FALSE);
+	SetBlendState(BLEND_MODE_ALPHABLEND);
+	SetWorldMatrix(&mtxWorld);
+	SetMaterial(*material);
+	GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
+
+
+	GetDeviceContext()->Draw(4, 0);
 
 }
 
 void GhostEnemy::NormalMovement()
 {
-    // å‹•ãæ–¹å‘å¤‰ã‚ã‚Šã‚¿ã‚¤ãƒãƒ¼
-    moveChangeTimer -= 1.0f / 60.0f; // 60fpsã“ã¨ã«å‹•ãæ–¹å‘å¤‰ã‚ã‚Š
-    if (moveChangeTimer <= 0.0f) {
-        moveChangeTimer = 2.0f; // reset timer
+	// “®‚«•ûŒü•Ï‚í‚èƒ^ƒCƒ}[
+	moveChangeTimer -= 1.0f / 60.0f; // 60fps‚±‚Æ‚É“®‚«•ûŒü•Ï‚í‚è
+	if (moveChangeTimer <= 0.0f) {
+		moveChangeTimer = 2.0f; // reset timer
 
-        // å‹•ãæ–¹å‘å¤‰ã‚ã‚‹ã“ã¨ã¯ãƒ©ãƒ³ãƒ€ãƒ è¨­å®š
-        int dir = rand() % 6;
-        switch (dir) 
-        {
-            case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // å³
-            case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // å·¦
-            case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // å‰ï¼ˆ+ï½šï¼‰
-            case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // å¾Œã‚ï¼ˆ-ï½šï¼‰
-            case 4: moveDir = XMFLOAT3(0.0f, 1.0f, 0.0f); break; // ä¸Šï¼ˆ+ï½™ï¼‰
-            case 5: moveDir = XMFLOAT3(0.0f, -1.0f, 0.0f); break; // ä¸‹ï¼ˆ-ï½™ï¼‰
-        }
-    }
+		// “®‚«•ûŒü•Ï‚í‚é‚±‚Æ‚Íƒ‰ƒ“ƒ_ƒ€İ’è
+		int dir = rand() % 6;
+		switch (dir)
+		{
+		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // ‰E
+		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // ¶
+		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // ‘Oi+‚šj
+		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // Œã‚ëi-‚šj
+		case 4: moveDir = XMFLOAT3(0.0f, 1.0f, 0.0f); break; // ãi+‚™j
+		case 5: moveDir = XMFLOAT3(0.0f, -1.0f, 0.0f); break; // ‰ºi-‚™j
+		}
+	}
 
-    // æ–°ã—ã„ä½ç½®ã‚’è¨ˆç®—
-    XMFLOAT3 newPos = pos;
-    newPos.x += moveDir.x * speed;
-    newPos.y += moveDir.y * speed;
-    newPos.z += moveDir.z * speed;
+	// V‚µ‚¢ˆÊ’u‚ğŒvZ
+	XMFLOAT3 newPos = pos;
+	newPos.x += moveDir.x * speed;
+	newPos.y += moveDir.y * speed;
+	newPos.z += moveDir.z * speed;
 
-    // ç¯„å›²åˆ¶é™ï¼ˆä¾‹ãˆã°ï¼šXã¨Zã¯ -50.0f ã€œ +50.0fï¼‰
-    const float minX = -200.0f;
-    const float maxX = 200.0f;
-    const float minZ = -100.0f;
-    const float maxZ = 100.0f;
-    const float minY = -50.0f;
-    const float maxY = 100.0f;
+	// ”ÍˆÍ§ŒÀi—á‚¦‚ÎFX‚ÆZ‚Í -50.0f ? +50.0fj
+	const float minX = -200.0f;
+	const float maxX = 200.0f;
+	const float minZ = -100.0f;
+	const float maxZ = 100.0f;
+	const float minY = -50.0f;
+	const float maxY = 100.0f;
 
-    // ç¯„å›²å†…ãªã‚‰ç§»å‹•
-    if (newPos.x >= minX && newPos.x <= maxX &&
-        newPos.y >= minY && newPos.y <= maxY &&
-        newPos.z >= minZ && newPos.z <= maxZ ) {
-        pos = newPos;
-    }
-    else {
-        // ç¯„å›²å¤–ã«å‡ºãã†ãªã‚‰æ–¹å‘ã‚’å¤‰ãˆã‚‹
-        moveChangeTimer = 0.0f; // ã™ãæ¬¡ã®æ–¹å‘ã¸å¤‰æ›´
-    }
+	// ”ÍˆÍ“à‚È‚çˆÚ“®
+	if (newPos.x >= minX && newPos.x <= maxX &&
+		newPos.y >= minY && newPos.y <= maxY &&
+		newPos.z >= minZ && newPos.z <= maxZ) {
+		pos = newPos;
+	}
+	else {
+		// ”ÍˆÍŠO‚Éo‚»‚¤‚È‚ç•ûŒü‚ğ•Ï‚¦‚é
+		moveChangeTimer = 0.0f; // ‚·‚®Ÿ‚Ì•ûŒü‚Ö•ÏX
+	}
 }
 
 void GhostEnemy::Attack()

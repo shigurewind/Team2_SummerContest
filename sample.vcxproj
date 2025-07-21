@@ -458,6 +458,7 @@
     <ClInclude Include="meshfield.h" />
     <ClInclude Include="meshwall.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="object.h" />
     <ClInclude Include="Octree.h" />
     <ClInclude Include="overlay2D.h" />
     <ClInclude Include="particle.h" />
@@ -501,6 +502,7 @@
     <ClCompile Include="meshfield.cpp" />
     <ClCompile Include="meshwall.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="object.cpp" />
     <ClCompile Include="Octree.cpp" />
     <ClCompile Include="overlay2D.cpp" />
     <ClCompile Include="particle.cpp" />
