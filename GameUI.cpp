@@ -1,6 +1,6 @@
-ï»¿//=============================================================================
+//=============================================================================
 //
-// ã‚¹ã‚³ã‚¢å‡¦ç† [score.cpp]
+// ƒXƒRƒAˆ— [score.cpp]
 // Author : 
 //
 //=============================================================================
@@ -12,23 +12,23 @@
 #include "bullet.h"
 
 //*****************************************************************************
-// ãƒã‚¯ãƒ­å®šç¾©
+// ƒ}ƒNƒ’è‹`
 //*****************************************************************************
-#define TEXTURE_WIDTH				(16)	// ã‚­ãƒ£ãƒ©ã‚µã‚¤ã‚º
+#define TEXTURE_WIDTH				(16)	// ƒLƒƒƒ‰ƒTƒCƒY
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(6)		// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®æ•°
+#define TEXTURE_MAX					(6)		// ƒeƒNƒXƒ`ƒƒ‚Ì”
 
 
 //*****************************************************************************
-// ãƒ—ãƒ­ãƒˆã‚¿ã‚¤ãƒ—å®£è¨€
+// ƒvƒƒgƒ^ƒCƒvéŒ¾
 //*****************************************************************************
 
 
 //*****************************************************************************
-// ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°
+// ƒOƒ[ƒoƒ‹•Ï”
 //*****************************************************************************
-static ID3D11Buffer* g_VertexBuffer = NULL;		// é ‚ç‚¹æƒ…å ±
-static ID3D11ShaderResourceView* g_Texture[TEXTURE_MAX] = { NULL };	// ãƒ†ã‚¯ã‚¹ãƒãƒ£æƒ…å ±
+static ID3D11Buffer* g_VertexBuffer = NULL;		// ’¸“_î•ñ
+static ID3D11ShaderResourceView* g_Texture[TEXTURE_MAX] = { NULL };	// ƒeƒNƒXƒ`ƒƒî•ñ
 
 static char* g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/number16x32.png",
@@ -40,12 +40,12 @@ static char* g_TexturName[TEXTURE_MAX] = {
 };
 
 
-static BOOL						g_Use;						// TRUE:ä½¿ã£ã¦ã„ã‚‹  FALSE:æœªä½¿ç”¨
-static float					g_w, g_h;					// å¹…ã¨é«˜ã•
-static XMFLOAT3					g_Pos;						// ãƒãƒªã‚´ãƒ³ã®åº§æ¨™
-static int						g_TexNo;					// ãƒ†ã‚¯ã‚¹ãƒãƒ£ç•ªå·
+static BOOL						g_Use;						// TRUE:g‚Á‚Ä‚¢‚é  FALSE:–¢g—p
+static float					g_w, g_h;					// •‚Æ‚‚³
+static XMFLOAT3					g_Pos;						// ƒ|ƒŠƒSƒ“‚ÌÀ•W
+static int						g_TexNo;					// ƒeƒNƒXƒ`ƒƒ”Ô†
 
-static int						g_Score;					// ã‚¹ã‚³ã‚¢
+static int						g_Score;					// ƒXƒRƒA
 
 static BOOL						g_Load = FALSE;
 
@@ -57,13 +57,13 @@ static float g_WebEffectTimer = 0.0f;
 
 
 //=============================================================================
-// åˆæœŸåŒ–å‡¦ç†
+// ‰Šú‰»ˆ—
 //=============================================================================
 HRESULT InitScore(void)
 {
 	ID3D11Device* pDevice = GetDevice();
 
-	//ãƒ†ã‚¯ã‚¹ãƒãƒ£ç”Ÿæˆ
+	//ƒeƒNƒXƒ`ƒƒ¶¬
 	for (int i = 0; i < TEXTURE_MAX; i++)
 	{
 		g_Texture[i] = NULL;
@@ -76,7 +76,7 @@ HRESULT InitScore(void)
 	}
 
 
-	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
+	// ’¸“_ƒoƒbƒtƒ@¶¬
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DYNAMIC;
@@ -86,21 +86,21 @@ HRESULT InitScore(void)
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
 
-	// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®åˆæœŸåŒ–
+	// ƒvƒŒƒCƒ„[‚Ì‰Šú‰»
 	g_Use = TRUE;
 	g_w = TEXTURE_WIDTH;
 	g_h = TEXTURE_HEIGHT;
 	g_Pos = { 500.0f, 20.0f, 0.0f };
 	g_TexNo = 0;
 
-	g_Score = 0;	// ã‚¹ã‚³ã‚¢ã®åˆæœŸåŒ–
+	g_Score = 0;	// ƒXƒRƒA‚Ì‰Šú‰»
 
 	g_Load = TRUE;
 	return S_OK;
 }
 
 //=============================================================================
-// çµ‚äº†å‡¦ç†
+// I—¹ˆ—
 //=============================================================================
 void UninitScore(void)
 {
@@ -125,7 +125,7 @@ void UninitScore(void)
 }
 
 //=============================================================================
-// æ›´æ–°å‡¦ç†
+// XVˆ—
 //=============================================================================
 void UpdateScore(void)
 {
@@ -136,7 +136,7 @@ void UpdateScore(void)
 	}
 
 
-#ifdef _DEBUG	// ãƒ‡ãƒãƒƒã‚°æƒ…å ±ã‚’è¡¨ç¤ºã™ã‚‹
+#ifdef _DEBUG	// ƒfƒoƒbƒOî•ñ‚ğ•\¦‚·‚é
 	//char *str = GetDebugStr();
 	//sprintf(&str[strlen(str)], " PX:%.2f PY:%.2f", g_Pos.x, g_Pos.y);
 
@@ -145,61 +145,61 @@ void UpdateScore(void)
 }
 
 //=============================================================================
-// æç”»å‡¦ç†
+// •`‰æˆ—
 //=============================================================================
 void DrawScore(void)
 {
-	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡è¨­å®š
+	// ’¸“_ƒoƒbƒtƒ@İ’è
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
 	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
 
-	// ãƒãƒˆãƒªã‚¯ã‚¹è¨­å®š
+	// ƒ}ƒgƒŠƒNƒXİ’è
 	SetWorldViewProjection2D();
 
-	// ãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ãƒˆãƒãƒ­ã‚¸è¨­å®š
+	// ƒvƒŠƒ~ƒeƒBƒuƒgƒ|ƒƒWİ’è
 	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	// ãƒãƒ†ãƒªã‚¢ãƒ«è¨­å®š
+	// ƒ}ƒeƒŠƒAƒ‹İ’è
 	MATERIAL material;
 	ZeroMemory(&material, sizeof(material));
 	material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	SetMaterial(material);
 
-	// ãƒ†ã‚¯ã‚¹ãƒãƒ£è¨­å®š
+	// ƒeƒNƒXƒ`ƒƒİ’è
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_TexNo]);
 
 
 
 
 
-	//ã‚±ãƒ¼ã‚¸ã®HPãƒãƒ¼
-	{// ãƒ†ã‚¯ã‚¹ãƒãƒ£è¨­å®š
+	//ƒP[ƒW‚ÌHPƒo[
+	{// ƒeƒNƒXƒ`ƒƒİ’è
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
-		//ã‚²ãƒ¼ã‚¸ã®ä½ç½®ã‚„ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ¼åº§æ¨™ã‚’åæ˜ 
-		float pw = 280;		// ã‚²ãƒ¼ã‚¸ã®è¡¨ç¤ºå¹…
-		pw = pw * ((float)g_Player.HP / g_Player.HP_MAX);
-		float x = ((float)g_Player.HP / g_Player.HP_MAX);
+		//ƒQ[ƒW‚ÌˆÊ’u‚âƒeƒNƒXƒ`ƒƒ[À•W‚ğ”½‰f
+		float pw = 280;		// ƒQ[ƒW‚Ì•\¦•
+		pw = pw * ((float)GetPlayer()->HP / GetPlayer()->HP_MAX);
+		float x = ((float)GetPlayer()->HP / GetPlayer()->HP_MAX);
 
-		// ï¼‘æšã®ãƒãƒªã‚´ãƒ³ã®é ‚ç‚¹ã¨ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’è¨­å®š
+		// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ğİ’è
 		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, x, 1.0f);
 
-		// ãƒãƒªã‚´ãƒ³æç”»
+		// ƒ|ƒŠƒSƒ“•`‰æ
 		GetDeviceContext()->Draw(4, 0);
 	}
 
-	//HPã®UI
-	{// ãƒ†ã‚¯ã‚¹ãƒãƒ£è¨­å®š
+	//HP‚ÌUI
+	{// ƒeƒNƒXƒ`ƒƒİ’è
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
 
-		// ï¼‘æšã®ãƒãƒªã‚´ãƒ³ã®é ‚ç‚¹ã¨ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’è¨­å®š
+		// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ğİ’è
 		SetSprite(g_VertexBuffer, 130.0f, 30.0f, 400, 180, 0.0f, 0.0f, 1.0f, 1.0f);
 
-		// ãƒãƒªã‚´ãƒ³æç”»
+		// ƒ|ƒŠƒSƒ“•`‰æ
 		GetDeviceContext()->Draw(4, 0);
 	}
 
-	//ã‚¯ãƒ¢ã®æ”»æ’ƒã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+	//ƒNƒ‚‚ÌUŒ‚‚ÌƒGƒtƒFƒNƒg
 	if (g_WebEffectTimer > 0.0f)
 	{
 		MATERIAL m = {};
@@ -218,21 +218,21 @@ void DrawScore(void)
 	}
 
 
-	//å¼¾æ•°è¡¨ç¤ºã®å‘¼ã³å‡ºã—
+	//’e”•\¦‚ÌŒÄ‚Ño‚µ
 	DrawAmmoUI();
 
 }
 
 //========================================================
-// æ­¦å™¨ã¨å¼¾æ•°UIè¡¨ç¤º
+// •Ší‚Æ’e”UI•\¦
 //========================================================
 void DrawAmmoUI(void)
 {
 
 	Weapon* weapon = (GetCurrentWeaponType() == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
 
-	// === æ­¦å™¨ã‚¢ã‚¤ã‚³ãƒ³è¡¨ç¤º ===
-	const float weaponIconX = 1025.0f;  //è¡¨ç¤ºä½ç½®
+	// === •ŠíƒAƒCƒRƒ“•\¦ ===
+	const float weaponIconX = 1025.0f;  //•\¦ˆÊ’u
 	const float weaponIconY = 610.0f;
 
 	int weaponTexNo = (GetCurrentWeaponType() == WEAPON_REVOLVER) ? 3 : 4;
@@ -240,54 +240,54 @@ void DrawAmmoUI(void)
 
 	SetSprite(g_VertexBuffer,
 		weaponIconX, weaponIconY,
-		60, 60,  // ã‚µã‚¤ã‚º
+		60, 60,  // ƒTƒCƒY
 		0.0f, 0.0f, 1.0f, 1.0f
 	);
 	GetDeviceContext()->Draw(4, 0);
 
-	// === å¼¾æ•°è¡¨ç¤º === 
+	// === ’e”•\¦ === 
 	int clipSize = weapon->clipSize;
 
 	int ammoInClip = 0;
 	int ammoSpare = 0;
 
 	if (GetCurrentBulletType() == BULLET_NORMAL) {
-		ammoInClip = Min2(g_Player.ammoNormal, clipSize);
-		ammoSpare = g_Player.maxAmmoNormal;
+		ammoInClip = Min2(GetPlayer()->ammoNormal, clipSize);
+		ammoSpare = GetPlayer()->maxAmmoNormal;
 	}
 	else {
-		ammoInClip = Min2(g_Player.ammoFire, clipSize);
-		ammoSpare = g_Player.maxAmmoFire;
+		ammoInClip = Min2(GetPlayer()->ammoFire, clipSize);
+		ammoSpare = GetPlayer()->maxAmmoFire;
 	}
 
-	// ãƒãƒ†ãƒªã‚¢ãƒ«è¨­å®š
+	// ƒ}ƒeƒŠƒAƒ‹İ’è
 	MATERIAL material;
 	ZeroMemory(&material, sizeof(material));
 
 	if (GetCurrentBulletType() == BULLET_FIRE) {
-		material.Diffuse = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);  // ğŸ”´ èµ¤
+		material.Diffuse = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);  //  Ô
 	}
 	else {
-		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // âšª ç™½ï¼ˆãƒãƒ¼ãƒãƒ«å¼¾ï¼‰
+		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  //  ”’iƒm[ƒ}ƒ‹’ej
 	}
 
 	SetMaterial(material);
 
-	// æ•°å­—ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆè¨­å®šï¼ˆ0ã€œ9ãŒ1åˆ—ã«ä¸¦ã‚“ã§ã„ã‚‹ï¼‰
+	// ”šƒXƒvƒ‰ƒCƒgİ’èi0?9‚ª1—ñ‚É•À‚ñ‚Å‚¢‚éj
 	const float digitWidth = 16.0f;
 	const float digitHeight = 32.0f;
 
-	const float baseX = 1000.0f;  // è¡¨ç¤ºä½ç½®ï¼ˆå³ä¸‹ã«èª¿æ•´ï¼‰
+	const float baseX = 1000.0f;  // •\¦ˆÊ’ui‰E‰º‚É’²®j
 	const float baseY = 650.0f;
 
 	char text[16];
 	sprintf(text, "%d/%d", ammoInClip, ammoSpare);
 
-	// æ•°å­—ã‚’1æ–‡å­—ãšã¤æç”»
+	// ”š‚ğ1•¶š‚¸‚Â•`‰æ
 	for (int i = 0; text[i] != '\0'; ++i) {
 		char c = text[i];
 		if (c == '/') {
-			continue;  // ã‚¹ãƒ©ãƒƒã‚·ãƒ¥ã¯ä»Šã¯è¡¨ç¤ºã—ãªã„ï¼ˆå¿…è¦ãªã‚‰åˆ¥é€”ãƒ†ã‚¯ã‚¹ãƒãƒ£ç”¨æ„ï¼‰
+			continue;  // ƒXƒ‰ƒbƒVƒ…‚Í¡‚Í•\¦‚µ‚È‚¢i•K—v‚È‚ç•Ê“rƒeƒNƒXƒ`ƒƒ—pˆÓj
 		}
 
 		int n = c - '0';
@@ -312,8 +312,8 @@ void DrawAmmoUI(void)
 
 
 //=============================================================================
-// ã‚¹ã‚³ã‚¢ã‚’åŠ ç®—ã™ã‚‹
-// å¼•æ•°:add :è¿½åŠ ã™ã‚‹ç‚¹æ•°ã€‚ãƒã‚¤ãƒŠã‚¹ã‚‚å¯èƒ½
+// ƒXƒRƒA‚ğ‰ÁZ‚·‚é
+// ˆø”:add :’Ç‰Á‚·‚é“_”Bƒ}ƒCƒiƒX‚à‰Â”\
 //=============================================================================
 void AddScore(int add)
 {
@@ -332,9 +332,9 @@ int GetScore(void)
 }
 
 //=============================================================================
-// èœ˜è››ã®ãƒãƒƒãƒˆåŠ¹æœï¼ˆç”»é¢ã«è¡¨ç¤ºï¼‰ã‚’ä¸€å®šæ™‚é–“è¦‹ã›ã‚‹é–¢æ•°
+// ’wå‚ÌƒlƒbƒgŒø‰Êi‰æ–Ê‚É•\¦j‚ğˆê’èŠÔŒ©‚¹‚éŠÖ”
 //=============================================================================
 void ShowWebEffect(float time)
 {
-	g_WebEffectTimer = time; // time ç§’é–“ã€ç”»é¢ã«èœ˜è››ã®ãƒãƒƒãƒˆã‚’è¡¨ç¤º
+	g_WebEffectTimer = time; // time •bŠÔA‰æ–Ê‚É’wå‚Ìƒlƒbƒg‚ğ•\¦
 }

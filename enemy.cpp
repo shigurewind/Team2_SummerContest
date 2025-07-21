@@ -1,4 +1,4 @@
-ï»¿//=============================================================================
+//=============================================================================
 //
 // 
 // 
@@ -92,11 +92,11 @@ void SpiderEnemy::Init() {
 	isAttacking = false;
 	attackFrameTimer = 0.0f;
 	attackCooldownTimer = 0.0f;
-	attackCooldown = 1.5f;  // 1.5 ç§’ã“ã¨ã«æ”»æ’ƒã™ã‚‹
+	attackCooldown = 1.5f;  // 1.5 •b‚±‚Æ‚ÉUŒ‚‚·‚é
 
-	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // ç¾åœ¨ã®å‹•ãæ–¹å‘
-	moveChangeTimer = 2.0f;  // å‘ãå¤‰ã‚ã‚‹ã‚¿ã‚¤ãƒãƒ¼
-	speed = 0.5f;			//ã‚¨ãƒãƒŸãƒ¼ã®ã‚¹ãƒ”ãƒ¼ãƒ‰
+	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // Œ»İ‚Ì“®‚«•ûŒü
+	moveChangeTimer = 2.0f;  // Œü‚«•Ï‚í‚éƒ^ƒCƒ}[
+	speed = 0.5f;			//ƒGƒlƒ~[‚ÌƒXƒs[ƒh
 	currentFrame = 0;
 	frameCounter = 0;
 	frameInterval = 15;//change speed
@@ -114,7 +114,7 @@ void SpiderEnemy::Update() {
 	if (!use) return;
 
 
-	if (isAttacking)    //æ”»æ’ƒã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å‡¦ç†
+	if (isAttacking)    //UŒ‚‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ˆ—
 	{
 		attackFrameTimer -= 1.0f / 60.0f;
 		if (attackFrameTimer <= 0.0f) {
@@ -129,7 +129,7 @@ void SpiderEnemy::Update() {
 	}
 	else
 	{
-		// ç§»å‹•ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å‡¦ç†
+		// ˆÚ“®‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ˆ—
 		frameCounter++;
 		if (frameCounter >= frameInterval) {
 			frameCounter = 0;
@@ -138,25 +138,25 @@ void SpiderEnemy::Update() {
 	}
 
 
-	// ã‚¨ãƒãƒŸãƒ¼ã‹ã‚‰ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¾ã§ã®ãƒ™ã‚¯ãƒˆãƒ«
+	// ƒGƒlƒ~[‚©‚çƒvƒŒƒCƒ„[‚Ü‚Å‚ÌƒxƒNƒgƒ‹
 	XMFLOAT3 dir;
-	dir.x = g_Player.GetPosition().x - pos.x;
+	dir.x = GetPlayer()->GetPosition().x - pos.x;
 	dir.y = 0.0f;
-	dir.z = g_Player.GetPosition().z - pos.z;
+	dir.z = GetPlayer()->GetPosition().z - pos.z;
 
 
 
-	//// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®åº§æ¨™ã¾ã§ã®è¨ˆç®—
+	//// ƒvƒŒƒCƒ„[‚ÌÀ•W‚Ü‚Å‚ÌŒvZ
 	XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
 
 	float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
-	float range = 200.0f; // ç™ºå°„ç¯„å›²
+	float range = 200.0f; // ”­Ë”ÍˆÍ
 
 	attackCooldownTimer -= 1.0f / 60.0f;
 	if (attackCooldownTimer < 0.0f) attackCooldownTimer = 0.0f;
 
 
-	//ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’è¿½ã„ã‹ã‘ã‚‹è¡Œã†ç¯„å›²
+	//ƒvƒŒƒCƒ„[‚ğ’Ç‚¢‚©‚¯‚és‚¤”ÍˆÍ
 	if (distSq < range * range)
 	{
 		ChasingPlayer(speed, range);
@@ -173,12 +173,12 @@ void SpiderEnemy::Update() {
 	}
 
 
-	//å¼¾ã¨å½“ãŸã‚Šåˆ¤å®šï¼Ÿ
+	//’e‚Æ“–‚½‚è”»’èH
 	for (int i = 0; i < MAX_BULLET; i++)
 	{
 		if (!bullet[i].use) continue;
 
-		XMFLOAT3 enemyHalfSize = { width, height - 20.0f, 50.f }; //ã‚¨ãƒãƒŸãƒ¼ã®å½“ãŸã‚Šåˆ¤å®šã®ã‚µã‚¤ã‚º
+		XMFLOAT3 enemyHalfSize = { width, height - 20.0f, 50.f }; //ƒGƒlƒ~[‚Ì“–‚½‚è”»’è‚ÌƒTƒCƒY
 
 		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
 		{
@@ -276,41 +276,41 @@ void SpiderEnemy::Draw() {
 void SpiderEnemy::NormalMovement()
 {
 
-	// å‹•ãæ–¹å‘å¤‰ã‚ã‚Šã‚¿ã‚¤ãƒãƒ¼
-	moveChangeTimer -= 1.0f / 60.0f; // 60fpsã“ã¨ã«å‹•ãæ–¹å‘å¤‰ã‚ã‚Š
+	// “®‚«•ûŒü•Ï‚í‚èƒ^ƒCƒ}[
+	moveChangeTimer -= 1.0f / 60.0f; // 60fps‚±‚Æ‚É“®‚«•ûŒü•Ï‚í‚è
 	if (moveChangeTimer <= 0.0f) {
 		moveChangeTimer = 2.0f; // reset timer
 
-		// å‹•ãæ–¹å‘å¤‰ã‚ã‚‹ã“ã¨ã¯ãƒ©ãƒ³ãƒ€ãƒ è¨­å®š
+		// “®‚«•ûŒü•Ï‚í‚é‚±‚Æ‚Íƒ‰ƒ“ƒ_ƒ€İ’è
 		int dir = rand() % 4;
 		switch (dir) {
-		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // å³
-		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // å·¦
-		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // å‰ï¼ˆ+ï½šï¼‰
-		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // å¾Œã‚ï¼ˆ-ï½šï¼‰
+		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // ‰E
+		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // ¶
+		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // ‘Oi+‚šj
+		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // Œã‚ëi-‚šj
 		}
 	}
 
-	// æ–°ã—ã„ä½ç½®ã‚’è¨ˆç®—
+	// V‚µ‚¢ˆÊ’u‚ğŒvZ
 	XMFLOAT3 newPos = pos;
 	newPos.x += moveDir.x * speed;
 	newPos.y += moveDir.y * speed;
 	newPos.z += moveDir.z * speed;
 
-	// ç¯„å›²åˆ¶é™ï¼ˆä¾‹ãˆã°ï¼šXã¨Zã¯ -50.0f ã€œ +50.0fï¼‰
+	// ”ÍˆÍ§ŒÀi—á‚¦‚ÎFX‚ÆZ‚Í -50.0f ? +50.0fj
 	const float minX = -200.0f;
 	const float maxX = 200.0f;
 	const float minZ = -100.0f;
 	const float maxZ = 100.0f;
 
-	// ç¯„å›²å†…ãªã‚‰ç§»å‹•
+	// ”ÍˆÍ“à‚È‚çˆÚ“®
 	if (newPos.x >= minX && newPos.x <= maxX &&
 		newPos.z >= minZ && newPos.z <= maxZ) {
 		pos = newPos;
 	}
 	else {
-		// ç¯„å›²å¤–ã«å‡ºãã†ãªã‚‰æ–¹å‘ã‚’å¤‰ãˆã‚‹
-		moveChangeTimer = 0.0f; // ã™ãæ¬¡ã®æ–¹å‘ã¸å¤‰æ›´
+		// ”ÍˆÍŠO‚Éo‚»‚¤‚È‚ç•ûŒü‚ğ•Ï‚¦‚é
+		moveChangeTimer = 0.0f; // ‚·‚®Ÿ‚Ì•ûŒü‚Ö•ÏX
 	}
 }
 void SpiderEnemy::Attack()
@@ -318,9 +318,9 @@ void SpiderEnemy::Attack()
 	if (attackCooldownTimer <= 0.0f && !isAttacking)
 	{
 		isAttacking = true;
-		g_Player.HP -= 1;
-		attackFrameTimer = 0.5f;              // æ”»æ’ƒã®ãƒ•ãƒ¬ãƒ¼ãƒ ã®æç”»ã®æ™‚é–“
-		currentFrame = 2;                     // æ”»æ’ƒã®ãƒ•ãƒ¬ãƒ¼ãƒ ã®æç”»
+		GetPlayer()->HP -= 1;
+		attackFrameTimer = 0.5f;              // UŒ‚‚ÌƒtƒŒ[ƒ€‚Ì•`‰æ‚ÌŠÔ
+		currentFrame = 2;                     // UŒ‚‚ÌƒtƒŒ[ƒ€‚Ì•`‰æ
 		attackCooldownTimer = attackCooldown; // Reset cooldown
 
 		ShowWebEffect(0.5f);
@@ -538,11 +538,11 @@ void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 {
 
 
-	// ã‚¨ãƒãƒŸãƒ¼ã‹ã‚‰ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¾ã§ã®ãƒ™ã‚¯ãƒˆãƒ«
+	// ƒGƒlƒ~[‚©‚çƒvƒŒƒCƒ„[‚Ü‚Å‚ÌƒxƒNƒgƒ‹
 	XMFLOAT3 dir;
-	dir.x = g_Player.GetPosition().x - pos.x;
+	dir.x = GetPlayer()->GetPosition().x - pos.x;
 	dir.y = 0.0f;
-	dir.z = g_Player.GetPosition().z - pos.z;
+	dir.z = GetPlayer()->GetPosition().z - pos.z;
 
 	float distSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
 
@@ -550,11 +550,11 @@ void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 	float minSq = minDistance * minDistance;
 
 	if (distSq < maxSq && distSq > minSq) {
-		// æ­£è¦åŒ–ãƒ™ã‚¯ãƒˆãƒ«
+		// ³‹K‰»ƒxƒNƒgƒ‹
 		XMVECTOR vec = XMVector3Normalize(XMLoadFloat3(&dir));
 		XMStoreFloat3(&dir, vec);
 
-		// ä½ç½®ã‚¢ãƒƒãƒ—ãƒ‡ãƒ¼ãƒˆ
+		// ˆÊ’uƒAƒbƒvƒf[ƒg
 		pos.x += dir.x * speed;
 		pos.y += dir.y * speed;
 		pos.z += dir.z * speed;
@@ -596,9 +596,9 @@ void GhostEnemy::Init()
 	pos = XMFLOAT3(0.0f, 0.0f, ENEMY_OFFSET_Y);
 	scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	use = true;
-	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // ç¾åœ¨ã®å‹•ãæ–¹å‘
-	moveChangeTimer = 2.0f;  // å‘ãå¤‰ã‚ã‚‹ã‚¿ã‚¤ãƒãƒ¼
-	speed = 0.5f;			//ã‚¨ãƒãƒŸãƒ¼ã®ã‚¹ãƒ”ãƒ¼ãƒ‰
+	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // Œ»İ‚Ì“®‚«•ûŒü
+	moveChangeTimer = 2.0f;  // Œü‚«•Ï‚í‚éƒ^ƒCƒ}[
+	speed = 0.5f;			//ƒGƒlƒ~[‚ÌƒXƒs[ƒh
 	currentFrame = 0;
 	frameCounter = 0;
 	frameInterval = 15;//change speed
@@ -606,7 +606,7 @@ void GhostEnemy::Init()
 
 	HP = 50;
 
-	//å¹½éœŠã¯é‡åŠ›ã„ã‚‰ãªã„
+	//—H—ì‚Íd—Í‚¢‚ç‚È‚¢
 	EnableGravity(false);
 }
 
@@ -623,23 +623,23 @@ void GhostEnemy::Update()
 
 
 
-	// ã‚¨ãƒãƒŸãƒ¼ã‹ã‚‰ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¾ã§ã®ãƒ™ã‚¯ãƒˆãƒ«
+	// ƒGƒlƒ~[‚©‚çƒvƒŒƒCƒ„[‚Ü‚Å‚ÌƒxƒNƒgƒ‹
 	XMFLOAT3 dir;
-	dir.x = g_Player.GetPosition().x - pos.x;
-	dir.y = g_Player.GetPosition().y - pos.y;
-	dir.z = g_Player.GetPosition().z - pos.z;
+	dir.x = GetPlayer()->GetPosition().x - pos.x;
+	dir.y = GetPlayer()->GetPosition().y - pos.y;
+	dir.z = GetPlayer()->GetPosition().z - pos.z;
 
 
 
-	//// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®åº§æ¨™ã¾ã§ã®è¨ˆç®—
+	//// ƒvƒŒƒCƒ„[‚ÌÀ•W‚Ü‚Å‚ÌŒvZ
 	XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
 
 	float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
-	float range = 100.0f; // ç™ºå°„ç¯„å›²
+	float range = 100.0f; // ”­Ë”ÍˆÍ
 
 
 
-	//æ”»æ’ƒè¡Œã†ç¯„å›²
+	//UŒ‚s‚¤”ÍˆÍ
 	if (distSq < range * range)
 	{
 		ChasingPlayer(speed, range);
@@ -650,12 +650,12 @@ void GhostEnemy::Update()
 
 	}
 
-	//å¼¾ã¨å½“ãŸã‚Šåˆ¤å®šï¼Ÿ
+	//’e‚Æ“–‚½‚è”»’èH
 	for (int i = 0; i < MAX_BULLET; i++)
 	{
 		if (!bullet[i].use) continue;
 
-		XMFLOAT3 enemyHalfSize = { width / 2, height, 50.f }; //ã‚¨ãƒãƒŸãƒ¼ã®å½“ãŸã‚Šåˆ¤å®šã®ã‚µã‚¤ã‚º
+		XMFLOAT3 enemyHalfSize = { width / 2, height, 50.f }; //ƒGƒlƒ~[‚Ì“–‚½‚è”»’è‚ÌƒTƒCƒY
 
 		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
 		{
@@ -755,31 +755,31 @@ void GhostEnemy::Draw()
 
 void GhostEnemy::NormalMovement()
 {
-	// å‹•ãæ–¹å‘å¤‰ã‚ã‚Šã‚¿ã‚¤ãƒãƒ¼
-	moveChangeTimer -= 1.0f / 60.0f; // 60fpsã“ã¨ã«å‹•ãæ–¹å‘å¤‰ã‚ã‚Š
+	// “®‚«•ûŒü•Ï‚í‚èƒ^ƒCƒ}[
+	moveChangeTimer -= 1.0f / 60.0f; // 60fps‚±‚Æ‚É“®‚«•ûŒü•Ï‚í‚è
 	if (moveChangeTimer <= 0.0f) {
 		moveChangeTimer = 2.0f; // reset timer
 
-		// å‹•ãæ–¹å‘å¤‰ã‚ã‚‹ã“ã¨ã¯ãƒ©ãƒ³ãƒ€ãƒ è¨­å®š
+		// “®‚«•ûŒü•Ï‚í‚é‚±‚Æ‚Íƒ‰ƒ“ƒ_ƒ€İ’è
 		int dir = rand() % 6;
 		switch (dir)
 		{
-		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // å³
-		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // å·¦
-		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // å‰ï¼ˆ+ï½šï¼‰
-		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // å¾Œã‚ï¼ˆ-ï½šï¼‰
-		case 4: moveDir = XMFLOAT3(0.0f, 1.0f, 0.0f); break; // ä¸Šï¼ˆ+ï½™ï¼‰
-		case 5: moveDir = XMFLOAT3(0.0f, -1.0f, 0.0f); break; // ä¸‹ï¼ˆ-ï½™ï¼‰
+		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // ‰E
+		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // ¶
+		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // ‘Oi+‚šj
+		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // Œã‚ëi-‚šj
+		case 4: moveDir = XMFLOAT3(0.0f, 1.0f, 0.0f); break; // ãi+‚™j
+		case 5: moveDir = XMFLOAT3(0.0f, -1.0f, 0.0f); break; // ‰ºi-‚™j
 		}
 	}
 
-	// æ–°ã—ã„ä½ç½®ã‚’è¨ˆç®—
+	// V‚µ‚¢ˆÊ’u‚ğŒvZ
 	XMFLOAT3 newPos = pos;
 	newPos.x += moveDir.x * speed;
 	newPos.y += moveDir.y * speed;
 	newPos.z += moveDir.z * speed;
 
-	// ç¯„å›²åˆ¶é™ï¼ˆä¾‹ãˆã°ï¼šXã¨Zã¯ -50.0f ã€œ +50.0fï¼‰
+	// ”ÍˆÍ§ŒÀi—á‚¦‚ÎFX‚ÆZ‚Í -50.0f ? +50.0fj
 	const float minX = -200.0f;
 	const float maxX = 200.0f;
 	const float minZ = -100.0f;
@@ -787,15 +787,15 @@ void GhostEnemy::NormalMovement()
 	const float minY = -50.0f;
 	const float maxY = 100.0f;
 
-	// ç¯„å›²å†…ãªã‚‰ç§»å‹•
+	// ”ÍˆÍ“à‚È‚çˆÚ“®
 	if (newPos.x >= minX && newPos.x <= maxX &&
 		newPos.y >= minY && newPos.y <= maxY &&
 		newPos.z >= minZ && newPos.z <= maxZ) {
 		pos = newPos;
 	}
 	else {
-		// ç¯„å›²å¤–ã«å‡ºãã†ãªã‚‰æ–¹å‘ã‚’å¤‰ãˆã‚‹
-		moveChangeTimer = 0.0f; // ã™ãæ¬¡ã®æ–¹å‘ã¸å¤‰æ›´
+		// ”ÍˆÍŠO‚Éo‚»‚¤‚È‚ç•ûŒü‚ğ•Ï‚¦‚é
+		moveChangeTimer = 0.0f; // ‚·‚®Ÿ‚Ì•ûŒü‚Ö•ÏX
 	}
 }
 

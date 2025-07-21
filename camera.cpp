@@ -115,7 +115,7 @@ void UpdateCamera(void)
 
 		//ƒJƒƒ‰‚ÌˆÊ’u
 
-		g_Camera.pos = { g_Player.GetPosition().x, g_Player.GetPosition().y + 20.0f, g_Player.GetPosition().z };
+		g_Camera.pos = { GetPlayer()->GetPosition().x, GetPlayer()->GetPosition().y + 20.0f, GetPlayer()->GetPosition().z };
 		g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y);
 		g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
 		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y);
