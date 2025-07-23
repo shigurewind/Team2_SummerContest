@@ -19,7 +19,7 @@
 #include "item.h"
 #include <cstdlib>
 #include <ctime>
-
+#include "navmesh.h"
 
 
 
@@ -37,6 +37,8 @@ static BOOL g_bAlphaTestEnemy;
 
 
 
+static std::vector<NavNode> g_NavMeshNodes;
+static bool g_NavMeshBuilt = false;
 
 //PLAYER* player = GetPlayer();
 BULLET* bullet = GetBullet();
@@ -113,6 +115,23 @@ void SpiderEnemy::Init() {
 void SpiderEnemy::Update() {
 	if (!use) return;
 
+	attackCooldownTimer -= 1.0f / 60.0f;
+	if (attackCooldownTimer < 0.0f) attackCooldownTimer = 0.0f;
+
+	if (!g_NavMeshBuilt) {
+		g_NavMeshNodes = GenerateNavMeshFromFloorTriangles();
+		g_NavMeshBuilt = true;
+	}
+	pathUpdateTimer -= 1.0f / 60.0f;
+	if (pathUpdateTimer <= 0.0f) {
+		pathUpdateTimer = pathUpdateInterval;
+
+		XMFLOAT3 start = pos;
+		XMFLOAT3 goal = GetPlayer()->GetPosition();
+
+		FindPathAStar(start, goal, g_NavMeshNodes, pathPoints);
+		currentPathIndex = 0;
+	}
 
 	if (isAttacking)    //攻撃のアニメーション処理
 	{
@@ -137,6 +156,29 @@ void SpiderEnemy::Update() {
 		}
 	}
 
+
+	if (!pathPoints.empty() && currentPathIndex < pathPoints.size()) {
+		XMFLOAT3 target = pathPoints[currentPathIndex];
+
+		XMFLOAT3 dir = {
+			target.x - pos.x,
+			0.0f,
+			target.z - pos.z
+		};
+
+		float distSq = dir.x * dir.x + dir.z * dir.z;
+
+		if (distSq < 4.0f) {
+			currentPathIndex++;
+		}
+		else {
+			XMVECTOR vec = XMVector3Normalize(XMLoadFloat3(&dir));
+			XMStoreFloat3(&dir, vec);
+
+			pos.x += dir.x * speed;
+			pos.z += dir.z * speed;
+		}
+	}
 
 	// エネミーからプレイヤーまでのベクトル
 	XMFLOAT3 dir;

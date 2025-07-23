@@ -90,6 +90,13 @@ private:
 	float attackFrameTimer;
 
 
+	//===================== A* 自動尋路用 =====================
+	std::vector<XMFLOAT3> pathPoints;  // 経路点リスト
+	int currentPathIndex = 0;          // 今向かっている目標点のインデックス
+	float pathUpdateTimer = 0.0f;      // 再計算タイマー
+	const float pathUpdateInterval = 2.0f;  
+	//========================================================
+
 
 };
 
