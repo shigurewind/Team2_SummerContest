@@ -131,14 +131,16 @@ void ShowDebugUI()
 
 		for (int i = 0; i < MAX_ITEM; ++i)
 		{
-			if (!itemObj[i].use) continue;
+			if (!itemObj[i].IsUsed()) continue;
 
 			ImGui::PushID(i);
-			ImGui::Text("ID: %d (%s)", itemObj[i].item.id, itemObj[i].item.name.c_str());
-			ImGui::DragFloat3(u8"位置", (float*)&itemObj[i].pos, 0.5f);
-			ImGui::DragFloat3(u8"サイズ", (float*)&itemObj[i].scl, 0.1f);
+			ImGui::Text("ID: %d (%s)", itemObj[i].GetItem().GetID(), itemObj[i].GetItem().GetName().c_str());
+			XMFLOAT3 pos = itemObj[i].GetPosition();
+			ImGui::DragFloat3(u8"位置", (float*)&pos, 0.5f);
+			XMFLOAT3 scl = itemObj[i].GetScale();
+			ImGui::DragFloat3(u8"サイズ", (float*)&scl, 0.1f);
 			if (ImGui::Button(u8"削除")) {
-				itemObj[i].use = false;
+				itemObj[i].SetUsed(false);
 			}
 			ImGui::Separator();
 			ImGui::PopID();

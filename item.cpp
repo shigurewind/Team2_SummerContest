@@ -29,7 +29,7 @@ using json = nlohmann::json;
 
 
 
-static ITEM_OBJ				g_aItem[MAX_ITEM]; // アイテム配列
+static ITEM_OBJ			g_aItem[MAX_ITEM]; // アイテム配列
 
 static ItemDatabase			g_ItemDB;
 
@@ -48,62 +48,119 @@ HRESULT MakeVertexItem(void);
 
 
 
-
-
-int SetItem(XMFLOAT3 pos, int itemID)
+ITEM_OBJ::ITEM_OBJ()
+	: scl({ 1.0f, 1.0f, 1.0f }),
+	material{},
+	width(ITEM_WIDTH),
+	height(ITEM_HEIGHT),
+	use(false),
+	basePosY(0.0f),
+	timeOffset(0.0f)
 {
-	for (int i = 0; i < MAX_ITEM; i++)
-	{
-		if (!g_aItem[i].use)
-		{
-			g_aItem[i].pos = pos;
-			g_aItem[i].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-			g_aItem[i].item = CreateItemFromID(itemID);
-			g_aItem[i].material.Diffuse = XMFLOAT4(1, 1, 1, 1);
-			g_aItem[i].use = TRUE;
+	material.Diffuse = XMFLOAT4(1, 1, 1, 1);
+}
 
-			g_aItem[i].timeOffset = static_cast<float>((rand() % 1000) / 1000.0f * XM_2PI);
-			g_aItem[i].basePosY = pos.y;
-			return i;
+void ITEM_OBJ::SetItem(const Item& item_)
+{
+	item = item_;
+	timeOffset = static_cast<float>(rand()) / RAND_MAX * XM_2PI;
+}
+
+void ITEM_OBJ::Update()
+{
+	if (!use) return;
+
+	float t = g_ItemGlobalTime + timeOffset;
+	pos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
+
+
+	// Collision with player
+	if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
+		switch (item.GetCategory())
+		{
+		case ItemCategory::WeaponPart_Ammo:
+			//インベントリーに入れる
+			break;
+		case ItemCategory::WeaponPart_FireType:
+			//インベントリーに入れる
+			break;
+		case ItemCategory::Consumable:
+			//インベントリーに入れる
+			break;
+		case ItemCategory::InstantEffect:
+			//相応の効果
+			//test
+			GetPlayer()->HP += 1.0f;
+			use = false;
+			break;
+		default:
+			break;
 		}
 	}
-	return -1;
 }
 
-HRESULT InitItem()
+//void ITEM_OBJ::Draw()
+//{
+//	if (!use) return;
+//
+//	CAMERA* cam = GetCamera();
+//
+//	XMMATRIX mtxWorld = XMMatrixIdentity();
+//	XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
+//	XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+//	XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
+//
+//	// Billboarding
+//	mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
+//	mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
+//	mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
+//	mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
+//	mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
+//	mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
+//	mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
+//	mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
+//	mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
+//
+//	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
+//	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
+//
+//	SetWorldMatrix(&mtxWorld);
+//	SetMaterial(material);
+//
+//	int texID = item.GetID();
+//	if (g_ItemTextures[texID]) {
+//		GetDeviceContext()->PSSetShaderResources(0, 1, &g_ItemTextures[texID]);
+//		GetDeviceContext()->Draw(4, 0);
+//	}
+//}
+
+//int SetItem(XMFLOAT3 pos, int itemID)
+//{
+//	for (int i = 0; i < MAX_ITEM; i++)
+//	{
+//		if (!g_aItem[i].use)
+//		{
+//			g_aItem[i].pos = pos;
+//			g_aItem[i].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+//			g_aItem[i].item = CreateItemFromID(itemID);
+//			g_aItem[i].material.Diffuse = XMFLOAT4(1, 1, 1, 1);
+//			g_aItem[i].use = TRUE;
+//
+//			g_aItem[i].timeOffset = static_cast<float>((rand() % 1000) / 1000.0f * XM_2PI);
+//			g_aItem[i].basePosY = pos.y;
+//			return i;
+//		}
+//	}
+//	return -1;
+//}
+
+void InitItem()
 {
+	for (int i = 0; i < MAX_ITEM; ++i)
+		g_aItem[i].SetUsed(false);
 
-	srand((unsigned int)time(nullptr));
-
-	g_ItemDB = ItemDatabase();  // TODO:ヒープ領域に移動するかもしれないので注意
-	InitItemTextures();         // テクスチャ読み込み
-
-	MakeVertexItem();
-
-	for (int CntItem = 0; CntItem < MAX_ITEM; CntItem++)
-	{
-		ZeroMemory(&g_aItem[CntItem].material, sizeof(g_aItem[CntItem].material));
-		g_aItem[CntItem].material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-
-		g_aItem[CntItem].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		g_aItem[CntItem].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-		g_aItem[CntItem].fWidth = ITEM_WIDTH;
-		g_aItem[CntItem].fHeight = ITEM_HEIGHT;
-		g_aItem[CntItem].use = FALSE;
-
-	}
-
-	g_bAlpaTest = TRUE;
-
-	SetItem(XMFLOAT3(10.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
-	SetItem(XMFLOAT3(20.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
-
-
-
-	return S_OK;
-
+	g_ItemGlobalTime = 0.0f;
 }
-
 
 void UninitItem()
 {
@@ -123,53 +180,131 @@ void UninitItem()
 	}
 }
 
-
 void UpdateItem()
 {
 	g_ItemGlobalTime += ITEM_FLOAT_FREQUENCE / 60.0f;
-	// アイテムの更新処理
+	for (int i = 0; i < MAX_ITEM; i++)
+		g_aItem[i].Update();
+}
+
+//void DrawItem()
+//{
+//	if (g_bAlpaTest) SetAlphaTestEnable(TRUE);
+//	SetLightEnable(FALSE);
+//
+//	UINT stride = sizeof(VERTEX_3D);
+//	UINT offset = 0;
+//	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
+//	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+//
+//	for (int i = 0; i < MAX_ITEM; i++)
+//		g_aItem[i].Draw();
+//}
+
+
+
+int SetItem(XMFLOAT3 pos, int itemID)
+{
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
-		if (g_aItem[i].use)
+		if (!g_aItem[i].IsUsed())
 		{
-			//Itemのアニメーション
-			g_aItem[i].pos.y = g_aItem[i].basePosY + sinf(g_ItemGlobalTime + g_aItem[i].timeOffset) * ITEM_FLOAT_OFFSET;
-
-
-			//Playerと当たり判定
-			if (CollisionBC(g_aItem[i].pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size))
-			{
-				switch (g_aItem[i].item.category)
-				{
-				case ItemCategory::WeaponPart_Ammo:
-					//インベントリーに入れる
-
-					break;
-				case ItemCategory::WeaponPart_FireType:
-					//インベントリーに入れる
-
-					break;
-				case ItemCategory::Consumable:
-					//インベントリーに入れる
-
-					break;
-				case ItemCategory::InstantEffect:
-					//相応の効果
-					//test
-					GetPlayer()->HP += 1.0f;
-					g_aItem[i].use = false;
-
-					break;
-
-				default:
-					break;
-				}
-			}
-
-
+			Item item = CreateItemFromID(itemID);
+			g_aItem[i].SetItem(item);
+			g_aItem[i].SetUsed(true);
+			g_aItem[i].SetPosition(pos);
+			g_aItem[i].SetBasePosY(pos.y);
+			return i;
 		}
 	}
+	return -1;
 }
+
+
+//HRESULT InitItem()
+//{
+//
+//	srand((unsigned int)time(nullptr));
+//
+//	g_ItemDB = ItemDatabase();  // TODO:ヒープ領域に移動するかもしれないので注意
+//	InitItemTextures();         // テクスチャ読み込み
+//
+//	MakeVertexItem();
+//
+//	for (int CntItem = 0; CntItem < MAX_ITEM; CntItem++)
+//	{
+//		ZeroMemory(&g_aItem[CntItem].material, sizeof(g_aItem[CntItem].material));
+//		g_aItem[CntItem].material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+//
+//		g_aItem[CntItem].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+//		g_aItem[CntItem].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+//		g_aItem[CntItem].fWidth = ITEM_WIDTH;
+//		g_aItem[CntItem].fHeight = ITEM_HEIGHT;
+//		g_aItem[CntItem].use = FALSE;
+//
+//	}
+//
+//	g_bAlpaTest = TRUE;
+//
+//	SetItem(XMFLOAT3(10.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
+//	SetItem(XMFLOAT3(20.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
+//
+//
+//
+//	return S_OK;
+//
+//}
+//
+
+
+
+//void UpdateItem()
+//{
+//	g_ItemGlobalTime += ITEM_FLOAT_FREQUENCE / 60.0f;
+//	// アイテムの更新処理
+//	for (int i = 0; i < MAX_ITEM; i++)
+//	{
+//		if (g_aItem[i].use)
+//		{
+//			//Itemのアニメーション
+//			g_aItem[i].pos.y = g_aItem[i].basePosY + sinf(g_ItemGlobalTime + g_aItem[i].timeOffset) * ITEM_FLOAT_OFFSET;
+//
+//
+//			//Playerと当たり判定
+//			if (CollisionBC(g_aItem[i].pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size))
+//			{
+//				switch (g_aItem[i].item.category)
+//				{
+//				case ItemCategory::WeaponPart_Ammo:
+//					//インベントリーに入れる
+//
+//					break;
+//				case ItemCategory::WeaponPart_FireType:
+//					//インベントリーに入れる
+//
+//					break;
+//				case ItemCategory::Consumable:
+//					//インベントリーに入れる
+//
+//					break;
+//				case ItemCategory::InstantEffect:
+//					//相応の効果
+//					//test
+//					GetPlayer()->HP += 1.0f;
+//					g_aItem[i].use = false;
+//
+//					break;
+//
+//				default:
+//					break;
+//				}
+//			}
+//
+//
+//		}
+//	}
+//}
+
 
 void DrawItem()
 {
@@ -194,7 +329,7 @@ void DrawItem()
 
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
-		if (g_aItem[i].use)
+		if (g_aItem[i].IsUsed())
 		{
 			// ワールドマトリックスの初期化
 			mtxWorld = XMMatrixIdentity();
@@ -217,21 +352,23 @@ void DrawItem()
 
 
 			// スケールを反映
-			mtxScl = XMMatrixScaling(g_aItem[i].scl.x, g_aItem[i].scl.y, g_aItem[i].scl.z);
+			XMFLOAT3 scl = g_aItem[i].GetScale();
+			mtxScl = XMMatrixScaling(scl.x,scl.y,scl.z);
 			mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
 			// 移動を反映
-			mtxTranslate = XMMatrixTranslation(g_aItem[i].pos.x, g_aItem[i].pos.y, g_aItem[i].pos.z);
+			XMFLOAT3 pos = g_aItem[i].GetPosition();
+			mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
 			mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
 			// ワールドマトリックスの設定
 			SetWorldMatrix(&mtxWorld);
 
-			SetMaterial(g_aItem[i].material);
+			SetMaterial(g_aItem[i].GetMaterial());
 
 
 			// ItemDatabaseから得たテクスチャで描画
-			int texID = g_aItem[i].item.id;
+			int texID = g_aItem[i].GetItem().GetID();
 			if (g_ItemTextures[texID]) {
 				GetDeviceContext()->PSSetShaderResources(0, 1, &g_ItemTextures[texID]);
 				GetDeviceContext()->Draw(4, 0);
@@ -321,10 +458,6 @@ Item CreateItemFromID(int id) {
 }
 
 
-ITEM_OBJ* GetItemOBJ()
-{
-	return g_aItem;
-}
 
 
 void SaveItemData(const std::string& filename)
@@ -332,12 +465,16 @@ void SaveItemData(const std::string& filename)
 	json j = json::array();
 	for (int i = 0; i < MAX_ITEM; ++i)
 	{
-		if (g_aItem[i].use)
+		if (g_aItem[i].IsUsed())
 		{
+			Item& item = g_aItem[i].GetItem();
+			XMFLOAT3 pos = g_aItem[i].GetPosition();
+			XMFLOAT3 scl = g_aItem[i].GetScale();
+
 			json itemObj;
-			itemObj["id"] = g_aItem[i].item.id;
-			itemObj["pos"] = { g_aItem[i].pos.x, g_aItem[i].pos.y, g_aItem[i].pos.z };
-			itemObj["scl"] = { g_aItem[i].scl.x, g_aItem[i].scl.y, g_aItem[i].scl.z };
+			itemObj["id"] = item.GetID();
+			itemObj["pos"] = { pos.x, pos.y, pos.z };
+			itemObj["scl"] = { scl.x, scl.y, scl.z };
 			j.push_back(itemObj);
 		}
 	}
@@ -355,7 +492,7 @@ void LoadItemData(const std::string& filename)
 	file >> j;
 
 	for (int i = 0; i < MAX_ITEM; ++i)
-		g_aItem[i].use = false;
+		g_aItem[i].SetUsed(false);
 
 	for (const auto& itemObj : j)
 	{
@@ -364,7 +501,13 @@ void LoadItemData(const std::string& filename)
 		int index = SetItem(pos, id);
 		if (index >= 0)
 		{
-			g_aItem[index].scl = XMFLOAT3(itemObj["scl"][0], itemObj["scl"][1], itemObj["scl"][2]);
+			XMFLOAT3 scl = XMFLOAT3(itemObj["scl"][0], itemObj["scl"][1], itemObj["scl"][2]);
+			g_aItem[index].SetScale(scl);
 		}
 	}
+}
+
+ITEM_OBJ* GetItemOBJ()
+{
+	return g_aItem;;
 }
