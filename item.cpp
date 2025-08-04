@@ -154,13 +154,13 @@ void ITEM_OBJ::Update()
 //	return -1;
 //}
 
-void InitItem()
-{
-	for (int i = 0; i < MAX_ITEM; ++i)
-		g_aItem[i].SetUsed(false);
-
-	g_ItemGlobalTime = 0.0f;
-}
+//void InitItem()
+//{
+//	for (int i = 0; i < MAX_ITEM; ++i)
+//		g_aItem[i].IsUsed();
+//
+//	g_ItemGlobalTime = 0.0f;
+//}
 
 void UninitItem()
 {
@@ -221,40 +221,44 @@ int SetItem(XMFLOAT3 pos, int itemID)
 }
 
 
-//HRESULT InitItem()
-//{
-//
-//	srand((unsigned int)time(nullptr));
-//
-//	g_ItemDB = ItemDatabase();  // TODO:ヒープ領域に移動するかもしれないので注意
-//	InitItemTextures();         // テクスチャ読み込み
-//
-//	MakeVertexItem();
-//
-//	for (int CntItem = 0; CntItem < MAX_ITEM; CntItem++)
-//	{
-//		ZeroMemory(&g_aItem[CntItem].material, sizeof(g_aItem[CntItem].material));
-//		g_aItem[CntItem].material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-//
-//		g_aItem[CntItem].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-//		g_aItem[CntItem].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-//		g_aItem[CntItem].fWidth = ITEM_WIDTH;
-//		g_aItem[CntItem].fHeight = ITEM_HEIGHT;
-//		g_aItem[CntItem].use = FALSE;
-//
-//	}
-//
-//	g_bAlpaTest = TRUE;
-//
-//	SetItem(XMFLOAT3(10.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
-//	SetItem(XMFLOAT3(20.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
-//
-//
-//
-//	return S_OK;
-//
-//}
-//
+HRESULT InitItem()
+{
+
+	srand((unsigned int)time(nullptr));
+
+	g_ItemDB = ItemDatabase();  // TODO:ヒープ領域に移動するかもしれないので注意
+	InitItemTextures();         // テクスチャ読み込み
+
+	MakeVertexItem();
+
+	for (int CntItem = 0; CntItem < MAX_ITEM; CntItem++)
+	{
+		//ZeroMemory(&g_aItem[CntItem].material, sizeof(g_aItem[CntItem].material));
+		//g_aItem[CntItem].material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		MATERIAL mat = {};
+		mat.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		g_aItem[CntItem].SetMaterial(mat);
+
+
+		g_aItem[CntItem].SetUsed(false);
+		g_aItem[CntItem].SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+		g_aItem[CntItem].SetScale(XMFLOAT3(1.0f, 1.0f, 1.0f));
+		g_aItem[CntItem].SetWidth(ITEM_WIDTH);
+		g_aItem[CntItem].SetHeight(ITEM_HEIGHT);
+
+	}
+
+	g_bAlpaTest = TRUE;
+
+	SetItem(XMFLOAT3(10.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
+	SetItem(XMFLOAT3(20.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
+
+
+
+	return S_OK;
+
+}
+
 
 
 

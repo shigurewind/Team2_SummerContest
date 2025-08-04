@@ -22,7 +22,7 @@ enum class ItemCategory {
 //	}
 //};
 
-class Item : public Object
+class Item
 {
 public:
 	Item(int id = 0, const std::string& name = "unknown", int count = 1, ItemCategory category = ItemCategory::Consumable)
@@ -76,6 +76,13 @@ public:
 	void SetMaterial(const MATERIAL& mat) { material = mat; }
 	const MATERIAL& GetMaterial() const { return material; }
 
+	void SetWidth(float w) { width = w; }
+	void SetHeight(float h) { height = h; }
+	float GetWidth() const { return width; }
+	float GetHeight() const { return height; }
+
+
+
 	void SetBasePosY(float y) { basePosY = y; }
 
 private:
@@ -111,7 +118,7 @@ enum ItemID
 
 int SetItem(XMFLOAT3 pos, int itemID);
 
-void InitItem();
+HRESULT InitItem();
 void UninitItem();
 void UpdateItem();
 void DrawItem();
