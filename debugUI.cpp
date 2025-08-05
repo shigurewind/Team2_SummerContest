@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 
 #include "dissolveTest.h"
+#include "shaderManager.h"
 
 
 // item.cppにあるアイテム配列
@@ -164,13 +165,19 @@ void ShowDebugUI()
 	//Shaderエディター
 	if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
 	{
+
+
 		DissolveTest* dissolveTest = GetDissolveTest();
 		ImGui::Checkbox(u8"ディゾルブ有効", &dissolveTest->isDissolving);
 		ImGui::DragFloat(u8"ディゾルブ値", &dissolveTest->dissolve, 0.01f, 0.0f, 1.0f, "%.2f");
+
+		
 
 	}
 
 
 
 	ImGui::End();
+
+	ShaderManager::ShowShaderDebugUI();
 }

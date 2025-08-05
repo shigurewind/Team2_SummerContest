@@ -26,6 +26,8 @@
 
 #include "debugUI.h"
 
+#include "shaderManager.h"
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -293,6 +295,14 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	// フェードの初期化
 	InitFade();
 
+
+	//shaderManagerの初期化
+	if (!ShaderManager::Initialize())
+	{
+		MessageBox(NULL, "Failed to initialize ShaderManager", "Error", MB_OK);
+		return E_FAIL;
+	}
+
 	// 最初のモードをセット
 	SetMode(g_Mode);	// ここはSetModeのままで！
 
@@ -312,6 +322,9 @@ void Uninit(void)
 
 	// 終了のモードをセット
 	SetMode(MODE_MAX);
+
+	//shaderManagerの終了処理
+	ShaderManager::Cleanup();
 
 	// サウンド終了処理
 	UninitSound();
