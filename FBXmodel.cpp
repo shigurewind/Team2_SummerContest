@@ -121,7 +121,7 @@ void UpdateFBXTestModel(void)
 
 void DrawFBXTestModel(void)
 {
-	SHADER_SCOPE(SHADER_FBX);//©“®ShaderØ‚è‘Ö‚¦
+	SHADER_SCOPE(SHADER_TERRAIN);//©“®ShaderØ‚è‘Ö‚¦
 
 	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld, quatMatrix;
 

@@ -1,34 +1,50 @@
 #pragma once
 #include "main.h"
-#include "renderer.h"
+//#include "renderer.h"
 #include <map>
 #include <string>
+
+
+//前方宣言
+struct ID3D11Device;
+struct ID3D11DeviceContext;
+struct ID3D11VertexShader;
+struct ID3D11PixelShader;
+struct ID3D11InputLayout;
+struct ID3D11Buffer;
+
+
 
 // シェーダータイプ列挙型 - プロジェクトで使用する全てのシェーダータイプを定義
 enum SHADER_TYPE
 {
-    SHADER_DEFAULT = 0,    // デフォルトシェーダー (shader.hlsl)
-    SHADER_FBX,           // FBXモデル専用 (testShader.hlsl)  
+    SHADER_DEFAULT = 0,    // デフォルトシェーダー (vertexshader.hlsl + pixelShader_default.hlsl)
+    SHADER_TERRAIN,           // FBXモデル専用 (vertexshader.hlsl + pixelShader_FBX.hlsl)  
     SHADER_TYPE_MAX       // 最大値、ループ用
 };
+
+
 
 // 元のSHADER構造体は変更なし（後方互換性）
 struct SHADER
 {
-    ID3D11VertexShader* vertexShader;
-    ID3D11PixelShader* pixelShader;
-    ID3D11InputLayout* inputLayout;
+    ID3D11VertexShader* vertexShader = nullptr;
+    ID3D11PixelShader* pixelShader = nullptr;
+    ID3D11InputLayout* inputLayout = nullptr;
 };
 
-// 新規：詳細情報を含むシェーダー情報構造体
+// 詳細情報を含むシェーダー情報構造体
 struct ShaderInfo
 {
     SHADER shader;              // 実際のシェーダーオブジェクト
     std::string name;           // 表示名（デバッグ界面用）
     std::string fileName;       // ファイルパス
+    std::string vsFile;         // 頂点シェーダーファイル（組み合わせ用）
+    std::string psFile;         // ピクセルシェーダーファイル（組み合わせ用）
     std::string vsEntry;        // 頂点シェーダーエントリ関数名
     std::string psEntry;        // ピクセルシェーダーエントリ関数名
-    bool isLoaded;             // ロード済みかどうか
+    bool isLoaded = false;             // ロード済みかどうか
+    bool isCombined = false;           // 組み合わせシェーダーかどうか
 };
 
 // ===== 元の関数は不変（後方互換性） =====
@@ -49,9 +65,14 @@ public:
     static void Cleanup();        // 全リソースをクリーンアップ
     
     // ===== シェーダーロード管理 =====
-    static bool LoadShader(SHADER_TYPE type, const char* fileName, 
-                          const char* vsEntry = "VertexShaderPolygon", 
-                          const char* psEntry = "PixelShaderPolygon");
+    static bool LoadShader(SHADER_TYPE type, const char* fileName,
+        const char* vsEntry = "VertexShaderPolygon",
+        const char* psEntry = "PixelShaderPolygon");
+    static bool LoadCombinedShader(SHADER_TYPE type,
+        const char* vsFile,
+        const char* psFile,
+        const char* vsEntry = "VertexShaderPolygon",
+        const char* psEntry = "PixelShaderPolygon");
     static bool ReloadShader(SHADER_TYPE type);  // シェーダー再ロード（開発時便利）
     static void UnloadShader(SHADER_TYPE type);  // シェーダーアンロード
     
@@ -66,6 +87,7 @@ public:
     
     // ===== ImGuiデバッグ界面 =====
     static void ShowShaderDebugUI();  // シェーダーデバッグ界面を表示
+	static void ShowEffectDebugUI(); // エフェクトデバッグ界面を表示
     
     // ===== ユーティリティ関数 =====
     static const char* GetShaderName(SHADER_TYPE type);    // シェーダー表示名を取得
@@ -98,3 +120,81 @@ public:
 // コードブロック終了時に前のシェーダーに自動復元される
 #define SHADER_SCOPE(type) ShaderManager::ShaderScope _scope(type)
 
+
+// シェーダーエフェクトパラメータ構造体
+struct EffectParams
+{
+    UINT effectFlags;
+    float padding1[3];
+
+    // ディゾルブ効果
+    float dissolveAmount;
+    float padding2[3];        // 16バイト
+    XMFLOAT4 dissolveColor;
+
+    // 血痕効果
+    XMFLOAT4 bloodPositions[4];  // XMFLOAT3 -> XMFLOAT4
+    XMFLOAT4 bloodRadii;         // float[4] -> XMFLOAT4
+    float bloodIntensity;
+    int bloodCount;
+    float padding3[2];
+
+    // カスタマイズパラメータ
+    XMFLOAT4 customParam1;
+    XMFLOAT4 customParam2;
+
+    
+};
+
+
+// エフェクトフラグ定義
+#define EFFECT_DISSOLVE     0x01
+#define EFFECT_BLOOD_STAIN  0x02
+#define EFFECT_GLOW         0x04
+#define EFFECT_DAMAGE       0x08
+
+//エフェクトマネージャークラス
+class EffectManager
+{
+private:
+    static EffectParams s_EffectParams;
+    static ID3D11Buffer* s_EffectBuffer;
+    static bool s_IsInitialized;
+
+public:
+
+    static bool Initialize();
+    static void Cleanup();
+
+    // 効果の有効化・無効化
+    static void EnableEffect(UINT effectFlag);
+    static void DisableEffect(UINT effectFlag);
+    static void ClearAllEffects();
+
+    // ディゾルブ
+    static void SetDissolveEffect(float amount, XMFLOAT4 color);
+    static void ClearDissolveEffect();
+
+    // 血痕
+    static void AddBloodStain(XMFLOAT3 position, float radius);
+    static void ClearBloodStains();
+    static void SetBloodIntensity(float intensity);
+
+    // Glow
+    static void SetGlowEffect(float intensity, XMFLOAT3 color);
+
+    // ダメージフラッシュ
+    static void SetDamageFlash(float intensity);
+
+    // カスタムパラメータ設定
+    static void SetCustomParam1(XMFLOAT4 param);
+    static void SetCustomParam2(XMFLOAT4 param);
+
+    // エフェクトパラメータを更新
+    static void ApplyEffects();
+
+
+    // デバッグ用
+    static EffectParams* GetEffectParams() { return &s_EffectParams; }
+
+};

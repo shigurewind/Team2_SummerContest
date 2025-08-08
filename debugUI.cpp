@@ -180,4 +180,6 @@ void ShowDebugUI()
 	ImGui::End();
 
 	ShaderManager::ShowShaderDebugUI();
+
+	ShaderManager::ShowEffectDebugUI();
 }

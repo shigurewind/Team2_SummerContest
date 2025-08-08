@@ -126,8 +126,5 @@ ID3D11VertexShader* GetDefaultVertexShader();
 ID3D11PixelShader* GetDefaultPixelShader();
 ID3D11InputLayout* GetDefaultInputLayout();
 
-void SetDefaultShader();
 
-//
-void SetDissolveValue(float dissolve, XMFLOAT4 color);
 
