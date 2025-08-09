@@ -12,6 +12,9 @@
 #include "bullet.h"
 #include "camera.h"
 #include "player.h"
+#include "Octree.h"
+#include "FBXmodel.h"
+#include "meshfield.h"
 #include <math.h>
 #include <vector>
 
@@ -158,17 +161,42 @@ void UpdateBullet(void)
 
         if (g_Bullet[i].use)
         {
+            // 次の位置を計算
+            XMFLOAT3 nextPos = {
+                g_Bullet[i].pos.x + g_Bullet[i].vel.x,
+                g_Bullet[i].pos.y + g_Bullet[i].vel.y,
+                g_Bullet[i].pos.z + g_Bullet[i].vel.z
+            };
 
+            // 弾のAABB（半径はsizeの半分）
+            float r = g_Bullet[i].size * 0.5f;
+            XMFLOAT3 boxMin = { nextPos.x - r, nextPos.y - r, nextPos.z - r };
+            XMFLOAT3 boxMax = { nextPos.x + r, nextPos.y + r, nextPos.z + r };
+
+            // 壁当たり判定
+            if (AABBHitOctree(GetWallTree(), GetWallTriangles(), boxMin, boxMax, 0, 5, 5))
+            {
+                g_Bullet[i].use = FALSE;
+                continue; // この弾の処理終了
+            }
+
+            // 床当たり判定（必要なら）
+            if (AABBHitOctree(GetFloorTree(), GetFloorTriangles(), boxMin, boxMax, 0, 5, 5))
+            {
+                g_Bullet[i].use = FALSE;
+                continue;
+            }
 
             // ロケットランチャーの弾だけ重力をかける
             if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
             {
                 g_Bullet[i].vel.y += rocketGravity;
             }
-            g_Bullet[i].pos.x += g_Bullet[i].vel.x;
-            g_Bullet[i].pos.y += g_Bullet[i].vel.y;
-            g_Bullet[i].pos.z += g_Bullet[i].vel.z;
 
+            // 位置更新
+            g_Bullet[i].pos = nextPos;
+
+            // 寿命処理
             g_Bullet[i].lifetime -= 1.0f;
             if (g_Bullet[i].lifetime <= 0)
             {
@@ -176,9 +204,7 @@ void UpdateBullet(void)
             }
         }
     }
-
 }
-
 //=============================================================================
 // 弾の描画
 //=============================================================================
