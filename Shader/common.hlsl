@@ -102,7 +102,7 @@ cbuffer EffectBuffer : register(b8)
     float4 g_CustomParam1;
     float4 g_CustomParam2;
 
-    float2 g_EffectPadding; // alignment padding
+    float2 g_EffectPadding; // 16バイト用
 };
 
 //*****************************************************************************
@@ -140,7 +140,7 @@ struct VertexOutput
 // Common Textures and Samplers
 //*****************************************************************************
 Texture2D g_Texture : register(t0);
-Texture2D g_DissolveMap : register(t1); // noise texture for dissolve
+Texture2D g_DissolveMap : register(t1); // ノイズテクスチャ
 SamplerState g_SamplerState : register(s0);
 
 //*****************************************************************************
@@ -181,6 +181,7 @@ float4 CalculateLighting(float4 worldPos, float4 normal, float4 baseColor)
     if (Light.Enable == 0)
     {
         return baseColor * Material.Diffuse;
+        
     }
 
     float4 finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -190,14 +191,17 @@ float4 CalculateLighting(float4 worldPos, float4 normal, float4 baseColor)
         if (Light.Flags[i].y == 1) // light is enabled
         {
             float4 tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
+            
+            
 
-            if (Light.Flags[i].x == 1) // directional light
+            if (Light.Flags[i].x == 1) // 平行光
             {
                 float3 lightDir = normalize(-Light.Direction[i].xyz);
                 float lightIntensity = max(0.0f, dot(lightDir, normalize(normal.xyz)));
                 tempColor = baseColor * Light.Diffuse[i] * lightIntensity;
+                
             }
-            else if (Light.Flags[i].x == 2) // point light
+            else if (Light.Flags[i].x == 2) // ポイントライト
             {
                 float3 lightDir = normalize(Light.Position[i].xyz - worldPos.xyz);
                 float lightIntensity = max(0.0f, dot(lightDir, normalize(normal.xyz)));
@@ -212,6 +216,8 @@ float4 CalculateLighting(float4 worldPos, float4 normal, float4 baseColor)
             finalColor += tempColor;
         }
     }
+    
+    finalColor = min(finalColor, 1.0f);
 
     finalColor.a = baseColor.a * Material.Diffuse.a;
     return finalColor;

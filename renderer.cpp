@@ -7,6 +7,8 @@
 #include "main.h"
 #include "renderer.h"
 
+#include "shaderManager.h"
+
 //デバッグ用画面テキスト出力を有効にする
 #define DEBUG_DISP_TEXTOUT
 //シェーダーデバッグ設定を有効にする
@@ -89,9 +91,7 @@ static ID3D11DepthStencilView* g_DepthStencilView = NULL;
 
 
 
-static ID3D11VertexShader* g_VertexShader = NULL;
-static ID3D11PixelShader* g_PixelShader = NULL;
-static ID3D11InputLayout* g_VertexLayout = NULL;
+
 static ID3D11Buffer* g_WorldBuffer = NULL;
 static ID3D11Buffer* g_ViewBuffer = NULL;
 static ID3D11Buffer* g_ProjectionBuffer = NULL;
@@ -265,6 +265,8 @@ void SetWorldViewProjection2D(void)
 	worldViewProjection = XMMatrixOrthographicOffCenterLH(0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f);
 	worldViewProjection = XMMatrixTranspose(worldViewProjection);
 	GetDeviceContext()->UpdateSubresource(g_ProjectionBuffer, 0, NULL, &worldViewProjection, 0, 0);
+
+	ShaderManager::SetDefaultShader();
 }
 
 
@@ -578,53 +580,7 @@ HRESULT InitRenderer(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 
 
 
-	// 頂点シェーダコンパイル・生成
-	ID3DBlob* pErrorBlob;
-	ID3DBlob* pVSBlob = NULL;
-	DWORD shFlag = D3DCOMPILE_ENABLE_STRICTNESS;
-
-#if defined(_DEBUG) && defined(DEBUG_SHADER)
-	shFlag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-	hr = D3DX11CompileFromFile("Shader/shader.hlsl", NULL, NULL, "VertexShaderPolygon", "vs_4_0", shFlag, 0, NULL, &pVSBlob, &pErrorBlob, NULL);
-	if (FAILED(hr))
-	{
-		MessageBox(NULL, (char*)pErrorBlob->GetBufferPointer(), "VS", MB_OK | MB_ICONERROR);
-	}
-
-	g_D3DDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &g_VertexShader);
-
-	// 入力レイアウト生成
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,		0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,		0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,			0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-	UINT numElements = ARRAYSIZE(layout);
-
-	g_D3DDevice->CreateInputLayout(layout,
-		numElements,
-		pVSBlob->GetBufferPointer(),
-		pVSBlob->GetBufferSize(),
-		&g_VertexLayout);
-
-	pVSBlob->Release();
-
-
-	// ピクセルシェーダコンパイル・生成
-	ID3DBlob* pPSBlob = NULL;
-	hr = D3DX11CompileFromFile("Shader/shader.hlsl", NULL, NULL, "PixelShaderPolygon", "ps_4_0", shFlag, 0, NULL, &pPSBlob, &pErrorBlob, NULL);
-	if (FAILED(hr))
-	{
-		MessageBox(NULL, (char*)pErrorBlob->GetBufferPointer(), "PS", MB_OK | MB_ICONERROR);
-	}
-
-	g_D3DDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &g_PixelShader);
-
-	pPSBlob->Release();
+	
 
 
 	// 定数バッファ生成
@@ -685,20 +641,17 @@ HRESULT InitRenderer(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	// エフェクト用定数バッファ (b8)
 	
 
-
-	// 入力レイアウト設定
-	g_ImmediateContext->IASetInputLayout(g_VertexLayout);
-
-	// シェーダ設定
-	g_ImmediateContext->VSSetShader(g_VertexShader, NULL, 0);
-	g_ImmediateContext->PSSetShader(g_PixelShader, NULL, 0);
+	//シェーダー初期化
+	ShaderManager::SetDefaultShader();
 
 	//ライト初期化
 	ZeroMemory(&g_Light, sizeof(LIGHT_CBUFFER));
 	g_Light.Direction[0] = XMFLOAT4(1.0f, -1.0f, 1.0f, 0.0f);
 	g_Light.Diffuse[0] = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
-	g_Light.Ambient[0] = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	g_Light.Ambient[0] = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 	g_Light.Flags[0].Type = LIGHT_TYPE_DIRECTIONAL;
+	g_Light.Flags[0].OnOff = 1;
+	g_Light.Enable = 1;
 	SetLightBuffer();
 
 
@@ -736,9 +689,7 @@ void UninitRenderer(void)
 	if (g_LightBuffer)			g_LightBuffer->Release();
 	if (g_FogBuffer)			g_FogBuffer->Release();
 
-	if (g_VertexLayout)			g_VertexLayout->Release();
-	if (g_VertexShader)			g_VertexShader->Release();
-	if (g_PixelShader)			g_PixelShader->Release();
+	
 
 	if (g_ImmediateContext)		g_ImmediateContext->ClearState();
 	if (g_RenderTargetView)		g_RenderTargetView->Release();
@@ -824,27 +775,7 @@ void DebugTextOut(char* text, int x, int y)
 #endif
 }
 
-ID3D11VertexShader* GetDefaultVertexShader()
-{
-	return g_VertexShader;
-}
 
-ID3D11PixelShader* GetDefaultPixelShader()
-{
-	return g_PixelShader;
-}
 
-ID3D11InputLayout* GetDefaultInputLayout()
-{
-	return g_VertexLayout;
-}
-
-void SetDefaultShader()
-{
-	ID3D11DeviceContext* ctx = GetDeviceContext();
-	ctx->IASetInputLayout(GetDefaultInputLayout());
-	ctx->VSSetShader(GetDefaultVertexShader(), nullptr, 0);
-	ctx->PSSetShader(GetDefaultPixelShader(), nullptr, 0);
-}
 
 

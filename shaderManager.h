@@ -20,6 +20,7 @@ enum SHADER_TYPE
 {
     SHADER_DEFAULT = 0,    // デフォルトシェーダー (vertexshader.hlsl + pixelShader_default.hlsl)
     SHADER_TERRAIN,           // FBXモデル専用 (vertexshader.hlsl + pixelShader_FBX.hlsl)  
+
     SHADER_TYPE_MAX       // 最大値、ループ用
 };
 

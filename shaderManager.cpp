@@ -109,14 +109,14 @@ bool ShaderManager::Initialize()
         return false;
     }
 
-    MessageBox(NULL, "Device and DeviceContext are OK", "ShaderManager Debug", MB_OK);
+    //MessageBox(NULL, "Device and DeviceContext are OK", "ShaderManager Debug", MB_OK);
 
     // 効果管理初期化
     if (!EffectManager::Initialize()) {
         MessageBox(NULL, "EffectManager::Initialize() failed!", "ShaderManager Error", MB_OK);
         return false;
     }
-    MessageBox(NULL, "EffectManager initialized successfully", "ShaderManager Debug", MB_OK);
+    //MessageBox(NULL, "EffectManager initialized successfully", "ShaderManager Debug", MB_OK);
 
     // 各シェーダータイプの情報を設定
     m_Shaders[SHADER_DEFAULT].name = "Default Shader";
@@ -134,7 +134,7 @@ bool ShaderManager::Initialize()
     m_Shaders[SHADER_TERRAIN].psEntry = "PixelShaderPolygon";
 
 
-    MessageBox(NULL, "Starting shader loading...", "ShaderManager Debug", MB_OK);
+    //MessageBox(NULL, "Starting shader loading...", "ShaderManager Debug", MB_OK);
 
     // 全シェーダーのコンビをロード
     // デフォルトシェーダーの読み込み
@@ -160,7 +160,7 @@ bool ShaderManager::Initialize()
     m_CurrentShader = SHADER_DEFAULT;
 
     if (success) {
-        MessageBox(NULL, "ShaderManager initialized successfully!", "ShaderManager Debug", MB_OK);
+        //MessageBox(NULL, "ShaderManager initialized successfully!", "ShaderManager Debug", MB_OK);
     }
     else {
         MessageBox(NULL, "ShaderManager initialization FAILED!", "ShaderManager Error", MB_OK);
@@ -254,7 +254,7 @@ bool ShaderManager::LoadCombinedShader(SHADER_TYPE type,
     char debugMsg[512];
     sprintf_s(debugMsg, "Loading shaders:\nVS: %s (%s)\nPS: %s (%s)",
         vsFile, vsEntry, psFile, psEntry);
-    MessageBox(NULL, debugMsg, "LoadCombinedShader Debug", MB_OK);
+    //MessageBox(NULL, debugMsg, "LoadCombinedShader Debug", MB_OK);
 
 	// ファイル存在チェック
     FILE* testFile = nullptr;
@@ -274,7 +274,7 @@ bool ShaderManager::LoadCombinedShader(SHADER_TYPE type,
     }
     fclose(testFile);
 
-    MessageBox(NULL, "Both shader files exist and are accessible", "File Check OK", MB_OK);
+    //MessageBox(NULL, "Both shader files exist and are accessible", "File Check OK", MB_OK);
 
     // 頂点シェーダーコンパイル
     HRESULT hr = D3DX11CompileFromFile(vsFile, nullptr, nullptr,
