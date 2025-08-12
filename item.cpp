@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "collision.h"
 #include "player.h"
+#include "FBXmodel.h"
 
 #include <cstdlib> // for rand()
 #include <ctime>   // for time()
@@ -25,7 +26,7 @@ using json = nlohmann::json;
 
 #define ITEM_SIZE (20.0f)
 
-
+#define ITEM_OFFSET_Y (50.0f)
 
 
 
@@ -96,6 +97,31 @@ void ITEM_OBJ::Update()
 		default:
 			break;
 		}
+	}
+}
+
+void ITEM_OBJ::HandleGroundCheck()
+{
+	const float groundThreshold = 0.2f;
+	float groundY;
+	if (CheckItemGroundSimple(pos, ITEM_OFFSET_Y, groundY) && velocity.y <= 0.0f)
+	{
+		float targetY = groundY;
+		float distanceToGround = pos.y - targetY;
+		if (distanceToGround <= groundThreshold)
+		{
+			pos.y = targetY;
+			velocity.y = 0.0f;
+			isGround = true;
+		}
+		else
+		{
+			isGround = false;
+		}
+	}
+	else
+	{
+		isGround = false;
 	}
 }
 
@@ -514,4 +540,25 @@ void LoadItemData(const std::string& filename)
 ITEM_OBJ* GetItemOBJ()
 {
 	return g_aItem;;
+}
+
+bool CheckItemGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
+{
+	const auto& tris = GetFloorTriangles();
+
+	XMFLOAT3 rayStart = pos;
+	rayStart.y += 50.0f;
+	XMFLOAT3 rayEnd = pos;
+	rayEnd.y -= 100.0f;
+
+	XMFLOAT3 hit, normal;
+	for (const auto& tri : tris)
+	{
+		if (RayCast(tri.v0, tri.v1, tri.v2, rayStart, rayEnd, &hit, &normal))
+		{
+			groundY = hit.y;
+			return true;
+		}
+	}
+	return false;
 }

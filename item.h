@@ -85,6 +85,8 @@ public:
 
 	void SetBasePosY(float y) { basePosY = y; }
 
+	void HandleGroundCheck();
+
 private:
 	Item item;
 	XMFLOAT3 scl;
@@ -133,3 +135,5 @@ void LoadItemData(const std::string& filename);
 
 
 ITEM_OBJ* GetItemOBJ();
+bool CheckItemGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);
+
