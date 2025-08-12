@@ -12,6 +12,8 @@
 #include "dissolveTest.h"
 #include "shaderManager.h"
 
+#include "light.h"
+
 
 // item.cppにあるアイテム配列
 #define MAX_ITEM (128)
@@ -172,6 +174,74 @@ void ShowDebugUI()
 		ImGui::DragFloat(u8"ディゾルブ値", &dissolveTest->dissolve, 0.01f, 0.0f, 1.0f, "%.2f");
 
 		
+	}
+
+	//ライトエディター
+	if (ImGui::CollapsingHeader(u8"ライトエディター"))
+	{
+		//
+		for (int lightIndex = 0; lightIndex < LIGHT_MAX; lightIndex++)
+		{
+			LIGHT* light = GetLightData(lightIndex);
+			bool changed = false;
+
+			char headerName[64];
+			sprintf_s(headerName, u8"光源 %d", lightIndex);
+
+			if (ImGui::CollapsingHeader(headerName))
+			{
+				ImGui::PushID(lightIndex); // 光源ID衝突ないように
+
+				// 光源スイッチ
+				bool enabled = (light->Enable == TRUE);
+				if (ImGui::Checkbox(u8"起用", &enabled)) {
+					light->Enable = enabled ? TRUE : FALSE;
+					changed = true;
+				}
+
+				// 光源タイプ
+				const char* lightTypes[] = { u8"無し", u8"平行光", u8"点光源" };
+				int currentType = light->Type;
+				if (ImGui::Combo(u8"光源タイプ", &currentType, lightTypes, 3)) {
+					light->Type = currentType;
+					changed = true;
+				}
+
+				// 平行光
+				if (light->Type == LIGHT_TYPE_DIRECTIONAL) {
+					if (ImGui::DragFloat3(u8"光源方向", (float*)&light->Direction, 0.01f, -1.0f, 1.0f)) {
+						changed = true;
+					}
+				}
+
+				// 点光源
+				if (light->Type == LIGHT_TYPE_POINT) {
+					if (ImGui::DragFloat3(u8"光源位置", (float*)&light->Position, 0.5f, -100.0f, 100.0f)) {
+						changed = true;
+					}
+					if (ImGui::DragFloat(u8"減衰距離", &light->Attenuation, 1.0f, 1.0f, 1000.0f)) {
+						changed = true;
+					}
+				}
+
+				// 色情報
+				if (ImGui::ColorEdit3(u8"光の色", (float*)&light->Diffuse)) {
+					changed = true;
+				}
+				if (ImGui::ColorEdit3(u8"環境光", (float*)&light->Ambient)) {
+					changed = true;
+				}
+
+				// アップデートする
+				if (changed) {
+					SetLightData(lightIndex, light);
+				}
+
+				ImGui::PopID();
+			}
+		}
+
+
 
 	}
 
@@ -179,7 +249,7 @@ void ShowDebugUI()
 
 	ImGui::End();
 
-	ShaderManager::ShowShaderDebugUI();
+	//ShaderManager::ShowShaderDebugUI();
 
-	ShaderManager::ShowEffectDebugUI();
+	//ShaderManager::ShowEffectDebugUI();
 }

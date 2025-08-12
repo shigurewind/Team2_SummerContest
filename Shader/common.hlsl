@@ -198,7 +198,13 @@ float4 CalculateLighting(float4 worldPos, float4 normal, float4 baseColor)
             {
                 float3 lightDir = normalize(-Light.Direction[i].xyz);
                 float lightIntensity = max(0.0f, dot(lightDir, normalize(normal.xyz)));
-                tempColor = baseColor * Light.Diffuse[i] * lightIntensity;
+                
+                float4 diffuse = baseColor * Light.Diffuse[i] * lightIntensity;
+                
+                //環境光
+                float4 ambient = baseColor * Light.Ambient[i];
+                
+                tempColor = diffuse + ambient;
                 
             }
             else if (Light.Flags[i].x == 2) // ポイントライト

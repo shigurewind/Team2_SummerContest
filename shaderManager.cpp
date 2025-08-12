@@ -619,7 +619,7 @@ bool EffectManager::s_IsInitialized = false;
 
 bool EffectManager::Initialize()
 {
-    MessageBox(NULL, "EffectManager::Initialize() called", "EffectManager Debug", MB_OK);
+    //MessageBox(NULL, "EffectManager::Initialize() called", "EffectManager Debug", MB_OK);
 
     if (s_IsInitialized) {
         MessageBox(NULL, "EffectManager already initialized", "EffectManager Debug", MB_OK);
@@ -634,7 +634,7 @@ bool EffectManager::Initialize()
 
     // 効果パラメーター初期化
     ZeroMemory(&s_EffectParams, sizeof(EffectParams));
-    MessageBox(NULL, "EffectParams initialized", "EffectManager Debug", MB_OK);
+    //MessageBox(NULL, "EffectParams initialized", "EffectManager Debug", MB_OK);
 
     // 効果パラメーター用定数バッファ作成
     D3D11_BUFFER_DESC bufferDesc;
@@ -646,7 +646,7 @@ bool EffectManager::Initialize()
     bufferDesc.MiscFlags = 0;
     bufferDesc.StructureByteStride = 0;
 
-    MessageBox(NULL, "About to create buffer", "EffectManager Debug", MB_OK);
+    //MessageBox(NULL, "About to create buffer", "EffectManager Debug", MB_OK);
     HRESULT hr = GetDevice()->CreateBuffer(&bufferDesc, nullptr, &s_EffectBuffer);
     if (FAILED(hr)) {
         char errorMsg[256];
@@ -655,7 +655,7 @@ bool EffectManager::Initialize()
         return false;
     }
 
-    MessageBox(NULL, "Buffer created successfully", "EffectManager Debug", MB_OK);
+    //MessageBox(NULL, "Buffer created successfully", "EffectManager Debug", MB_OK);
     s_IsInitialized = true;
     return true;
 }
