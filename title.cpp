@@ -51,6 +51,18 @@ static XMFLOAT3					g_GameStartPos;
 float	alpha;
 BOOL	flag_alpha;
 
+// --- 当たり判定の手動調整用パラメータ ---
+static float g_HitOffsetX  = +60.0f;   // +で右へ、-で左へ
+static float g_HitOffsetY  = +50.0f;   // +で下へ、-で上へ
+static float g_HitInflateW = -60.0f;   // +で幅を広げる（全体）。-で狭める
+static float g_HitInflateH = -100.0f;   // +で高さを広げる（全体）。-で狭める
+
+// 「ゲームスタート」ボタン用の基本サイズと状態
+static float g_GameStartBaseW = 600.0f;   // 既存描画と同じ幅
+static float g_GameStartBaseH = 300.0f;   // 既存描画と同じ高さ
+static float g_GameStartScale = 1.0f;     // 拡大率
+static bool  g_GameStartHover = false;    // ホバー中か
+
 static BOOL						g_Load = FALSE;
 
 
@@ -138,10 +150,6 @@ void UpdateTitle(void)
 	{// Enter押したら、ステージを切り替える
 		SetFade(FADE_OUT, MODE_GAME);
 	}
-	if (IsMouseLeftTriggered())
-	{//マウス
-		SetFade(FADE_OUT, MODE_GAME);
-	}
 	// ゲームパッドで入力処理
 	else if (IsButtonTriggered(0, BUTTON_START))
 	{
@@ -149,6 +157,42 @@ void UpdateTitle(void)
 	}
 	else if (IsButtonTriggered(0, BUTTON_B))
 	{
+		SetFade(FADE_OUT, MODE_GAME);
+	}
+
+
+	if (GetKeyboardTrigger(DIK_RETURN)) { SetFade(FADE_OUT, MODE_GAME); }
+	else if (IsButtonTriggered(0, BUTTON_START)) { SetFade(FADE_OUT, MODE_GAME); }
+	else if (IsButtonTriggered(0, BUTTON_B)) { SetFade(FADE_OUT, MODE_GAME); }
+
+	POINT mp;
+	GetCursorPos(&mp);
+
+
+	// ボタンの描画サイズ（拡大率を反映）
+	float drawW = g_GameStartBaseW * g_GameStartScale;
+	float drawH = g_GameStartBaseH * g_GameStartScale;
+
+	// ★ 手動調整を反映した“判定用”サイズと中心
+	float testW = drawW + g_HitInflateW;
+	float testH = drawH + g_HitInflateH;
+	float cx = g_GameStartPos.x + g_HitOffsetX;
+	float cy = g_GameStartPos.y + g_HitOffsetY;
+
+	float halfW = testW * 0.5f;
+	float halfH = testH * 0.5f;
+
+	// ここではマウス座標 mp.x/mp.y をそのまま使う（必要なら上で ScreenToClient を使って補正）
+	g_GameStartHover =
+		(mp.x >= cx - halfW) && (mp.x <= cx + halfW) &&
+		(mp.y >= cy - halfH) && (mp.y <= cy + halfH);
+
+	// ホバー時は少し拡大（スムーズに補間）
+	const float targetScale = g_GameStartHover ? 1.08f : 1.0f;
+	g_GameStartScale += (targetScale - g_GameStartScale) * 0.2f;
+
+	// 左クリックは「ボタン上にあるときだけ」シーン遷移
+	if (g_GameStartHover && IsMouseLeftTriggered()) {
 		SetFade(FADE_OUT, MODE_GAME);
 	}
 
@@ -234,13 +278,20 @@ void DrawTitle(void)
 	{
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[3]);
 
-		// サイズは仮に300×100とする（画像の実サイズに合わせて調整）
-		SetSpriteColor(g_VertexBuffer, g_GameStartPos.x, g_GameStartPos.y, 600.0f,300.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, alpha));
+		float drawW = g_GameStartBaseW * g_GameStartScale;
+		float drawH = g_GameStartBaseH * g_GameStartScale;
+
+		// ホバー時はアルファを上げて存在感を出す（お好みで）
+		float a = g_GameStartHover ? 1.0f : alpha;
+
+		SetSpriteColor(g_VertexBuffer,
+			g_GameStartPos.x, g_GameStartPos.y,
+			drawW, drawH,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, a));
 
 		GetDeviceContext()->Draw(4, 0);
 	}
-
 //	// 加減算のテスト
 //	SetBlendState(BLEND_MODE_ADD);		// 加算合成
 ////	SetBlendState(BLEND_MODE_SUBTRACT);	// 減算合成
