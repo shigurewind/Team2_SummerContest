@@ -1,5 +1,6 @@
 #include "FBXmodel.h"
 #include "Octree.h"
+#include "shaderManager.h"
 
 
 //-------------------------------------------------------------------------
@@ -7,7 +8,7 @@ static std::vector<TriangleData> g_TriangleList;
 static FBXTESTMODEL g_FBXTestModel;	// FBXモデルのデータ
 
 
-static SHADER g_shaderCustom;
+
 
 static OctreeNode* g_WallTree = nullptr;
 static OctreeNode* g_FloorTree = nullptr;
@@ -33,8 +34,7 @@ HRESULT InitFBXTestModel(void)
 	sprintf_s(debugPos, "FBX pos.y = %.2f\n", g_FBXTestModel.pos.y);
 	OutputDebugStringA(debugPos);
 
-	LoadShaderFromFile("Shader/testShader.hlsl", "VertexShaderPolygon", "PixelShaderPolygon", &g_shaderCustom);
-	g_FBXTestModel.shader = &g_shaderCustom;
+	
 
 
 	g_FBXTestModel.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -121,7 +121,7 @@ void UpdateFBXTestModel(void)
 
 void DrawFBXTestModel(void)
 {
-	
+	SHADER_SCOPE(SHADER_TERRAIN);//自動Shader切り替え
 
 	XMMATRIX mtxScl, mtxRot, mtxTranslate, mtxWorld, quatMatrix;
 
@@ -165,22 +165,11 @@ void DrawFBXTestModel(void)
 	// 縁取りの設定
 	//SetFuchi(1);
 
-	// シェーダーの設定
-	ID3D11DeviceContext* context = GetDeviceContext();
-	if (g_FBXTestModel.shader)
-	{
-		context->IASetInputLayout(g_FBXTestModel.shader->inputLayout);
-		context->VSSetShader(g_FBXTestModel.shader->vertexShader, nullptr, 0);
-		context->PSSetShader(g_FBXTestModel.shader->pixelShader, nullptr, 0);
-	}
 
 	// モデル描画
 	ModelDraw(g_FBXTestModel.model);
 
-	//デフォルトShaderに戻す
-	SetDefaultShader();
-
-
+	
 	//SetFuchi(0);
 
 	// カリング設定を戻す
