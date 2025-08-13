@@ -42,7 +42,7 @@ void InitLight(void)
 		g_Light[i].Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
 		g_Light[i].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		g_Light[i].Ambient = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
-		g_Light[i].Attenuation = 200.0f;	// 減衰距離
+		g_Light[i].Attenuation = 100.0f;	// 減衰距離
 		g_Light[i].Type = LIGHT_TYPE_NONE;	// ライトのタイプ
 		g_Light[i].Enable = FALSE;			// ON / OFF
 		SetLight(i, &g_Light[i]);
@@ -51,6 +51,7 @@ void InitLight(void)
 	// 並行光源の設定（世界を照らす光）
 	g_Light[0].Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);		// 光の向き
 	g_Light[0].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);	// 光の色
+	g_Light[0].Ambient = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);	// 環境光の色
 	g_Light[0].Type = LIGHT_TYPE_DIRECTIONAL;					// 並行光源
 	g_Light[0].Enable = TRUE;									// このライトをON
 	SetLight(0, &g_Light[0]);									// これで設定している

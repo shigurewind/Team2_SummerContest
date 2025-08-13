@@ -10,6 +10,9 @@
 #include <nlohmann/json.hpp>
 
 #include "dissolveTest.h"
+#include "shaderManager.h"
+
+#include "light.h"
 
 
 // item.cppにあるアイテム配列
@@ -131,14 +134,16 @@ void ShowDebugUI()
 
 		for (int i = 0; i < MAX_ITEM; ++i)
 		{
-			if (!itemObj[i].use) continue;
+			if (!itemObj[i].IsUsed()) continue;
 
 			ImGui::PushID(i);
-			ImGui::Text("ID: %d (%s)", itemObj[i].item.id, itemObj[i].item.name.c_str());
-			ImGui::DragFloat3(u8"位置", (float*)&itemObj[i].pos, 0.5f);
-			ImGui::DragFloat3(u8"サイズ", (float*)&itemObj[i].scl, 0.1f);
+			ImGui::Text("ID: %d (%s)", itemObj[i].GetItem().GetID(), itemObj[i].GetItem().GetName().c_str());
+			XMFLOAT3 pos = itemObj[i].GetPosition();
+			ImGui::DragFloat3(u8"位置", (float*)&pos, 0.5f);
+			XMFLOAT3 scl = itemObj[i].GetScale();
+			ImGui::DragFloat3(u8"サイズ", (float*)&scl, 0.1f);
 			if (ImGui::Button(u8"削除")) {
-				itemObj[i].use = false;
+				itemObj[i].SetUsed(false);
 			}
 			ImGui::Separator();
 			ImGui::PopID();
@@ -164,13 +169,89 @@ void ShowDebugUI()
 	//Shaderエディター
 	if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
 	{
+
+
 		DissolveTest* dissolveTest = GetDissolveTest();
 		ImGui::Checkbox(u8"ディゾルブ有効", &dissolveTest->isDissolving);
 		ImGui::DragFloat(u8"ディゾルブ値", &dissolveTest->dissolve, 0.01f, 0.0f, 1.0f, "%.2f");
+
+		
+	}
+
+	//ライトエディター
+	if (ImGui::CollapsingHeader(u8"ライトエディター"))
+	{
+		//
+		for (int lightIndex = 0; lightIndex < LIGHT_MAX; lightIndex++)
+		{
+			LIGHT* light = GetLightData(lightIndex);
+			bool changed = false;
+
+			char headerName[64];
+			sprintf_s(headerName, u8"光源 %d", lightIndex);
+
+			if (ImGui::CollapsingHeader(headerName))
+			{
+				ImGui::PushID(lightIndex); // 光源ID衝突ないように
+
+				// 光源スイッチ
+				bool enabled = (light->Enable == TRUE);
+				if (ImGui::Checkbox(u8"起用", &enabled)) {
+					light->Enable = enabled ? TRUE : FALSE;
+					changed = true;
+				}
+
+				// 光源タイプ
+				const char* lightTypes[] = { u8"無し", u8"平行光", u8"点光源" };
+				int currentType = light->Type;
+				if (ImGui::Combo(u8"光源タイプ", &currentType, lightTypes, 3)) {
+					light->Type = currentType;
+					changed = true;
+				}
+
+				// 平行光
+				if (light->Type == LIGHT_TYPE_DIRECTIONAL) {
+					if (ImGui::DragFloat3(u8"光源方向", (float*)&light->Direction, 0.01f, -1.0f, 1.0f)) {
+						changed = true;
+					}
+				}
+
+				// 点光源
+				if (light->Type == LIGHT_TYPE_POINT) {
+					if (ImGui::DragFloat3(u8"光源位置", (float*)&light->Position, 0.5f, -100.0f, 100.0f)) {
+						changed = true;
+					}
+					if (ImGui::DragFloat(u8"減衰距離", &light->Attenuation, 1.0f, 1.0f, 1000.0f)) {
+						changed = true;
+					}
+				}
+
+				// 色情報
+				if (ImGui::ColorEdit3(u8"光の色", (float*)&light->Diffuse)) {
+					changed = true;
+				}
+				if (ImGui::ColorEdit3(u8"環境光", (float*)&light->Ambient)) {
+					changed = true;
+				}
+
+				// アップデートする
+				if (changed) {
+					SetLightData(lightIndex, light);
+				}
+
+				ImGui::PopID();
+			}
+		}
+
+
 
 	}
 
 
 
 	ImGui::End();
+
+	//ShaderManager::ShowShaderDebugUI();
+
+	//ShaderManager::ShowEffectDebugUI();
 }

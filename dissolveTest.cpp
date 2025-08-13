@@ -1,6 +1,7 @@
 #include "dissolveTest.h"
 #include "main.h"
 #include "camera.h"
+#include "shaderManager.h"
 
 #define TEXTURE_MAX (2)
 
@@ -157,7 +158,8 @@ void DrawDissolveTest()
 	SetMaterial(g_dissolveTest.material);
 
 	//ディゾルブ
-	SetDissolveValue(g_dissolveTest.dissolve, g_dissolveTest.material.Diffuse);
+	//SetDissolveValue(g_dissolveTest.dissolve, g_dissolveTest.material.Diffuse);
+	EffectManager::SetDissolveEffect(g_dissolveTest.dissolve, XMFLOAT4(1.0f, 0.2f, 0.0f, 1.0f));
 	
 	//GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[0]);
 	ID3D11ShaderResourceView* textures[] = { g_Texture[0], g_Texture[1] };
@@ -166,7 +168,8 @@ void DrawDissolveTest()
 	GetDeviceContext()->Draw(4, 0);
 
 	//デフォルトディゾルブ禁止
-	SetDissolveValue(-1.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	//SetDissolveValue(-1.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	EffectManager::SetDissolveEffect(-1.0f, XMFLOAT4(1.0f, 0.2f, 0.0f, 1.0f));
 	
 }
 

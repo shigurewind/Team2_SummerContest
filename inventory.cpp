@@ -10,7 +10,7 @@ bool Inventory::AddItem(const Item& item) {
 	std::vector<Item>* target = nullptr;
 	int* capacity = nullptr;
 
-	switch (item.category) {
+	switch (item.GetCategory()) {
 	case ItemCategory::WeaponPart_Ammo:
 		target = &ammoParts;
 		capacity = &ammoCapacity;
@@ -27,8 +27,8 @@ bool Inventory::AddItem(const Item& item) {
 
 	// 同じIDのアイテムがあるか確認（スタックする）
 	for (auto& i : *target) {
-		if (i.id == item.id) {
-			i.count += item.count;
+		if (i.GetID() == item.GetID()) {
+			i.SetCount(i.GetCount() + item.GetCount());
 			return true; // 既存アイテムに加算して終了
 		}
 	}
@@ -56,7 +56,7 @@ bool Inventory::RemoveItem(int itemId, ItemCategory category) {
 
 	// アイテムを検索して削除
 	for (auto it = target->begin(); it != target->end(); ++it) {
-		if (it->id == itemId) {
+		if (it->GetID() == itemId) {
 			target->erase(it);
 			return true;
 		}
