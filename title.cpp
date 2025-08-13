@@ -182,7 +182,6 @@ void UpdateTitle(void)
 	float halfW = testW * 0.5f;
 	float halfH = testH * 0.5f;
 
-	// ここではマウス座標 mp.x/mp.y をそのまま使う（必要なら上で ScreenToClient を使って補正）
 	g_GameStartHover =
 		(mp.x >= cx - halfW) && (mp.x <= cx + halfW) &&
 		(mp.y >= cy - halfH) && (mp.y <= cy + halfH);
