@@ -49,7 +49,7 @@ struct LIGHT_CBUFFER
 	XMFLOAT4	Attenuation[LIGHT_MAX];	// 減衰率
 	LIGHTFLAGS	Flags[LIGHT_MAX];		// ライト種別
 	int			Enable;					// ライティング有効・無効フラグ
-	int			Dummy[3];				// 16byte境界用
+	int			Dummy[15];				// 16byte境界用
 };
 
 // フォグ用定数バッファ構造体
