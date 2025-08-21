@@ -13,6 +13,7 @@
 #include "shaderManager.h"
 
 #include "light.h"
+#include "boundingBoxDebug.h"
 
 
 // item.cppにあるアイテム配列
@@ -244,7 +245,40 @@ void ShowDebugUI()
 		}
 
 
+	}
 
+
+	//バウンディングボックスデバッグ
+	if (ImGui::CollapsingHeader(u8"バウンディングボックス"))
+	{
+		BoundingBoxDebugRenderer& debugRenderer = BoundingBoxDebugRenderer::GetInstance();
+
+		bool globalEnable = debugRenderer.GetGlobalEnable();
+		if (ImGui::Checkbox(u8"バウンディングボックス起用", &globalEnable)) {
+			debugRenderer.SetGlobalEnable(globalEnable);
+		}
+
+		if (globalEnable) {
+			bool playerBox = debugRenderer.GetPlayerBoxEnable();
+			if (ImGui::Checkbox(u8"プレイヤーボックス", &playerBox)) {
+				debugRenderer.SetPlayerBoxEnable(playerBox);
+			}
+
+			bool enemyBox = debugRenderer.GetEnemyBoxEnable();
+			if (ImGui::Checkbox(u8"エネミーボックス", &enemyBox)) {
+				debugRenderer.SetEnemyBoxEnable(enemyBox);
+			}
+
+			bool itemBox = debugRenderer.GetItemBoxEnable();
+			if (ImGui::Checkbox(u8"アイテムボックス", &itemBox)) {
+				debugRenderer.SetItemBoxEnable(itemBox);
+			}
+
+			bool terrainBox = debugRenderer.GetTerrainBoxEnable();
+			if (ImGui::Checkbox(u8"マップボックス", &terrainBox)) {
+				debugRenderer.SetTerrainBoxEnable(terrainBox);
+			}
+		}
 	}
 
 

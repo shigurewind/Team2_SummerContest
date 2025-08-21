@@ -30,6 +30,8 @@
 #include "item.h"
 #include "dissolveTest.h"
 
+#include "boundingBoxDebug.h"
+
 
 //*****************************************************************************
 // マクロ定義
@@ -91,6 +93,9 @@ HRESULT InitGame(void)
 
 	InitDissolveTest();
 
+	// デバッグ用のバウンディングボックスの初期化
+	BoundingBoxDebugRenderer::GetInstance().Initialize();
+
 	// BGM再生
 	PlaySound(SOUND_LABEL_BGM_sample001);
 
@@ -130,6 +135,8 @@ void UninitGame(void)
 	UninitItem();
 
 	UninitDissolveTest();
+
+	BoundingBoxDebugRenderer::GetInstance().Shutdown();
 
 }
 
@@ -195,6 +202,8 @@ void UpdateGame(void)
 	UpdateItem();
 
 	UpdateDissolveTest();
+
+	BoundingBoxDebugRenderer::GetInstance().Update();
 }
 
 //=============================================================================
@@ -229,6 +238,10 @@ void DrawGame0(void)
 	DrawItem();
 
 	DrawDissolveTest();
+
+
+	//デバッグ用のバウンディングボックスの描画処理（全ての物描画した後）
+	BoundingBoxDebugRenderer::GetInstance().Draw();
 
 
 	// 2Dの物を描画する処理
