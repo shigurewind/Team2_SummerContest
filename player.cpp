@@ -350,17 +350,33 @@ void PLAYER::ApplyCollision()
 
 	if (AABBHitOctree(GetWallTree(), GetWallTriangles(), min, max, 0, 5, 5))
 	{
-		//Slide処理
-		XMFLOAT3 originalVelocity = { velocity.x, 0.0f, velocity.z };
+		// 壁に沿ってスライド
+		//velocity-(velocity・normal)*normal
 
-		//壁の法線
-		XMFLOAT3 wallNormal = GetWallCollisionNormal(pos, originalVelocity, halfSize);
+		XMFLOAT3 remainingVelocity = { velocity.x, 0.0f, velocity.z };
+		const int maxIterations = 3; //回数制限
+		const float minVelocityThreshold = 0.1f; //移動最小値
 
-		if (wallNormal.x != 0.0f || wallNormal.z != 0.0f)
+		for (int iteration = 0; iteration < maxIterations; iteration++)
 		{
-			// 壁に沿ってスライド
-			//velocity-(velocity・normal)*normal
-			XMVECTOR vel = XMLoadFloat3(&originalVelocity);
+			//移動できるかどうか確認
+			float velocityMagnitude = sqrtf(remainingVelocity.x * remainingVelocity.x +
+				remainingVelocity.z * remainingVelocity.z);
+			if (velocityMagnitude < minVelocityThreshold)
+			{
+				break; //小さい移動量なら終了
+			}
+
+			//壁法線を取得
+			XMFLOAT3 wallNormal = GetWallCollisionNormal(pos, remainingVelocity, halfSize);
+
+			if (wallNormal.x == 0.0f && wallNormal.z == 0.0f)
+			{
+				break; // 壁法線が取得できなかった場合終了
+			}
+
+			//スライドベクトルを計算
+			XMVECTOR vel = XMLoadFloat3(&remainingVelocity);
 			XMVECTOR normal = XMLoadFloat3(&wallNormal);
 
 			float dotProduct = XMVectorGetX(XMVector3Dot(vel, normal));
@@ -369,7 +385,7 @@ void PLAYER::ApplyCollision()
 			XMFLOAT3 slideVelocity;
 			XMStoreFloat3(&slideVelocity, slide);
 
-			// スライド後の位置を計算
+			//スライド位置
 			XMFLOAT3 testPos = pos;
 			testPos.x += slideVelocity.x;
 			testPos.z += slideVelocity.z;
@@ -379,24 +395,25 @@ void PLAYER::ApplyCollision()
 
 			if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), testMin, testMax, 0, 5, 5))
 			{
-				//スライド応用
+				// スライド応用
 				velocity.x = slideVelocity.x;
 				velocity.z = slideVelocity.z;
+				return; 
 			}
 			else
 			{
-				//止まる
-				velocity.x = 0;
-				velocity.z = 0;
-			}
+				//まだ壁に当たる場合、残りの速度を更新
+				remainingVelocity = slideVelocity;
 
+				// 速度を降ろす
+				remainingVelocity.x *= 0.8f;
+				remainingVelocity.z *= 0.8f;
+			}
 		}
-		else
-		{
-			//壁にぶつかったら止まる
-			velocity.x = 0;
-			velocity.z = 0;
-		}
+
+		//止まる
+		velocity.x = 0;
+		velocity.z = 0;
 		
 
 	}
