@@ -278,6 +278,15 @@ void ShowDebugUI()
 			if (ImGui::Checkbox(u8"マップボックス", &terrainBox)) {
 				debugRenderer.SetTerrainBoxEnable(terrainBox);
 			}
+			//説明
+			if (terrainBox) {
+				int depthLimit = debugRenderer.GetOctreeDepthLimit();
+				if (ImGui::SliderInt(u8"八分木描画深度", &depthLimit, 0, 6)) {
+					debugRenderer.SetOctreeDepthLimit(depthLimit);
+				}
+				ImGui::Text(u8"深度高いほど描画が詳しいが、ボックスを数が増える");
+				ImGui::Text(u8"色情報：赤（0）緑（1）青（2）黄（3）");
+			}
 		}
 	}
 

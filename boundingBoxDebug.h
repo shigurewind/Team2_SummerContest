@@ -1,6 +1,7 @@
 #pragma once
 #include "main.h"
 #include "renderer.h"
+#include "octree.h"
 
 
 struct DebugBoundingBox {
@@ -26,6 +27,12 @@ public:
     void AddEnemyBox(const XMFLOAT3& center, float size);
     void AddItemBox(const XMFLOAT3& center, float size);
 
+
+    void AddTerrainBoxes();
+    void SetOctreeDepthLimit(int depth) { m_octreeDepthLimit = depth; }
+    int GetOctreeDepthLimit() const { return m_octreeDepthLimit; }
+
+
     // スイッチ
     void SetGlobalEnable(bool enable) { m_globalEnable = enable; }
     void SetPlayerBoxEnable(bool enable) { m_showPlayerBox = enable; }
@@ -45,6 +52,11 @@ private:
 
     void CreateLineBoxMesh();
     void DrawWireframeBox(const XMFLOAT3& min, const XMFLOAT3& max, const XMFLOAT4& color);
+
+
+    void TraverseOctreeNode(OctreeNode* node, int currentDepth);
+    int m_octreeDepthLimit = 3;//デフォルトは3階まで
+
 
     ID3D11Buffer* m_vertexBuffer = nullptr;
     ID3D11Buffer* m_indexBuffer = nullptr;

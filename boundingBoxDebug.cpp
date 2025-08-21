@@ -1,6 +1,7 @@
 #include "boundingBoxDebug.h"
 #include "camera.h"
 #include "player.h"
+#include "FBXmodel.h"
 
 BoundingBoxDebugRenderer* BoundingBoxDebugRenderer::s_instance = nullptr;
 
@@ -96,6 +97,11 @@ void BoundingBoxDebugRenderer::Update() {
     // if (m_showEnemyBox) {  }
     // if (m_showItemBox) { }
 
+
+    if (m_showTerrainBox) {
+        AddTerrainBoxes();
+    }
+
 }
 
 
@@ -188,4 +194,57 @@ void BoundingBoxDebugRenderer::AddItemBox(const XMFLOAT3& center, float size) {
     XMFLOAT3 max = { center.x + size, center.y + size, center.z + size };
 	AddBox(min, max, { 0.0f, 0.0f, 1.0f, 1.0f }); // 青
 }
+
+
+void BoundingBoxDebugRenderer::AddTerrainBoxes() {
+	// 八分木から壁と床のボックスを取得
+    OctreeNode* wallTree = GetWallTree();
+    OctreeNode* floorTree = GetFloorTree();
+
+	// 壁八分木を走査してボックスを追加
+    if (wallTree) {
+        TraverseOctreeNode(wallTree, 0);
+    }
+
+	// 床八分木を走査してボックスを追加
+    if (floorTree) {
+        TraverseOctreeNode(floorTree, 0);
+    }
+}
+
+
+void BoundingBoxDebugRenderer::TraverseOctreeNode(OctreeNode* node, int currentDepth) {
+    if (!node || currentDepth > m_octreeDepthLimit) return;
+
+	// 葉ノードまたは深度制限に達した場合、ボックスを追加
+    bool shouldDraw = (node->IsLeaf() || currentDepth == m_octreeDepthLimit)
+        && !node->triangleIndices.empty();
+
+    if (shouldDraw) {
+		// 深度に応じて色を変更
+        XMFLOAT4 color;
+        switch (currentDepth % 4) {
+        case 0: color = { 1.0f, 0.0f, 0.0f, 0.7f }; break;  //赤
+        case 1: color = { 0.0f, 1.0f, 0.0f, 0.7f }; break;  //緑
+        case 2: color = { 0.0f, 0.0f, 1.0f, 0.7f }; break;  //青
+        case 3: color = { 1.0f, 1.0f, 0.0f, 0.7f }; break;  //黄
+        default: color = { 1.0f, 0.0f, 1.0f, 0.7f }; break; //紫
+        }
+
+        AddBox(node->minBound, node->maxBound, color);
+    }
+
+	// 再帰的に子ノードを走査
+    if (node->isSubdivided) {
+        for (int i = 0; i < 8; i++) {
+            if (node->children[i]) {
+                TraverseOctreeNode(node->children[i], currentDepth + 1);
+            }
+        }
+    }
+}
+
+
+
+
 
