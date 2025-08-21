@@ -350,8 +350,55 @@ void PLAYER::ApplyCollision()
 
 	if (AABBHitOctree(GetWallTree(), GetWallTriangles(), min, max, 0, 5, 5))
 	{
-		velocity.x = 0;
-		velocity.z = 0;
+		//Slide処理
+		XMFLOAT3 originalVelocity = { velocity.x, 0.0f, velocity.z };
+
+		//壁の法線
+		XMFLOAT3 wallNormal = GetWallCollisionNormal(pos, originalVelocity, halfSize);
+
+		if (wallNormal.x != 0.0f || wallNormal.z != 0.0f)
+		{
+			// 壁に沿ってスライド
+			//velocity-(velocity・normal)*normal
+			XMVECTOR vel = XMLoadFloat3(&originalVelocity);
+			XMVECTOR normal = XMLoadFloat3(&wallNormal);
+
+			float dotProduct = XMVectorGetX(XMVector3Dot(vel, normal));
+			XMVECTOR slide = XMVectorSubtract(vel, XMVectorScale(normal, dotProduct));
+
+			XMFLOAT3 slideVelocity;
+			XMStoreFloat3(&slideVelocity, slide);
+
+			// スライド後の位置を計算
+			XMFLOAT3 testPos = pos;
+			testPos.x += slideVelocity.x;
+			testPos.z += slideVelocity.z;
+
+			XMFLOAT3 testMin = { testPos.x - halfSize, pos.y - 0.1f, testPos.z - halfSize };
+			XMFLOAT3 testMax = { testPos.x + halfSize, pos.y + 0.1f, testPos.z + halfSize };
+
+			if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), testMin, testMax, 0, 5, 5))
+			{
+				//スライド応用
+				velocity.x = slideVelocity.x;
+				velocity.z = slideVelocity.z;
+			}
+			else
+			{
+				//止まる
+				velocity.x = 0;
+				velocity.z = 0;
+			}
+
+		}
+		else
+		{
+			//壁にぶつかったら止まる
+			velocity.x = 0;
+			velocity.z = 0;
+		}
+		
+
 	}
 }
 
@@ -442,6 +489,30 @@ void PLAYER::HandleReload()
 	}
 }
 
+
+XMFLOAT3 PLAYER::GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector, float halfSize)
+{
+	//rayの開始位置
+	XMFLOAT3 rayStart = currentPos;
+	rayStart.y += 1.0f;
+
+	XMFLOAT3 rayEnd = rayStart;
+	rayEnd.x += moveVector.x * 2.0f;
+	rayEnd.z += moveVector.z * 2.0f;
+
+	XMFLOAT3 rayDir = { rayEnd.x - rayStart.x, rayEnd.y - rayStart.y, rayEnd.z - rayStart.z };
+
+	//一番近いの壁
+	float closestDist = 100.0f;
+	XMFLOAT3 hitPos, hitNormal = { 0.0f, 0.0f, 0.0f };
+
+	if (RayHitOctree(GetWallTree(), GetWallTriangles(), rayStart, rayDir, &closestDist, &hitPos, &hitNormal, 0, 5, 5))
+	{
+		return hitNormal;
+	}
+
+	return { 0.0f, 0.0f, 0.0f };
+}
 
 
 //=============================================================================
