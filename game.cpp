@@ -13,6 +13,7 @@
 #include "sound.h"
 #include "fade.h"
 #include "overlay2D.h"
+#include "blood.h"
 
 #include "player.h"
 #include "enemy.h"
@@ -72,7 +73,7 @@ HRESULT InitGame(void)
 	InitEnemy();
 
 	
-
+	InitBlood();
 	
 
 	// 弾の初期化
@@ -111,7 +112,7 @@ void UninitGame(void)
 	// 弾の終了処理
 	UninitBullet();
 
-	
+	UninitBlood();
 
 	// 地面の終了処理
 	//UninitMeshField();
@@ -186,6 +187,8 @@ void UpdateGame(void)
 
 	// 当たり判定処理
 	CheckHit();
+
+	UpdateBlood();
 	UpdateOverlay2D();
 	// スコアの更新処理
 	UpdateScore();
@@ -226,9 +229,12 @@ void DrawGame0(void)
 
 	DrawFBXTestModel();
 
+
 	DrawItem();
 
 	DrawDissolveTest();
+
+	DrawBlood();
 
 
 	// 2Dの物を描画する処理

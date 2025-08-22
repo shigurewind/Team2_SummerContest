@@ -11,6 +11,7 @@
 #include "debugproc.h"
 #include "camera.h"
 #include "main.h"
+#include "blood.h"
 #include "renderer.h"
 #include "sprite.h"
 #include "input.h"
@@ -184,6 +185,18 @@ void SpiderEnemy::Update() {
 		{
 			bullet[i].use = false;
 			HP -= 1;
+
+
+			XMFLOAT3 closestPoint;
+			closestPoint.x = max(pos.x - enemyHalfSize.x, min(bullet[i].pos.x, pos.x + enemyHalfSize.x));
+			closestPoint.y = max(pos.y - enemyHalfSize.y, min(bullet[i].pos.y, pos.y + enemyHalfSize.y));
+			closestPoint.z = max(pos.z - enemyHalfSize.z, min(bullet[i].pos.z, pos.z + enemyHalfSize.z));
+
+			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&bullet[i].vel));
+			XMFLOAT3 hitNormal;
+			XMStoreFloat3(&hitNormal, v);
+			SpawnBlood(closestPoint, 8, hitNormal);
+
 			if (HP <= 0)
 			{
 				use = false;
@@ -661,6 +674,18 @@ void GhostEnemy::Update()
 		{
 			bullet[i].use = false;
 			HP -= 1;
+
+			XMFLOAT3 closestPoint;
+			closestPoint.x = max(pos.x - enemyHalfSize.x, min(bullet[i].pos.x, pos.x + enemyHalfSize.x));
+			closestPoint.y = max(pos.y - enemyHalfSize.y, min(bullet[i].pos.y, pos.y + enemyHalfSize.y));
+			closestPoint.z = max(pos.z - enemyHalfSize.z, min(bullet[i].pos.z, pos.z + enemyHalfSize.z));
+
+
+			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&bullet[i].vel));
+			XMFLOAT3 hitNormal;
+			XMStoreFloat3(&hitNormal, v);
+			SpawnBlood(closestPoint, 8, hitNormal);
+
 			if (HP <= 0)
 			{
 				use = false;
