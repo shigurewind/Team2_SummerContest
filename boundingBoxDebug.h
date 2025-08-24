@@ -46,6 +46,19 @@ public:
     bool GetItemBoxEnable() const { return m_showItemBox; }
     bool GetTerrainBoxEnable() const { return m_showTerrainBox; }
 
+
+    //法線用
+    void SetNormalVectorEnable(bool enable) { m_showNormalVector = enable; }
+    bool GetNormalVectorEnable() const { return m_showNormalVector; }
+    void SetFloorNormalEnable(bool enable) { m_showFloorNormal = enable; }
+    void SetWallNormalEnable(bool enable) { m_showWallNormal = enable; }
+    bool GetFloorNormalEnable() const { return m_showFloorNormal; }
+    bool GetWallNormalEnable() const { return m_showWallNormal; }
+    void SetNormalLength(float length) { m_normalLength = length; }
+    float GetNormalLength() const { return m_normalLength; }
+    void SetNormalDisplayRange(float range) { m_normalDisplayRange = range; }
+    float GetNormalDisplayRange() const { return m_normalDisplayRange; }
+
 private:
     BoundingBoxDebugRenderer() = default;
     ~BoundingBoxDebugRenderer() = default;
@@ -69,6 +82,21 @@ private:
     bool m_showEnemyBox = false;
     bool m_showItemBox = false;
     bool m_showTerrainBox = false;
+
+
+	// 法線表示用
+    bool m_showNormalVector = false;
+    bool m_showFloorNormal = true;
+    bool m_showWallNormal = true;
+    float m_normalLength = 5.0f;
+	float m_normalDisplayRange = 50.0f;//プレイヤーからの距離
+
+    ID3D11Buffer* m_lineVertexBuffer = nullptr;
+
+    void CreateLineMesh();
+    void DrawNormalVectors();
+    void DrawLine(const XMFLOAT3& start, const XMFLOAT3& end, const XMFLOAT4& color);
+
 
     static BoundingBoxDebugRenderer* s_instance;
 };

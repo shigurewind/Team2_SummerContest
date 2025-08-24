@@ -14,6 +14,7 @@ BoundingBoxDebugRenderer& BoundingBoxDebugRenderer::GetInstance() {
 
 void BoundingBoxDebugRenderer::Initialize() {
     CreateLineBoxMesh();
+    CreateLineMesh();
 }
 
 void BoundingBoxDebugRenderer::Shutdown() {
@@ -21,9 +22,15 @@ void BoundingBoxDebugRenderer::Shutdown() {
         m_vertexBuffer->Release();
         m_vertexBuffer = nullptr;
     }
+
     if (m_indexBuffer) {
         m_indexBuffer->Release();
         m_indexBuffer = nullptr;
+    }
+
+    if (m_lineVertexBuffer) {
+        m_lineVertexBuffer->Release();
+        m_lineVertexBuffer = nullptr;
     }
 }
 
@@ -79,6 +86,27 @@ void BoundingBoxDebugRenderer::CreateLineBoxMesh() {
 }
 
 
+// 線分メッシュの作成
+void BoundingBoxDebugRenderer::CreateLineMesh() {
+    // 頂点バッファ
+    VERTEX_3D lineVertices[2] = {
+        {{0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}
+    };
+
+    D3D11_BUFFER_DESC lbd = {};
+    lbd.Usage = D3D11_USAGE_DYNAMIC;
+    lbd.ByteWidth = sizeof(lineVertices);
+    lbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    lbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    D3D11_SUBRESOURCE_DATA lInitData = {};
+    lInitData.pSysMem = lineVertices;
+
+    GetDevice()->CreateBuffer(&lbd, &lInitData, &m_lineVertexBuffer);
+}
+
+
 
 void BoundingBoxDebugRenderer::Update() {
     if (!m_globalEnable) return;
@@ -107,22 +135,33 @@ void BoundingBoxDebugRenderer::Update() {
 
 //描画
 void BoundingBoxDebugRenderer::Draw() {
-    if (!m_globalEnable || m_boxes.empty()) return;
+    if (!m_globalEnable) return;
 
-	//レンダリング設定
-    SetDepthEnable(TRUE);
-    SetBlendState(BLEND_MODE_ALPHABLEND);
-    SetCullingMode(CULL_MODE_NONE);
+	//ボックスを描画
+    if (!m_boxes.empty())
+    {
+        //レンダリング設定
+        SetDepthEnable(TRUE);
+        SetBlendState(BLEND_MODE_ALPHABLEND);
+        SetCullingMode(CULL_MODE_NONE);
 
-	// 全てのボックスを描画
-    for (const auto& box : m_boxes) {
-        if (box.enabled) {
-            DrawWireframeBox(box.min, box.max, box.color);
+        // 全てのボックスを描画
+        for (const auto& box : m_boxes) {
+            if (box.enabled) {
+                DrawWireframeBox(box.min, box.max, box.color);
+            }
         }
+
+        // カーリングモードを元に戻す
+        SetCullingMode(CULL_MODE_BACK);
     }
 
-	// カーリングモードを元に戻す
-    SetCullingMode(CULL_MODE_BACK);
+
+	// 線分メッシュの描画
+    if (m_showNormalVector) {
+        DrawNormalVectors();
+    }
+	
 }
 
 
@@ -167,6 +206,116 @@ void BoundingBoxDebugRenderer::DrawWireframeBox(const XMFLOAT3& min, const XMFLO
     // 描画
     GetDeviceContext()->DrawIndexed(24, 0, 0);
 }
+
+
+// 法線ベクトルの描画
+void BoundingBoxDebugRenderer::DrawNormalVectors() {
+    PLAYER* player = GetPlayer();
+    XMFLOAT3 playerPos = player->GetPosition();
+
+	//レンダリング設定
+    SetDepthEnable(TRUE);
+    SetBlendState(BLEND_MODE_ALPHABLEND);
+    SetCullingMode(CULL_MODE_NONE);
+
+	// 床の法線を描画
+    if (m_showFloorNormal) {
+        const auto& floorTriangles = GetFloorTriangles();
+        for (const auto& tri : floorTriangles) {
+			// 三角形の中心を計算
+            XMFLOAT3 center = {
+                (tri.v0.x + tri.v1.x + tri.v2.x) / 3.0f,
+                (tri.v0.y + tri.v1.y + tri.v2.y) / 3.0f,
+                (tri.v0.z + tri.v1.z + tri.v2.z) / 3.0f
+            };
+
+			// 距離チェック
+            float dx = center.x - playerPos.x;
+            float dy = center.y - playerPos.y;
+            float dz = center.z - playerPos.z;
+            float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+
+            if (distance <= m_normalDisplayRange) {
+                XMFLOAT3 normalEnd = {
+                    center.x + tri.normal.x * m_normalLength,
+                    center.y + tri.normal.y * m_normalLength,
+                    center.z + tri.normal.z * m_normalLength
+                };
+				DrawLine(center, normalEnd, { 0.0f, 1.0f, 0.0f, 1.0f }); // 床は緑色
+            }
+        }
+    }
+
+	// 壁の法線を描画
+    if (m_showWallNormal) {
+        const auto& wallTriangles = GetWallTriangles();
+        for (const auto& tri : wallTriangles) {
+            // 三角形の中心を計算
+            XMFLOAT3 center = {
+                (tri.v0.x + tri.v1.x + tri.v2.x) / 3.0f,
+                (tri.v0.y + tri.v1.y + tri.v2.y) / 3.0f,
+                (tri.v0.z + tri.v1.z + tri.v2.z) / 3.0f
+            };
+
+            // 距離チェック
+            float dx = center.x - playerPos.x;
+            float dy = center.y - playerPos.y;
+            float dz = center.z - playerPos.z;
+            float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+
+            if (distance <= m_normalDisplayRange) {
+                XMFLOAT3 normalEnd = {
+                    center.x + tri.normal.x * m_normalLength,
+                    center.y + tri.normal.y * m_normalLength,
+                    center.z + tri.normal.z * m_normalLength
+                };
+				DrawLine(center, normalEnd, { 1.0f, 0.0f, 0.0f, 1.0f }); //壁は赤色
+            }
+        }
+    }
+
+	// カーリングモードを元に戻す
+    SetCullingMode(CULL_MODE_BACK);
+}
+
+// 線分の描画
+void BoundingBoxDebugRenderer::DrawLine(const XMFLOAT3& start, const XMFLOAT3& end, const XMFLOAT4& color) {
+	// 線の頂点データを更新
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    GetDeviceContext()->Map(m_lineVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    VERTEX_3D* vertices = reinterpret_cast<VERTEX_3D*>(mapped.pData);
+
+    vertices[0].Position = start;
+    vertices[0].Diffuse = color;
+    vertices[1].Position = end;
+    vertices[1].Diffuse = color;
+
+    GetDeviceContext()->Unmap(m_lineVertexBuffer, 0);
+
+	// 行列を単位行列に設定
+    XMMATRIX identity = XMMatrixIdentity();
+    SetWorldMatrix(&identity);
+
+	// マテリアル設定
+    MATERIAL mat = {};
+    mat.Diffuse = color;
+    mat.Ambient = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+    mat.Specular = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+    mat.Emission = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+    mat.Shininess = 1.0f;
+    mat.noTexSampling = 1;
+    SetMaterial(mat);
+
+	// 頂点バッファ設定
+    UINT stride = sizeof(VERTEX_3D);
+    UINT offset = 0;
+    GetDeviceContext()->IASetVertexBuffers(0, 1, &m_lineVertexBuffer, &stride, &offset);
+    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+	// 線の描画
+    GetDeviceContext()->Draw(2, 0);
+}
+
 
 void BoundingBoxDebugRenderer::AddBox(const XMFLOAT3& min, const XMFLOAT3& max, const XMFLOAT4& color) {
     DebugBoundingBox box;

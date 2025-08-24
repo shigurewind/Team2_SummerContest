@@ -287,6 +287,39 @@ void ShowDebugUI()
 				ImGui::Text(u8"深度高いほど描画が詳しいが、ボックスを数が増える");
 				ImGui::Text(u8"色情報：赤（0）緑（1）青（2）黄（3）");
 			}
+
+			ImGui::Separator();
+
+			//法線ベクトル表示
+			bool normalVector = debugRenderer.GetNormalVectorEnable();
+			if (ImGui::Checkbox(u8"法線ベクトル描画", &normalVector)) {
+				debugRenderer.SetNormalVectorEnable(normalVector);
+			}
+
+			if (normalVector) {
+				bool floorNormal = debugRenderer.GetFloorNormalEnable();
+				if (ImGui::Checkbox(u8"床の法線ベクトル（緑）", &floorNormal)) {
+					debugRenderer.SetFloorNormalEnable(floorNormal);
+				}
+
+				bool wallNormal = debugRenderer.GetWallNormalEnable();
+				if (ImGui::Checkbox(u8"壁の法線ベクトル（赤）", &wallNormal)) {
+					debugRenderer.SetWallNormalEnable(wallNormal);
+				}
+
+				float normalLength = debugRenderer.GetNormalLength();
+				if (ImGui::SliderFloat(u8"法線の長さ", &normalLength, 1.0f, 20.0f)) {
+					debugRenderer.SetNormalLength(normalLength);
+				}
+
+				float normalRange = debugRenderer.GetNormalDisplayRange();
+				if (ImGui::SliderFloat(u8"描画範囲", &normalRange, 10.0f, 200.0f)) {
+					debugRenderer.SetNormalDisplayRange(normalRange);
+				}
+
+				ImGui::Text(u8"床の法線は緑、壁のは赤");
+				
+			}
 		}
 	}
 
