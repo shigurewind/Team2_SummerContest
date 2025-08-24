@@ -77,7 +77,7 @@ struct INTERPOLATION_DATA
 	float		frame;		// 実行フレーム数 ( dt = 1.0f/frame )
 };
 
-enum
+enum MODE
 {
 	MODE_TITLE = 0,			// タイトル画面
 	MODE_TUTORIAL,			// ゲーム説明画面
@@ -85,6 +85,7 @@ enum
 	MODE_RESULT,			// リザルト画面
 	MODE_MAX
 };
+
 
 //*****************************************************************************
 // プロトタイプ宣言

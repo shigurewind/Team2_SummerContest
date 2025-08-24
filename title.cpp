@@ -148,22 +148,22 @@ void UpdateTitle(void)
 
 	if (GetKeyboardTrigger(DIK_RETURN))
 	{// Enter押したら、ステージを切り替える
-		SetFade(FADE_OUT, MODE_GAME);
+		SetFade(FADE_OUT, MODE_TUTORIAL);
 	}
 	// ゲームパッドで入力処理
 	else if (IsButtonTriggered(0, BUTTON_START))
 	{
-		SetFade(FADE_OUT, MODE_GAME);
+		SetFade(FADE_OUT, MODE_TUTORIAL);
 	}
 	else if (IsButtonTriggered(0, BUTTON_B))
 	{
-		SetFade(FADE_OUT, MODE_GAME);
+		SetFade(FADE_OUT, MODE_TUTORIAL);
 	}
 
 
-	if (GetKeyboardTrigger(DIK_RETURN)) { SetFade(FADE_OUT, MODE_GAME); }
-	else if (IsButtonTriggered(0, BUTTON_START)) { SetFade(FADE_OUT, MODE_GAME); }
-	else if (IsButtonTriggered(0, BUTTON_B)) { SetFade(FADE_OUT, MODE_GAME); }
+	if (GetKeyboardTrigger(DIK_RETURN)) { SetFade(FADE_OUT, MODE_TUTORIAL); }
+	else if (IsButtonTriggered(0, BUTTON_START)) { SetFade(FADE_OUT, MODE_TUTORIAL); }
+	else if (IsButtonTriggered(0, BUTTON_B)) { SetFade(FADE_OUT, MODE_TUTORIAL); }
 
 	POINT mp;
 	GetCursorPos(&mp);
@@ -192,7 +192,7 @@ void UpdateTitle(void)
 
 	// 左クリックは「ボタン上にあるときだけ」シーン遷移
 	if (g_GameStartHover && IsMouseLeftTriggered()) {
-		SetFade(FADE_OUT, MODE_GAME);
+		SetFade(FADE_OUT, MODE_TUTORIAL);
 	}
 
 	if (flag_alpha == TRUE)

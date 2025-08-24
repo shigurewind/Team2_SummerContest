@@ -7,7 +7,7 @@
 #include "main.h"
 #include "renderer.h"
 #include "model.h"
-#include "game.h"
+#include "game1.h"
 #include "camera.h"
 #include "input.h"
 #include "sound.h"
@@ -40,7 +40,6 @@
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
-void CheckHit(void);
 
 
 
@@ -49,13 +48,13 @@ void CheckHit(void);
 //*****************************************************************************
 static int	g_ViewPortType_Game = TYPE_FULL_SCREEN;
 
-BOOL	g_bPause = FALSE;	// ポーズON/OFF
+BOOL	g_bPause1 = FALSE;	// ポーズON/OFF
 
 
 //=============================================================================
 // 初期化処理
 //=============================================================================
-HRESULT InitGame(void)
+HRESULT InitGame1(void)
 {
 	g_ViewPortType_Game = TYPE_FULL_SCREEN;
 
@@ -68,7 +67,7 @@ HRESULT InitGame(void)
 	// プレイヤーの初期化
 	InitPlayer();
 
-	// エネミーの初期化
+	//// エネミーの初期化
 	InitEnemy();
 
 	
@@ -100,7 +99,7 @@ HRESULT InitGame(void)
 //=============================================================================
 // 終了処理
 //=============================================================================
-void UninitGame(void)
+void UninitGame1(void)
 {
 	// パーティクルの終了処理
 	UninitParticle();
@@ -116,7 +115,7 @@ void UninitGame(void)
 	// 地面の終了処理
 	//UninitMeshField();
 
-	// エネミーの終了処理
+	//// エネミーの終了処理
 	UninitEnemy();
 
 	// プレイヤーの終了処理
@@ -136,7 +135,7 @@ void UninitGame(void)
 //=============================================================================
 // 更新処理
 //=============================================================================
-void UpdateGame(void)
+void UpdateGame1(void)
 {
 #ifdef _DEBUG
 	if (GetKeyboardTrigger(DIK_V))
@@ -148,13 +147,17 @@ void UpdateGame(void)
 	// 時間を止める
 	if (GetKeyboardTrigger(DIK_P))
 	{
-		g_bPause = g_bPause ? FALSE : TRUE;
+		g_bPause1 = g_bPause1 ? FALSE : TRUE;
 	}
 
 
 #endif
 
-	if (g_bPause == TRUE)
+	if (GetFade() == FADE_OUT) {
+		return;
+	}
+
+	if (g_bPause1 == TRUE)
 		return;
 	
 	if (IsTutorialShowing())
@@ -171,7 +174,7 @@ void UpdateGame(void)
 	// プレイヤーの更新処理
 	UpdatePlayer();
 
-	// エネミーの更新処理
+	//// エネミーの更新処理
 	UpdateEnemy();
 
 
@@ -185,48 +188,25 @@ void UpdateGame(void)
 	UpdateShadow();
 
 	// 当たり判定処理
-	CheckHit();
 	UpdateOverlay2D();
 	// スコアの更新処理
 	UpdateScore();
 
-	UpdateFBXTestModel();
+	//UpdateFBXTestModel();
 
 	UpdateItem();
 
 	UpdateDissolveTest();
-
-	bool allDead = true;
-	for (auto enemy : GetEnemies())
-	{
-		if (enemy->IsUsed())
-		{
-			allDead = false;
-			break;
-		}
-	}
-
-	static bool requestFadeOut = false;
-
-	if (allDead && !requestFadeOut)
-	{
-		requestFadeOut = true;
-	}
-
-
-	if (requestFadeOut && GetFade() == FADE_NONE)
-	{
-		SetFade(FADE_OUT, MODE_GAME);
-		requestFadeOut = false;
-	}
 }
 
 //=============================================================================
 // 描画処理
 //=============================================================================
-void DrawGame0(void)
+void DrawGame01(void)
 {
-
+	if (GetFade() == FADE_OUT) {
+		return;
+	}
 
 	// 3Dの物を描画する処理
 	// 地面の描画処理
@@ -235,7 +215,7 @@ void DrawGame0(void)
 	// 影の描画処理
 	DrawShadow();
 
-	// エネミーの描画処理
+	//// エネミーの描画処理
 	DrawEnemy();
 
 	// プレイヤーの描画処理
@@ -276,10 +256,13 @@ void DrawGame0(void)
 }
 
 
-void DrawGame(void)
+void DrawGame1(void)
 {
 	XMFLOAT3 pos;
 
+	if (GetFade() == FADE_OUT) {
+		return;
+	}
 
 #ifdef _DEBUG
 	// デバッグ表示
@@ -297,13 +280,13 @@ void DrawGame(void)
 	{
 	case TYPE_FULL_SCREEN:
 		SetViewPort(TYPE_FULL_SCREEN);
-		DrawGame0();
+		DrawGame01();
 		break;
 
 	case TYPE_LEFT_HALF_SCREEN:
 	case TYPE_RIGHT_HALF_SCREEN:
 		SetViewPort(TYPE_LEFT_HALF_SCREEN);
-		DrawGame0();
+		DrawGame01();
 
 		// エネミー視点
 		//pos = GetEnemy()->pos;
@@ -317,7 +300,7 @@ void DrawGame(void)
 	case TYPE_UP_HALF_SCREEN:
 	case TYPE_DOWN_HALF_SCREEN:
 		SetViewPort(TYPE_UP_HALF_SCREEN);
-		DrawGame0();
+		DrawGame01();
 
 		// エネミー視点
 		//pos = GetEnemy()->pos;
@@ -329,85 +312,6 @@ void DrawGame(void)
 		break;
 
 	}
-
-}
-
-
-//=============================================================================
-// 当たり判定処理
-//=============================================================================
-void CheckHit(void)
-{
-	//ENEMY *enemy = GetEnemy();		// エネミーのポインターを初期化
-	//PLAYER *player = GetPlayer();	// プレイヤーのポインターを初期化
-	//BULLET *bullet = GetBullet();	// 弾のポインターを初期化
-
-	//// 敵とプレイヤーキャラ
-	//for (int i = 0; i < MAX_ENEMY; i++)
-	//{
-	//	//敵の有効フラグをチェックする
-	//	if (enemy[i].use == FALSE)
-	//		continue;
-
-	//	//BCの当たり判定
-	//	if (CollisionBC(player->pos, enemy[i].pos, player->size, enemy[i].size))
-	//	{
-	//		// 敵キャラクターは倒される
-	//		enemy[i].use = FALSE;
-	//		ReleaseShadow(enemy[i].shadowIdx);
-
-	//		// スコアを足す
-	//		AddScore(100);
-	//	}
-	//}
-
-
-	//// プレイヤーの弾と敵
-	////for (int i = 0; i < MAX_BULLET; i++)
-	////{
-	////	//弾の有効フラグをチェックする
-	////	if (bullet[i].use == FALSE)
-	////		continue;
-
-	////	// 敵と当たってるか調べる
-	////	for (int j = 0; j < MAX_ENEMY; j++)
-	////	{
-	////		//敵の有効フラグをチェックする
-	////		if (enemy[j].use == FALSE)
-	////			continue;
-
-			////BCの当たり判定
-			//if (CollisionBC(bullet[i].pos, enemy[j].pos, bullet[i].fWidth, enemy[j].size))
-			//{
-			//	// 当たったから未使用に戻す
-			//	bullet[i].use = FALSE;
-
-
-	////			// 敵キャラクターは倒される
-	////			enemy[j].use = FALSE;
-	////			ReleaseShadow(enemy[j].shadowIdx);
-
-	////			// スコアを足す
-	////			AddScore(10);
-	////		}
-	////	}
-
-	////}
-
-
-	//// エネミーが全部死亡したら状態遷移
-	//int enemy_count = 0;
-	//for (int i = 0; i < MAX_ENEMY; i++)
-	//{
-	//	if (enemy[i].use == FALSE) continue;
-	//	enemy_count++;
-	//}
-
-	//// エネミーが０匹？
-	//if (enemy_count == 0)
-	//{
-	//	SetFade(FADE_OUT, MODE_RESULT);
-	//}
 
 }
 

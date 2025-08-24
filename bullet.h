@@ -50,6 +50,7 @@ struct Weapon {
 //=============================================================================
 struct BULLET {
     bool use;
+    bool isLoaded;
     XMFLOAT3 pos;
     XMFLOAT3 rot;
     float spd;

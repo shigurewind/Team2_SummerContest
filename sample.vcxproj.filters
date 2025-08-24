@@ -42,6 +42,7 @@
     <ClCompile Include="title.cpp" />
     <ClCompile Include="tree.cpp" />
     <ClCompile Include="object.cpp" />
+    <ClCompile Include="game1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bullet.h" />
@@ -373,5 +374,6 @@
     <ClInclude Include="title.h" />
     <ClInclude Include="tree.h" />
     <ClInclude Include="object.h" />
+    <ClInclude Include="game1.h" />
   </ItemGroup>
 </Project>

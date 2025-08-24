@@ -441,6 +441,7 @@
     <ClInclude Include="fade.h" />
     <ClInclude Include="FBXmodel.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="game1.h" />
     <ClInclude Include="imconfig.h" />
     <ClInclude Include="imgui.h" />
     <ClInclude Include="imgui_impl_dx11.h" />
@@ -485,6 +486,7 @@
     <ClCompile Include="fade.cpp" />
     <ClCompile Include="FBXmodel.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="game1.cpp" />
     <ClCompile Include="GameUI.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
