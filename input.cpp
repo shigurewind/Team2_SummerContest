@@ -472,6 +472,18 @@ void UninitPad(void)
 //------------------------------------------ 更新
 float GY, GX;
 
+//スティック
+static float leftStickX[GAMEPADMAX] = { 0 };
+static float leftStickY[GAMEPADMAX] = { 0 };
+static float rightStickX[GAMEPADMAX] = { 0 };
+static float rightStickY[GAMEPADMAX] = { 0 };
+
+//十字キー
+static DWORD dpadState[GAMEPADMAX] = { 0 };
+static DWORD dpadTrigger[GAMEPADMAX] = { 0 };
+
+
+
 void UpdatePad(void)
 {
 	HRESULT			result;
@@ -499,14 +511,28 @@ void UpdatePad(void)
 		}
 
 		// ３２の各ビットに意味を持たせ、ボタン押下に応じてビットをオンにする
-		//* y-axis (forward)
-		if ( dijs.lY < 0 )					padState[i] |= BUTTON_UP;
-		//* y-axis (backward)
-		if ( dijs.lY > 0 )					padState[i] |= BUTTON_DOWN;
-		//* x-axis (left)
-		if ( dijs.lX < 0 )					padState[i] |= BUTTON_LEFT;
-		//* x-axis (right)
-		if ( dijs.lX > 0 )					padState[i] |= BUTTON_RIGHT;
+		// 
+		DWORD lastDPadState = dpadState[i];
+		dpadState[i] = 0;
+
+		// スティックの値を取得
+		leftStickX[i] = (float)dijs.lX / 1000.0f;
+		leftStickY[i] = (float)dijs.lY / 1000.0f;
+
+		rightStickX[i] = (float)dijs.lRx / 1000.0f;
+		rightStickY[i] = (float)dijs.lRy / 1000.0f;
+
+		// 十字キー
+		if (dijs.rgdwPOV[0] != (DWORD)-1) {
+			DWORD pov = dijs.rgdwPOV[0];
+			if (pov >= 31500 || pov <= 4500) dpadState[i] |= BUTTON_UP;
+			if (pov >= 4500 && pov <= 13500) dpadState[i] |= BUTTON_RIGHT;
+			if (pov >= 13500 && pov <= 22500) dpadState[i] |= BUTTON_DOWN;
+			if (pov >= 22500 && pov <= 31500) dpadState[i] |= BUTTON_LEFT;
+		}
+		// Trigger設定
+		dpadTrigger[i] = ((lastDPadState ^ dpadState[i]) & dpadState[i]);
+
 		//* Ｘボタン
 		if (dijs.rgbButtons[rgbButtons_X] & 0x80)	padState[i] |= BUTTON_X;
 		//* Ａボタン
@@ -546,4 +572,54 @@ BOOL IsButtonTriggered(int padNo,DWORD button)
 	return (button & padTrigger[padNo]);
 }
 
+
+// スティックの値を取得
+float GetLeftStickX(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return 0.0f;
+	return leftStickX[padNo];
+}
+
+float GetLeftStickY(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return 0.0f;
+	return leftStickY[padNo];
+}
+
+float GetRightStickX(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return 0.0f;
+	return rightStickX[padNo];
+}
+
+float GetRightStickY(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return 0.0f;
+	return rightStickY[padNo];
+}
+
+// 十字キーの状態を取得
+BOOL IsDPadUpTriggered(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return FALSE;
+	return (dpadTrigger[padNo] & BUTTON_UP) ? TRUE : FALSE;
+}
+
+BOOL IsDPadDownTriggered(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return FALSE;
+	return (dpadTrigger[padNo] & BUTTON_DOWN) ? TRUE : FALSE;
+}
+
+BOOL IsDPadLeftTriggered(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return FALSE;
+	return (dpadTrigger[padNo] & BUTTON_LEFT) ? TRUE : FALSE;
+}
+
+BOOL IsDPadRightTriggered(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return FALSE;
+	return (dpadTrigger[padNo] & BUTTON_RIGHT) ? TRUE : FALSE;
+}
 

@@ -19,6 +19,7 @@
 #include "collision.h"
 #include "overlay2D.h"
 #include "enemy.h"
+#include "inputManager.h"
 
 //*****************************************************************************
 // マクロ定義	
@@ -253,7 +254,7 @@ void PLAYER::OnUpdate() {
 
 //ジャンプ
 void PLAYER::HandleJump() {
-	if (GetKeyboardTrigger(DIK_SPACE) && isGround) {
+	if (g_pInputManager->IsActionTriggered(ACTION_JUMP) && isGround) {
 		velocity.y = jumpPower;
 		isGround = false;
 	}

@@ -27,6 +27,7 @@
 #include "debugUI.h"
 
 #include "shaderManager.h"
+#include "inputManager.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -303,6 +304,9 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 		return E_FAIL;
 	}
 
+	//inputManagerの初期化
+	g_pInputManager = new InputManager();
+
 	// 最初のモードをセット
 	SetMode(g_Mode);	// ここはSetModeのままで！
 
@@ -334,6 +338,9 @@ void Uninit(void)
 
 	//入力の終了処理
 	UninitInput();
+
+	//inputManagerの終了処理
+	delete g_pInputManager;
 
 	UninitRenderer();
 }

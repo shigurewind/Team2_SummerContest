@@ -92,3 +92,14 @@ BOOL IsButtonPressed(int padNo,DWORD button);
 BOOL IsButtonTriggered(int padNo,DWORD button);
 
 
+float GetLeftStickX(int padNo = 0);		// 左スティックのX方向(-100～+100)
+float GetLeftStickY(int padNo = 0);
+
+float GetRightStickX(int padNo = 0);
+float GetRightStickY(int padNo = 0);
+
+
+BOOL IsDPadUpTriggered(int padNo = 0);
+BOOL IsDPadDownTriggered(int padNo = 0);
+BOOL IsDPadLeftTriggered(int padNo = 0);
+BOOL IsDPadRightTriggered(int padNo = 0);

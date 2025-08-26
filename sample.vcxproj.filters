@@ -43,6 +43,7 @@
     <ClCompile Include="tree.cpp" />
     <ClCompile Include="object.cpp" />
     <ClCompile Include="boundingBoxDebug.cpp" />
+    <ClCompile Include="inputManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bullet.h" />
@@ -375,5 +376,6 @@
     <ClInclude Include="tree.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="boundingBoxDebug.h" />
+    <ClInclude Include="inputManager.h" />
   </ItemGroup>
 </Project>
