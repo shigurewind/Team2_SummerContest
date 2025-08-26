@@ -10,6 +10,7 @@
 #include "debugproc.h"
 
 #include "player.h"
+#include "inputManager.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -42,8 +43,10 @@ static int				g_ViewPortType = TYPE_FULL_SCREEN;
 bool isFirstPersonMode = false; // 最初はマウス自由操作状態
 bool tabKeyWasPressed = false; // 前フレームのTabキー状態
 
-//マオスの感度調整
-float sensitivity = 0.002f;
+//感度調整
+float sensitivity = 0.002f;// マウスの感度
+float controllerSensitivity = 0.1f;// コントローラーの感度
+
 
 //=============================================================================
 // 初期化処理
@@ -87,7 +90,7 @@ void UpdateCamera(void)
 
 
 
-#ifdef _DEBUG
+
 	CheckTabToggle();
 
 
@@ -121,6 +124,30 @@ void UpdateCamera(void)
 		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y);
 
 
+		////コントローラーの右スティックでの視点移動
+		//if (g_pInputManager) {
+		//	float rightStickX = g_pInputManager->GetRightStickXValue();
+		//	float rightStickY = g_pInputManager->GetRightStickYValue();
+
+		//	// Deadzoneの適用
+		//	if (fabs(rightStickX) > 0.1f || fabs(rightStickY) > 0.1f) {
+		//		g_Camera.rot.y += rightStickX * controllerSensitivity;
+		//		g_Camera.rot.x -= rightStickY * controllerSensitivity;
+
+		//		// 回転制限
+		//		g_Camera.rot.x = max(min(g_Camera.rot.x, XM_PI / 2.0f), -XM_PI / 2.0f);
+
+		//		
+		//		// カメラ位置更新
+		//		g_Camera.pos = { GetPlayer()->GetPosition().x, GetPlayer()->GetPosition().y + 20.0f, GetPlayer()->GetPosition().z };
+		//		g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y);
+		//		g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
+		//		g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y);
+		//		
+		//		
+		//	}
+		//}
+
 
 	}
 	else
@@ -132,15 +159,40 @@ void UpdateCamera(void)
 
 	}
 
-	//// カメラを初期に戻す
-	//if (GetKeyboardPress(DIK_R))
-	//{
-	//	UninitCamera();
-	//	InitCamera();
-	//}
+	if (g_pInputManager) {
+		float rightStickX = g_pInputManager->GetRightStickXValue();
+		float rightStickY = g_pInputManager->GetRightStickYValue();
 
+#ifdef _DEBUG
+		// debug
+		PrintDebugProc("Right Stick X: %.3f, Y: %.3f\n", rightStickX, rightStickY);
 #endif
 
+		// 
+		if (fabs(rightStickX) > 0.2f || fabs(rightStickY) > 0.2f) {
+			g_Camera.rot.y += rightStickX * controllerSensitivity;
+			g_Camera.rot.x -= rightStickY * controllerSensitivity;
+
+			//
+			g_Camera.rot.x = max(min(g_Camera.rot.x, XM_PI / 2.0f), -XM_PI / 2.0f);
+
+			// 
+			if (isFirstPersonMode) {
+				//
+				g_Camera.pos = { GetPlayer()->GetPosition().x, GetPlayer()->GetPosition().y + 20.0f, GetPlayer()->GetPosition().z };
+				g_Camera.at.x = g_Camera.pos.x + sinf(g_Camera.rot.y);
+				g_Camera.at.y = g_Camera.pos.y + sinf(g_Camera.rot.x);
+				g_Camera.at.z = g_Camera.pos.z + cosf(g_Camera.rot.y);
+			}
+			else {
+				// 
+				g_Camera.at = GetPlayer()->GetPosition();
+				g_Camera.pos.x = g_Camera.at.x - sinf(g_Camera.rot.y) * cosf(g_Camera.rot.x) * g_Camera.len;
+				g_Camera.pos.y = g_Camera.at.y - sinf(g_Camera.rot.x) * g_Camera.len;
+				g_Camera.pos.z = g_Camera.at.z - cosf(g_Camera.rot.y) * cosf(g_Camera.rot.x) * g_Camera.len;
+			}
+		}
+	}
 
 
 

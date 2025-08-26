@@ -173,35 +173,7 @@ void UpdatePlayer(void)
 
 
 
-
-
-
-		//HP減るtest
-		if (GetKeyboardTrigger(DIK_H))
-		{
-			g_Player.HP = g_Player.HP - 1;
-		}
-
 	}
-
-
-
-#ifdef _DEBUG
-
-#endif
-
-
-
-
-
-
-
-
-
-	// 影もプレイヤーの位置に合わせる
-	XMFLOAT3 pos = g_Player.GetPosition();
-	pos.y -= (PLAYER_OFFSET_Y - 0.1f);
-	SetPositionShadow(g_Player.shadowIdx, pos);
 
 
 
@@ -270,36 +242,42 @@ void PLAYER::HandleInput()
 
 	// 移動処理
 	XMFLOAT3 move = {};
-	//bool isMoving = false;
+	XMFLOAT2 inputVector = {};
 
-	if (GetKeyboardPress(DIK_W)) {
-		move.x += sinf(cam->rot.y);
-		move.z += cosf(cam->rot.y);
-		//isMoving = true;
+	if (g_pInputManager->IsActionPressed(ACTION_MOVE_FORWARD)) {
+		inputVector.y += 1.0f;
 	}
-	if (GetKeyboardPress(DIK_S)) {
-		move.x -= sinf(cam->rot.y);
-		move.z -= cosf(cam->rot.y);
-		//isMoving = true;
+	if (g_pInputManager->IsActionPressed(ACTION_MOVE_BACKWARD)) {
+		inputVector.y -= 1.0f;
 	}
-	if (GetKeyboardPress(DIK_A)) {
-		move.x -= cosf(cam->rot.y);
-		move.z += sinf(cam->rot.y);
-		//isMoving = true;
+	if (g_pInputManager->IsActionPressed(ACTION_MOVE_LEFT)) {
+		inputVector.x -= 1.0f;
 	}
-	if (GetKeyboardPress(DIK_D)) {
-		move.x += cosf(cam->rot.y);
-		move.z -= sinf(cam->rot.y);
-		//isMoving = true;
+	if (g_pInputManager->IsActionPressed(ACTION_MOVE_RIGHT)) {
+		inputVector.x += 1.0f;
 	}
+
+	float stickX = g_pInputManager->GetLeftStickXValue();
+	float stickY = g_pInputManager->GetLeftStickYValue();
 	
+	if (fabs(stickX) > 0.1f || fabs(stickY) > 0.1f) {
+		inputVector.x = stickX;
+		inputVector.y = -stickY;
+	}
+
+	//カメラの向きに合わせて移動
+	if (inputVector.x != 0.0f || inputVector.y != 0.0f) {
+		move.x += sinf(cam->rot.y) * inputVector.y + cosf(cam->rot.y) * inputVector.x;
+		move.z += cosf(cam->rot.y) * inputVector.y - sinf(cam->rot.y) * inputVector.x;
+	}
+
 	velocity.x = move.x * speed;
 	velocity.z = move.z * speed;
 
 	
 
 	//近接攻撃
-	if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
+	if (g_pInputManager->IsActionTriggered(ACTION_MELEE) && meleeCooldown <= 0.0f)
 	{
 		meleeCooldown = meleeCDTime;
 		PlayMeleeAnimation();
@@ -470,7 +448,7 @@ void PLAYER::HandleShooting()
 {
 	// 弾発射処理
 	int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
-	if (IsMouseLeftTriggered() && currentAmmo > 0)
+	if (g_pInputManager->IsActionTriggered(ACTION_SHOOT) && currentAmmo > 0)
 	{
 		XMFLOAT3 pos = GetGunMuzzlePosition();
 		XMFLOAT3 rot = GetGunMuzzleRotation();

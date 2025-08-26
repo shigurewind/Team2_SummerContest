@@ -42,7 +42,7 @@ void ShowDebugUI()
 
 	}
 
-	//カメラの制御
+	//カメラ視点の制御
 	if (ImGui::CollapsingHeader(u8"カメラ制御"))
 	{
 		CAMERA* cam = GetCamera();
@@ -50,6 +50,7 @@ void ShowDebugUI()
 		ImGui::Checkbox(u8"第一人称視点 (Tabキーでも切替可)", &isFirstPersonMode);
 
 		ImGui::SliderFloat(u8"マウス感度", &sensitivity, 0.0001f, 0.005f, "%.4f");
+		ImGui::SliderFloat(u8"コントローラー感度", &controllerSensitivity, 0.01f, 0.3f, "%.3f");
 
 		ImGui::DragFloat3(u8"カメラ座標", (float*)&cam->pos, 0.5f);
 

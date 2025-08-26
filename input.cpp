@@ -434,6 +434,12 @@ HRESULT InitializePad(void)			// パッド初期化
 		diprg.diph.dwObj		= DIJOFS_Y;
 		pGamePad[i]->SetProperty(DIPROP_RANGE, &diprg.diph);
 
+		//右スティックの範囲を設定
+		diprg.diph.dwObj = DIJOFS_Z;
+		pGamePad[i]->SetProperty(DIPROP_RANGE, &diprg.diph);
+		diprg.diph.dwObj = DIJOFS_RZ;
+		pGamePad[i]->SetProperty(DIPROP_RANGE, &diprg.diph);
+
 		// 各軸ごとに、無効のゾーン値を設定する。
 		// 無効ゾーンとは、中央からの微少なジョイスティックの動きを無視する範囲のこと。
 		// 指定する値は、10000に対する相対値(2000なら20パーセント)。
@@ -447,6 +453,12 @@ HRESULT InitializePad(void)			// パッド初期化
 		pGamePad[i]->SetProperty( DIPROP_DEADZONE, &dipdw.diph);
 		//Y軸の無効ゾーンを設定
 		dipdw.diph.dwObj		= DIJOFS_Y;
+		pGamePad[i]->SetProperty(DIPROP_DEADZONE, &dipdw.diph);
+
+		//右スティックの無効ゾーンを設定
+		dipdw.diph.dwObj = DIJOFS_Z;
+		pGamePad[i]->SetProperty(DIPROP_DEADZONE, &dipdw.diph);
+		dipdw.diph.dwObj = DIJOFS_RZ;
 		pGamePad[i]->SetProperty(DIPROP_DEADZONE, &dipdw.diph);
 			
 		//ジョイスティック入力制御開始
@@ -519,8 +531,14 @@ void UpdatePad(void)
 		leftStickX[i] = (float)dijs.lX / 1000.0f;
 		leftStickY[i] = (float)dijs.lY / 1000.0f;
 
-		rightStickX[i] = (float)dijs.lRx / 1000.0f;
-		rightStickY[i] = (float)dijs.lRy / 1000.0f;
+		rightStickX[i] = (float)dijs.lZ / 1000.0f;
+		rightStickY[i] = (float)dijs.lRz / 1000.0f;
+
+
+#ifdef _DEBUG
+		PrintDebugProc("lRx: %d, lRy: %d, lZ: %d, lRz: %d\n",
+			dijs.lRx, dijs.lRy, dijs.lZ, dijs.lRz);
+#endif
 
 		// 十字キー
 		if (dijs.rgdwPOV[0] != (DWORD)-1) {
@@ -589,13 +607,23 @@ float GetLeftStickY(int padNo)
 float GetRightStickX(int padNo)
 {
 	if (padNo >= GAMEPADMAX) return 0.0f;
-	return rightStickX[padNo];
+	float value = rightStickX[padNo];
+
+	// dead zone
+	if (fabs(value) < 0.2f) return 0.0f;
+
+	return value;
 }
 
 float GetRightStickY(int padNo)
 {
 	if (padNo >= GAMEPADMAX) return 0.0f;
-	return rightStickY[padNo];
+	float value = rightStickY[padNo];
+
+	// dead zone
+	if (fabs(value) < 0.2f) return 0.0f;
+
+	return value;
 }
 
 // 十字キーの状態を取得

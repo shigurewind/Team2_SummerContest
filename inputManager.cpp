@@ -22,7 +22,7 @@ void InputManager::InitializeDefaultBindings()
     }
 
 	// Default
-    // 移動
+    // 移動---------------------------------------------------------------
     BindAction(ACTION_MOVE_FORWARD, InputBinding(INPUTDEVICE_KEYBOARD, DIK_W));
     BindAction(ACTION_MOVE_FORWARD, InputBinding(INPUTDEVICE_LEFT_STICK, 1));
 
@@ -35,41 +35,46 @@ void InputManager::InitializeDefaultBindings()
     BindAction(ACTION_MOVE_RIGHT, InputBinding(INPUTDEVICE_KEYBOARD, DIK_D));
     BindAction(ACTION_MOVE_RIGHT, InputBinding(INPUTDEVICE_LEFT_STICK, 3));
 
+    //ジャンプ
     BindAction(ACTION_JUMP, InputBinding(INPUTDEVICE_KEYBOARD, DIK_SPACE));
     BindAction(ACTION_JUMP, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_A, 0));
 
-	// 攻撃
+	// 攻撃---------------------------------------------------------------
+    //射撃
     BindAction(ACTION_SHOOT, InputBinding(INPUTDEVICE_MOUSE, 0, 0));
     BindAction(ACTION_SHOOT, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_R2, 0));
-
+	//近接攻撃
     BindAction(ACTION_MELEE, InputBinding(INPUTDEVICE_MOUSE, 1, 0));
     BindAction(ACTION_MELEE, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_X, 0));
 
 
-    // 武器
+    // 武器---------------------------------------------------------------
+	// 武器変更
     BindAction(ACTION_WEAPON_CHANGE, InputBinding(INPUTDEVICE_KEYBOARD, DIK_1));
     BindAction(ACTION_WEAPON_CHANGE, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_L, 0));
-
+	// 弾薬変更
     BindAction(ACTION_BULLET_CHANGE, InputBinding(INPUTDEVICE_KEYBOARD, DIK_2));
     BindAction(ACTION_BULLET_CHANGE, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_R, 0));
 
-    // アイテム
+    // アイテム---------------------------------------------------------------
+	// アイテム使用
     BindAction(ACTION_USE_ITEM, InputBinding(INPUTDEVICE_KEYBOARD, DIK_F));
     BindAction(ACTION_USE_ITEM, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_Y, 0));
-
+	// 先のアイテム
     BindAction(ACTION_LAST_ITEM, InputBinding(INPUTDEVICE_KEYBOARD, DIK_Q));
     BindAction(ACTION_LAST_ITEM, InputBinding(INPUTDEVICE_DPAD, BUTTON_LEFT, 0));
-
+	// 次のアイテム
     BindAction(ACTION_NEXT_ITEM, InputBinding(INPUTDEVICE_KEYBOARD, DIK_E));
     BindAction(ACTION_NEXT_ITEM, InputBinding(INPUTDEVICE_DPAD, BUTTON_RIGHT, 0));
 
-    // UI
+    // UI---------------------------------------------------------------
+	// メニュー
     BindAction(ACTION_MENU, InputBinding(INPUTDEVICE_KEYBOARD, DIK_ESCAPE));
     BindAction(ACTION_MENU, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_SELECT, 0));
-
+	// 決定
     BindAction(ACTION_CONFIRM, InputBinding(INPUTDEVICE_KEYBOARD, DIK_RETURN));
     BindAction(ACTION_CONFIRM, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_A, 0));
-
+	// キャンセル
     BindAction(ACTION_CANCEL, InputBinding(INPUTDEVICE_KEYBOARD, DIK_ESCAPE));
     BindAction(ACTION_CANCEL, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_B, 0));
     
