@@ -61,6 +61,8 @@ public:
 
 	void SetBasePosY(float y) { basePosY = y; }
 
+	XMFLOAT3 GetRenderPosition() const { return renderPos; }
+
 	void HandleGroundCheck();
 
 private:
@@ -73,6 +75,7 @@ private:
 	float timeOffset;
 
 	bool hasLanded;// ’…’n‚µ‚½‚©‚Ìƒtƒ‰ƒO
+	XMFLOAT3 renderPos;
 };
 
 

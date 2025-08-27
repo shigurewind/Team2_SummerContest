@@ -57,7 +57,8 @@ ITEM_OBJ::ITEM_OBJ()
 	use(false),
 	basePosY(0.0f),
 	timeOffset(0.0f),
-	hasLanded(false)
+	hasLanded(false),
+	renderPos(XMFLOAT3(0.0f, 0.0f, 0.0f))
 {
 	material.Diffuse = XMFLOAT4(1, 1, 1, 1);
 	EnableGravity(true);
@@ -76,6 +77,8 @@ void ITEM_OBJ::Update()
 	Object::Update(); // 重力
 	HandleGroundCheck(); // 地面判定
 
+	renderPos = pos;
+
 	if (isGround && !hasLanded) {
 		// 着地、初期位置を設定
 		basePosY = pos.y;
@@ -85,7 +88,7 @@ void ITEM_OBJ::Update()
 	// 浮遊アニメーション
 	if (hasLanded && isGround) {
 		float t = g_ItemGlobalTime + timeOffset;
-		pos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
+		renderPos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
 	}
 
 
@@ -284,7 +287,7 @@ void DrawItem()
 			mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
 			// 移動を反映
-			XMFLOAT3 pos = g_aItem[i].GetPosition();
+			XMFLOAT3 pos = g_aItem[i].GetRenderPosition();
 			mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
 			mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
