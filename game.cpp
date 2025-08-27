@@ -81,7 +81,7 @@ HRESULT InitGame(void)
 	InitBullet();
 
 	// スコアの初期化
-	InitScore();
+	InitGameUI();
 
 	InitOverlay2D();
 	// パーティクルの初期化
@@ -111,7 +111,7 @@ void UninitGame(void)
 	UninitParticle();
 
 	// スコアの終了処理
-	UninitScore();
+	UnInitGameUI();
 	UninitOverlay2D();
 	// 弾の終了処理
 	UninitBullet();
@@ -195,7 +195,7 @@ void UpdateGame(void)
 	CheckHit();
 	UpdateOverlay2D();
 	// スコアの更新処理
-	UpdateScore();
+	UpdateGameUI();
 
 	UpdateFBXTestModel();
 
@@ -252,7 +252,7 @@ void DrawGame0(void)
 	SetLightEnable(FALSE);
 
 	// スコアの描画処理
-	DrawScore();
+	DrawGameUI();
 	DrawOverlay2D();
 	
 

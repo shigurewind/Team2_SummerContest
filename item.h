@@ -128,3 +128,5 @@ void ApplyConsumableItemEffect(int itemID);
 void UseCurrentItem();
 void SwitchToPreviousItem();
 void SwitchToNextItem();
+
+ID3D11ShaderResourceView* GetItemTexture(int itemID);

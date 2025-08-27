@@ -586,6 +586,14 @@ void SwitchToNextItem() {
 
 
 
+// アイテムIDに対応するテクスチャを取得
+ID3D11ShaderResourceView* GetItemTexture(int itemID) {
+	if (itemID >= 0 && itemID < ITEM_ID_MAX) {
+		return g_ItemTextures[itemID];
+	}
+	return nullptr;  // 無効なIDの場合はnullptrを返す
+}
+
 
 
 
