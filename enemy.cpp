@@ -459,7 +459,7 @@ void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType)
 	auto dropItemAtOffset = [&](int itemId) {
 		XMFLOAT3 dropPos = pos;
 		dropPos.x += getRandomOffsetX();
-		SetItem(dropPos, itemId);
+		SpawnItem(dropPos, itemId);
 		};
 
 	float random = (float)rand() / RAND_MAX;

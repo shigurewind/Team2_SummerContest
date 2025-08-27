@@ -10,6 +10,7 @@
 #include "sprite.h"
 #include "player.h"
 #include "bullet.h"
+#include "item.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -37,6 +38,7 @@ static char* g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/revolver.png",
 	"data/TEXTURE/shotgun.png",
 	"data/2Dpicture/enemy/enemyWeb.png",
+	"data/2Dpicture/UI/item_slot.png",
 	"data/TEXTURE/rocket_launcher.png",
 
 
@@ -62,7 +64,7 @@ static float g_WebEffectTimer = 0.0f;
 //=============================================================================
 // 初期化処理
 //=============================================================================
-HRESULT InitScore(void)
+HRESULT InitGameUI(void)
 {
 	ID3D11Device* pDevice = GetDevice();
 
@@ -105,7 +107,7 @@ HRESULT InitScore(void)
 //=============================================================================
 // 終了処理
 //=============================================================================
-void UninitScore(void)
+void UnInitGameUI(void)
 {
 	if (g_Load == FALSE) return;
 
@@ -130,7 +132,7 @@ void UninitScore(void)
 //=============================================================================
 // 更新処理
 //=============================================================================
-void UpdateScore(void)
+void UpdateGameUI(void)
 {
 	if (g_WebEffectTimer > 0.0f)
 	{
@@ -150,7 +152,7 @@ void UpdateScore(void)
 //=============================================================================
 // 描画処理
 //=============================================================================
-void DrawScore(void)
+void DrawGameUI(void)
 {
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
@@ -177,30 +179,10 @@ void DrawScore(void)
 	PLAYER* player = GetPlayer();
 
 	//ケージのHPバー
-	{// テクスチャ設定
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
-		//ゲージの位置やテクスチャー座標を反映
-		float pw = 280;		// ゲージの表示幅
-		pw = pw * ((float)player->HP / player->HP_MAX);
-		float x = ((float)player->HP / player->HP_MAX);
-
-		// １枚のポリゴンの頂点とテクスチャ座標を設定
-		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, x, 1.0f);
-
-		// ポリゴン描画
-		GetDeviceContext()->Draw(4, 0);
-	}
+	DrawHPBar();
 
 	//HPのUI
-	{// テクスチャ設定
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
-
-		// １枚のポリゴンの頂点とテクスチャ座標を設定
-		SetSprite(g_VertexBuffer, 130.0f, 30.0f, 400, 180, 0.0f, 0.0f, 1.0f, 1.0f);
-
-		// ポリゴン描画
-		GetDeviceContext()->Draw(4, 0);
-	}
+	DrawHP();
 
 	//クモの攻撃のエフェクト
 	if (g_WebEffectTimer > 0.0f)
@@ -224,6 +206,37 @@ void DrawScore(void)
 	//弾数表示の呼び出し
 	DrawAmmoUI();
 
+	//選択中のアイテム表示
+	DrawItemSlot();
+
+
+}
+
+
+void DrawHPBar()
+{
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
+	//ゲージの位置やテクスチャー座標を反映
+	float pw = 280;		// ゲージの表示幅
+	pw = pw * ((float)GetPlayer()->HP / GetPlayer()->HP_MAX);
+	float x = ((float)GetPlayer()->HP / GetPlayer()->HP_MAX);
+
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, x, 1.0f);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+}
+
+void DrawHP()
+{
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
+
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSprite(g_VertexBuffer, 130.0f, 30.0f, 400, 180, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
 }
 
 //========================================================
@@ -303,25 +316,6 @@ void DrawAmmoUI(void)
 }
 
 
-//=============================================================================
-// スコアを加算する
-// 引数:add :追加する点数。マイナスも可能
-//=============================================================================
-void AddScore(int add)
-{
-	g_Score += add;
-	if (g_Score > SCORE_MAX)
-	{
-		g_Score = SCORE_MAX;
-	}
-
-}
-
-
-int GetScore(void)
-{
-	return g_Score;
-}
 
 //=============================================================================
 // 蜘蛛のネット効果（画面に表示）を一定時間見せる関数
@@ -329,4 +323,116 @@ int GetScore(void)
 void ShowWebEffect(float time)
 {
 	g_WebEffectTimer = time; // time 秒間、画面に蜘蛛のネットを表示
+}
+
+
+// 選択中のアイテム描画
+void DrawItemSlot(void)
+{
+	const float slotX = 80.0f;   // 位置
+	const float slotY = 620.0f;
+	const float slotSize = 64.0f; // サイズ
+
+	// アイテムスロットの枠を描画
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[6]); // item_slot
+
+	MATERIAL slotMaterial;
+	ZeroMemory(&slotMaterial, sizeof(slotMaterial));
+	slotMaterial.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.8f); 
+	SetMaterial(slotMaterial);
+
+	SetSprite(g_VertexBuffer, slotX, slotY, slotSize, slotSize, 0.0f, 0.0f, 1.0f, 1.0f);
+	GetDeviceContext()->Draw(4, 0);
+
+	// 今のアイテムを取得して描画
+	Inventory* inventory = GetPlayerInventory();
+	const std::vector<Item>& consumables = inventory->GetConsumables();
+
+	if (!consumables.empty()) {
+		PLAYER* player = GetPlayer();
+		int currentIndex = player->currentConsumableIndex;
+
+		// 有効確認
+		if (currentIndex >= 0 && currentIndex < (int)consumables.size()) {
+			const Item& currentItem = consumables[currentIndex];
+
+			// アイテムアイコンを描画
+			ID3D11ShaderResourceView* itemTexture = GetItemTexture(currentItem.GetID());
+			if (itemTexture) {
+				
+				MATERIAL itemMaterial;
+				ZeroMemory(&itemMaterial, sizeof(itemMaterial));
+				itemMaterial.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+				SetMaterial(itemMaterial);
+
+				// アイテムアイコンを枠内に収めて描画
+				const float iconSize = slotSize * 0.8f;
+				const float iconX = slotX + (slotSize - iconSize) * 0.5f;
+				const float iconY = slotY + (slotSize - iconSize) * 0.5f;
+
+				GetDeviceContext()->PSSetShaderResources(0, 1, &itemTexture);
+				SetSprite(g_VertexBuffer, iconX, iconY, iconSize, iconSize, 0.0f, 0.0f, 1.0f, 1.0f);
+				GetDeviceContext()->Draw(4, 0);
+			}
+
+			// 数を表示
+			if (currentItem.GetCount() > 1) { 
+				MATERIAL countMaterial;
+				ZeroMemory(&countMaterial, sizeof(countMaterial));
+				countMaterial.Diffuse = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f); // 黄色
+				SetMaterial(countMaterial);
+
+				GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[0]); 
+
+				int count = currentItem.GetCount();
+				if (count > 99) count = 99; // MAX99まで表示
+
+				 
+				if (count >= 10) {
+					
+					int tensDigit = count / 10;
+					float u1 = (tensDigit % 10) / 10.0f;
+					float digitSize = 10.0f;
+
+					SetSpriteLeftTop(g_VertexBuffer,
+						slotX + slotSize - digitSize * 2 - 4, 
+						slotY + slotSize - digitSize - 4,
+						digitSize, digitSize,
+						u1, 0.0f, 0.1f, 1.0f);
+					GetDeviceContext()->Draw(4, 0);
+
+					
+					int onesDigit = count % 10;
+					float u2 = (onesDigit % 10) / 10.0f;
+
+					SetSpriteLeftTop(g_VertexBuffer,
+						slotX + slotSize - digitSize - 4,
+						slotY + slotSize - digitSize - 4,
+						digitSize, digitSize,
+						u2, 0.0f, 0.1f, 1.0f);
+					GetDeviceContext()->Draw(4, 0);
+				}
+				else {
+					
+					float u = (count % 10) / 10.0f;
+					float digitSize = 14.0f;
+
+					SetSpriteLeftTop(g_VertexBuffer,
+						slotX + slotSize - digitSize - 4,
+						slotY + slotSize - digitSize - 4,
+						digitSize, digitSize,
+						u, 0.0f, 0.1f, 1.0f);
+					GetDeviceContext()->Draw(4, 0);
+				}
+			}
+			
+			
+		}
+	}
+
+	
+	MATERIAL defaultMaterial;
+	ZeroMemory(&defaultMaterial, sizeof(defaultMaterial));
+	defaultMaterial.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	SetMaterial(defaultMaterial);
 }

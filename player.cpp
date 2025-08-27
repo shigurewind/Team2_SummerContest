@@ -119,6 +119,8 @@ void PLAYER::Init()
 	currentWeapon = WEAPON_REVOLVER;
 	currentBullet = BULLET_NORMAL;
 
+	currentConsumableIndex = 0;
+
 	load = TRUE;
 	LoadModel(MODEL_PLAYER, &model);
 
@@ -269,6 +271,20 @@ void PLAYER::HandleInput()
 			enemy->SetUsed(false);
 		}
 	}
+
+	//Item関連
+	if (g_pInputManager->IsActionTriggered(ACTION_USE_ITEM)) {
+		UseCurrentItem();  // 今のアイテムを使用
+	}
+
+	if (g_pInputManager->IsActionTriggered(ACTION_LAST_ITEM)) {
+		SwitchToPreviousItem();  // 先のアイテム
+	}
+
+	if (g_pInputManager->IsActionTriggered(ACTION_NEXT_ITEM)) {
+		SwitchToNextItem();  // 次のアイテム
+	}
+
 
 	//スポットライトの切り替え
 	if (g_pInputManager->IsActionTriggered(ACTION_LIGHT_SWITCH))
@@ -632,3 +648,14 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 	}
 	return false;
 }
+
+
+//プレイヤーのインベントリーを取得
+Inventory* GetPlayerInventory(void) {
+	PLAYER* player = GetPlayer();
+	return &(player->inventory);
+}
+
+
+
+

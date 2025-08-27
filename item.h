@@ -10,17 +10,7 @@ enum class ItemCategory {
 	InstantEffect,		//即時効果のアイテム
 };
 
-//struct Item {
-//	int id;                 //唯一無二のID
-//	std::string name;       //名前
-//	int count;              //所持数(このアイテムの数、インベントリーの中のではない)?
-//	ItemCategory category;  //アイテムのカテゴリ
-//
-//
-//	Item(int id = 0, const std::string& name = "unknown", int count = 1, ItemCategory category = ItemCategory::Consumable)
-//		: id(id), name(name), count(count), category(category) {
-//	}
-//};
+
 
 class Item
 {
@@ -43,21 +33,7 @@ private:
 	ItemCategory category;
 };
 
-//typedef struct {
-//	XMFLOAT3	pos;        // 位置
-//	XMFLOAT3	scl;        // スケール
-//	MATERIAL	material;   // マテリアル（色）
-//
-//	float		fWidth;			// 幅
-//	float		fHeight;		// 高さ
-//
-//
-//	Item		item;
-//	BOOL		use;        // 使用中かどうか
-//
-//	float		timeOffset;
-//	float		basePosY;
-//} ITEM_OBJ;
+
 
 class ITEM_OBJ : public Object
 {
@@ -85,6 +61,8 @@ public:
 
 	void SetBasePosY(float y) { basePosY = y; }
 
+	XMFLOAT3 GetRenderPosition() const { return renderPos; }
+
 	void HandleGroundCheck();
 
 private:
@@ -95,10 +73,13 @@ private:
 	bool use;
 	float basePosY;
 	float timeOffset;
+
+	bool hasLanded;// 着地したかのフラグ
+	XMFLOAT3 renderPos;
 };
 
 
-// アイテムIDの定義
+// 全てのアイテムIDの定義
 enum ItemID
 {
 	//弾の種類を決めるパーツ
@@ -109,6 +90,7 @@ enum ItemID
 
 	//消耗品
 	ITEM_APPLE,
+	ITEM_SPEED_UP,
 
 	//回復品
 	ITEM_SAN,
@@ -118,7 +100,7 @@ enum ItemID
 };
 
 
-int SetItem(XMFLOAT3 pos, int itemID);
+int SpawnItem(XMFLOAT3 pos, int itemID);
 
 HRESULT InitItem();
 void UninitItem();
@@ -128,7 +110,7 @@ void DrawItem();
 void InitItemTextures();
 
 Item CreateItemFromID(int id);
-int SetItem(XMFLOAT3 pos, int itemID);
+
 
 void SaveItemData(const std::string& filename);
 void LoadItemData(const std::string& filename);
@@ -137,3 +119,14 @@ void LoadItemData(const std::string& filename);
 ITEM_OBJ* GetItemOBJ();
 bool CheckItemGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);
 
+
+//InstantEffectアイテムの効果を適用関数
+void ApplyInstantItemEffect(int itemID);
+
+//Consumableアイテムの効果を適用関数
+void ApplyConsumableItemEffect(int itemID);
+void UseCurrentItem();
+void SwitchToPreviousItem();
+void SwitchToNextItem();
+
+ID3D11ShaderResourceView* GetItemTexture(int itemID);
