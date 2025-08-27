@@ -250,65 +250,39 @@ void DrawAmmoUI(void)
 		break;
 	}
 
-	// === 武器アイコン表示 ===
-	const float weaponIconX = 1025.0f;  //表示位置
+	// === 武器アイコン表示（現状維持） ===
+	const float weaponIconX = 1025.0f;
 	const float weaponIconY = 610.0f;
-
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[weaponTexNo]);
-
-	SetSprite(g_VertexBuffer,
-		weaponIconX, weaponIconY,
-		90, 60,  // サイズ
-		0.0f, 0.0f, 1.0f, 1.0f
-	);
+	SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 90, 60, 0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
-	// === 弾数表示 === 
-	int clipSize = weapon->clipSize;
+	// === 弾数表示：総弾数のみ ===
+	int currentAmmo = (GetCurrentBulletType() == BULLET_NORMAL)
+		? player->ammoNormal
+		: player->ammoFire;
 
-	int ammoInClip = 0;
-	int ammoSpare = 0;
-
-	if (GetCurrentBulletType() == BULLET_NORMAL) {
-		ammoInClip = Min2(player->ammoNormal, clipSize);
-		ammoSpare = player->maxAmmoNormal;
-	}
-	else {
-		ammoInClip = Min2(player->ammoFire, clipSize);
-		ammoSpare = player->maxAmmoFire;
-	}
-
-	// マテリアル設定
-	MATERIAL material;
-	ZeroMemory(&material, sizeof(material));
-
+	// 弾種の色（既存のまま）
+	MATERIAL material = {};
 	if (GetCurrentBulletType() == BULLET_FIRE) {
-		material.Diffuse = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);  // ?? 赤
+		material.Diffuse = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);  // 赤
 	}
 	else {
-		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // ? 白（ノーマル弾）
+		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // 白
 	}
-
 	SetMaterial(material);
 
-	// 数字スプライト設定（0?9が1列に並んでいる）
+	// 数字だけ描画（“/”やクリップは廃止）
 	const float digitWidth = 16.0f;
 	const float digitHeight = 32.0f;
-
-	const float baseX = 1000.0f;  // 表示位置（右下に調整）
+	const float baseX = 1020.0f;
 	const float baseY = 650.0f;
 
 	char text[16];
-	sprintf(text, "%d/%d", ammoInClip, ammoSpare);
+	sprintf(text, "%d", currentAmmo);
 
-	// 数字を1文字ずつ描画
 	for (int i = 0; text[i] != '\0'; ++i) {
-		char c = text[i];
-		if (c == '/') {
-			continue;  // スラッシュは今は表示しない（必要なら別途テクスチャ用意）
-		}
-
-		int n = c - '0';
+		int n = text[i] - '0';
 		if (n < 0 || n > 9) continue;
 
 		float u = (n % 10) / 10.0f;
@@ -323,7 +297,7 @@ void DrawAmmoUI(void)
 			u, v, uw, vh
 		);
 
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[0]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[0]); // number16x32.png
 		GetDeviceContext()->Draw(4, 0);
 	}
 }

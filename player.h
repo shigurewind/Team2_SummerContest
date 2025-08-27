@@ -32,7 +32,7 @@ public:
 	void HandleGroundCheck();//地面チェック
 
 	void HandleShooting();
-	void HandleReload();
+	//void HandleReload();
 	void HandleJump();
 
 	void EventCheck();

@@ -106,10 +106,10 @@ void PLAYER::Init()
 	SetMaxFallSpeed(6.0f);
 	jumpPower = 8.0f;
 
-	ammoNormal = 0;
-	maxAmmoNormal = 30;
-	ammoFire = 0;
-	maxAmmoFire = 20;
+	ammoNormal = 50;
+	maxAmmoNormal = 0;
+	ammoFire = 30;
+	maxAmmoFire = 0;
 
 	HP = HP_MAX = 5;
 	alive = true;
@@ -202,7 +202,7 @@ void UpdatePlayer(void)
 	// デバッグ表示
 	//PrintDebugProc("Player X:%f Y:%f Z:%f \n\n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
 
-	PrintDebugProc("Rキーでリロード\n"
+	PrintDebugProc(
 		"1キーで武器切り替え\n"
 		"2キーで弾切り替え");
 #endif
@@ -219,7 +219,7 @@ void PLAYER::OnUpdate() {
 	HandleGroundCheck();    // 地面接地判定
 
 	HandleShooting();       // 弾発射
-	HandleReload();         // Rでリロード
+	//HandleReload();         // Rでリロード
 
 	EventCheck();          // イベントチェック
 }
@@ -463,62 +463,76 @@ void PLAYER::EventCheck()
 
 void PLAYER::HandleShooting()
 {
-	// 弾発射処理
+	// 現在の弾種の“総弾数”ポインタを取得
 	int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
-	if (IsMouseLeftTriggered() && *currentAmmo > 0)
+
+	// 武器ごとの消費数
+	int requiredCost = 1;
+	switch (currentWeapon) {
+	case WEAPON_REVOLVER:         requiredCost = 1; break;
+	case WEAPON_SHOTGUN:          requiredCost = 3; break;
+	case WEAPON_ROCKET_LAUNCHER:  requiredCost = 5; break;
+	}
+
+	// クリックトリガ & 弾が足りる場合のみ発射
+	if (IsMouseLeftTriggered() && *currentAmmo >= requiredCost)
 	{
 		XMFLOAT3 pos = GetGunMuzzlePosition();
 		XMFLOAT3 rot = GetGunMuzzleRotation();
+
 		if (currentWeapon == WEAPON_REVOLVER)
 		{
 			SetRevolverBullet(currentBullet, pos, rot);
 		}
 		else if (currentWeapon == WEAPON_SHOTGUN)
 		{
-			SetShotgunBullet(currentBullet, pos, rot);
+			SetShotgunBullet(currentBullet, pos, rot); // ばら撒きは既存のまま
 		}
 		else if (currentWeapon == WEAPON_ROCKET_LAUNCHER)
 		{
 			SetRocketLauncherBullet(currentBullet, pos, rot);
 		}
-		(*currentAmmo)--;
+
+		// 武器ごとのコストを消費
+		*currentAmmo -= requiredCost;
+		if (*currentAmmo < 0) *currentAmmo = 0; // 念のため
 	}
 }
 
 
-void PLAYER::HandleReload()
-{
-	// Rキーでリロード処理
-	if (GetKeyboardTrigger(DIK_R))
-	{
-		Weapon* weapon = nullptr;
-		switch (currentWeapon)
-		{
-		case WEAPON_REVOLVER:
-			weapon = GetRevolver();
-			break;
-		case WEAPON_SHOTGUN:
-			weapon = GetShotgun();
-			break;
-		case WEAPON_ROCKET_LAUNCHER:
-			weapon = GetRocket_Launcher();
-			break;
-		}
-
-		int clipSize = weapon->clipSize;
-
-		int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
-		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
-
-		if (*ammo < clipSize && *maxAmmo > 0)
-		{
-			int need = clipSize - *ammo;
-			int reload = Min(need, *maxAmmo);
-			*ammo += reload;
-			*maxAmmo -= reload;
-		}
-	}
-}
+//void PLAYER::HandleReload()
+//{
+//	// Rキーでリロード処理
+//	if (GetKeyboardTrigger(DIK_R))
+//	{
+//		Weapon* weapon = nullptr;
+//		switch (currentWeapon)
+//		{
+//		case WEAPON_REVOLVER:
+//			weapon = GetRevolver();
+//			break;
+//		case WEAPON_SHOTGUN:
+//			weapon = GetShotgun();
+//			break;
+//		case WEAPON_ROCKET_LAUNCHER:
+//			weapon = GetRocket_Launcher();
+//			break;
+//		}
+//
+//		int clipSize = weapon->clipSize;
+//
+//		int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
+//		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
+//
+//		if (*ammo < clipSize && *maxAmmo > 0)
+//		{
+//			int need = clipSize - *ammo;
+//			int reload = Min(need, *maxAmmo);
+//			*ammo += reload;
+//			*maxAmmo -= reload;
+//		}
+//	}
+//}
 
 
 XMFLOAT3 PLAYER::GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector, float halfSize)
