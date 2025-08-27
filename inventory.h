@@ -22,6 +22,7 @@ public:
 	Inventory(int ammoCap = 10, int fireTypeCap = 10, int conCap = 20);
 
 	bool AddItem(const Item& item);
+	bool UseItem(int itemId, ItemCategory category, int useCount = 1);
 	bool RemoveItem(int itemId, ItemCategory category);
 
 	const std::vector<Item>& GetAmmoParts() const;

@@ -56,9 +56,11 @@ ITEM_OBJ::ITEM_OBJ()
 	height(ITEM_HEIGHT),
 	use(false),
 	basePosY(0.0f),
-	timeOffset(0.0f)
+	timeOffset(0.0f),
+	hasLanded(false)
 {
 	material.Diffuse = XMFLOAT4(1, 1, 1, 1);
+	EnableGravity(true);
 }
 
 void ITEM_OBJ::SetItem(const Item& item_)
@@ -71,27 +73,42 @@ void ITEM_OBJ::Update()
 {
 	if (!use) return;
 
-	float t = g_ItemGlobalTime + timeOffset;
-	pos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
+	Object::Update(); // 重力
+	HandleGroundCheck(); // 地面判定
+
+	if (isGround && !hasLanded) {
+		// 着地、初期位置を設定
+		basePosY = pos.y;
+		hasLanded = true;
+	}
+
+	// 浮遊アニメーション
+	if (hasLanded && isGround) {
+		float t = g_ItemGlobalTime + timeOffset;
+		pos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
+	}
 
 
-	// Collision with player
+	// 当たり判定
 	if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
+		
+		Inventory* playerInventory = GetPlayerInventory();
+
 		switch (item.GetCategory())
 		{
 		case ItemCategory::WeaponPart_Ammo:
-			//インベントリーに入れる
-			break;
 		case ItemCategory::WeaponPart_FireType:
-			//インベントリーに入れる
-			break;
 		case ItemCategory::Consumable:
 			//インベントリーに入れる
+			if (playerInventory->AddItem(item)) {
+				
+
+				use = false;  // アイテムを消す
+			}
 			break;
 		case ItemCategory::InstantEffect:
 			//相応の効果
-			//test
-			GetPlayer()->HP += 1.0f;
+			ApplyInstantItemEffect(item.GetID());
 			use = false;
 			break;
 		default:
@@ -125,68 +142,7 @@ void ITEM_OBJ::HandleGroundCheck()
 	}
 }
 
-//void ITEM_OBJ::Draw()
-//{
-//	if (!use) return;
-//
-//	CAMERA* cam = GetCamera();
-//
-//	XMMATRIX mtxWorld = XMMatrixIdentity();
-//	XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
-//	XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
-//	XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
-//
-//	// Billboarding
-//	mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
-//	mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
-//	mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
-//	mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
-//	mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
-//	mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
-//	mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
-//	mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
-//	mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
-//
-//	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
-//	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
-//
-//	SetWorldMatrix(&mtxWorld);
-//	SetMaterial(material);
-//
-//	int texID = item.GetID();
-//	if (g_ItemTextures[texID]) {
-//		GetDeviceContext()->PSSetShaderResources(0, 1, &g_ItemTextures[texID]);
-//		GetDeviceContext()->Draw(4, 0);
-//	}
-//}
 
-//int SetItem(XMFLOAT3 pos, int itemID)
-//{
-//	for (int i = 0; i < MAX_ITEM; i++)
-//	{
-//		if (!g_aItem[i].use)
-//		{
-//			g_aItem[i].pos = pos;
-//			g_aItem[i].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
-//			g_aItem[i].item = CreateItemFromID(itemID);
-//			g_aItem[i].material.Diffuse = XMFLOAT4(1, 1, 1, 1);
-//			g_aItem[i].use = TRUE;
-//
-//			g_aItem[i].timeOffset = static_cast<float>((rand() % 1000) / 1000.0f * XM_2PI);
-//			g_aItem[i].basePosY = pos.y;
-//			return i;
-//		}
-//	}
-//	return -1;
-//}
-
-//void InitItem()
-//{
-//	for (int i = 0; i < MAX_ITEM; ++i)
-//		g_aItem[i].IsUsed();
-//
-//	g_ItemGlobalTime = 0.0f;
-//}
 
 void UninitItem()
 {
@@ -213,23 +169,11 @@ void UpdateItem()
 		g_aItem[i].Update();
 }
 
-//void DrawItem()
-//{
-//	if (g_bAlpaTest) SetAlphaTestEnable(TRUE);
-//	SetLightEnable(FALSE);
-//
-//	UINT stride = sizeof(VERTEX_3D);
-//	UINT offset = 0;
-//	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
-//	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-//
-//	for (int i = 0; i < MAX_ITEM; i++)
-//		g_aItem[i].Draw();
-//}
 
 
 
-int SetItem(XMFLOAT3 pos, int itemID)
+
+int SpawnItem(XMFLOAT3 pos, int itemID)
 {
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
@@ -276,8 +220,8 @@ HRESULT InitItem()
 
 	g_bAlpaTest = TRUE;
 
-	SetItem(XMFLOAT3(10.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
-	SetItem(XMFLOAT3(20.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
+	SpawnItem(XMFLOAT3(30.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
+	SpawnItem(XMFLOAT3(50.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
 
 
 
@@ -287,53 +231,6 @@ HRESULT InitItem()
 
 
 
-
-//void UpdateItem()
-//{
-//	g_ItemGlobalTime += ITEM_FLOAT_FREQUENCE / 60.0f;
-//	// アイテムの更新処理
-//	for (int i = 0; i < MAX_ITEM; i++)
-//	{
-//		if (g_aItem[i].use)
-//		{
-//			//Itemのアニメーション
-//			g_aItem[i].pos.y = g_aItem[i].basePosY + sinf(g_ItemGlobalTime + g_aItem[i].timeOffset) * ITEM_FLOAT_OFFSET;
-//
-//
-//			//Playerと当たり判定
-//			if (CollisionBC(g_aItem[i].pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size))
-//			{
-//				switch (g_aItem[i].item.category)
-//				{
-//				case ItemCategory::WeaponPart_Ammo:
-//					//インベントリーに入れる
-//
-//					break;
-//				case ItemCategory::WeaponPart_FireType:
-//					//インベントリーに入れる
-//
-//					break;
-//				case ItemCategory::Consumable:
-//					//インベントリーに入れる
-//
-//					break;
-//				case ItemCategory::InstantEffect:
-//					//相応の効果
-//					//test
-//					GetPlayer()->HP += 1.0f;
-//					g_aItem[i].use = false;
-//
-//					break;
-//
-//				default:
-//					break;
-//				}
-//			}
-//
-//
-//		}
-//	}
-//}
 
 
 void DrawItem()
@@ -476,12 +373,16 @@ HRESULT MakeVertexItem(void)
 
 Item CreateItemFromID(int id) {
 	switch (id) {
+	case ITEM_SPEED_UP:
+		return Item(id, "Speed Up", 1, ItemCategory::Consumable);
 	case ITEM_APPLE:
 		return Item(id, "Apple", 1, ItemCategory::Consumable);
+
 	case ITEM_SAN:
 		return Item(id, "San", 1, ItemCategory::InstantEffect);
 	case ITEM_BULLET:
 		return Item(id, "Bullet", 10, ItemCategory::InstantEffect);
+
 	default:
 		return Item(id, "Unknown", 1, ItemCategory::Consumable);
 	}
@@ -528,7 +429,7 @@ void LoadItemData(const std::string& filename)
 	{
 		int id = itemObj["id"];
 		XMFLOAT3 pos = XMFLOAT3(itemObj["pos"][0], itemObj["pos"][1], itemObj["pos"][2]);
-		int index = SetItem(pos, id);
+		int index = SpawnItem(pos, id);
 		if (index >= 0)
 		{
 			XMFLOAT3 scl = XMFLOAT3(itemObj["scl"][0], itemObj["scl"][1], itemObj["scl"][2]);
@@ -562,3 +463,129 @@ bool CheckItemGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 	}
 	return false;
 }
+
+
+
+// 即時効果を持つアイテムの効果を適用する関数
+void ApplyInstantItemEffect(int itemID) {
+	PLAYER* player = GetPlayer();
+
+	switch (itemID) {
+	case ITEM_SAN:
+		// HPを回復
+		player->HP += 1.0f;//TODO：数値調整
+		if (player->HP > player->HP_MAX) {
+			player->HP = player->HP_MAX;  
+		}
+		break;
+
+	case ITEM_BULLET:
+		// 弾数補充
+		player->ammoNormal += 5;//TODO：数値調整
+		if (player->ammoNormal > player->maxAmmoNormal) {
+			player->ammoNormal = player->maxAmmoNormal;  
+		}
+		break;
+
+		
+	default:
+		
+		break;
+	}
+}
+
+// 消費アイテムの効果を適用する関数
+void ApplyConsumableItemEffect(int itemID) {
+	PLAYER* player = GetPlayer();
+
+	switch (itemID) {
+	case ITEM_APPLE:
+		// HPを回復
+		player->HP += 2.0f;  // TODO：数値調整
+		if (player->HP > player->HP_MAX) {
+			player->HP = player->HP_MAX;
+		}
+		break;
+
+	case ITEM_SPEED_UP:
+		// Speed Up
+		player->speed += 1.0f;  // TODO：数値調整(永久？)
+		break;
+
+	default:
+		break;
+	}
+}
+
+
+//Item使用
+void UseCurrentItem() {
+	PLAYER* player = GetPlayer();
+	Inventory* inventory = &(player->inventory);
+	const std::vector<Item>& consumables = inventory->GetConsumables();
+
+	if (consumables.empty()) return;  // アイテムがない
+
+	// インデックスの範囲をチェック
+	if (player->currentConsumableIndex >= (int)consumables.size()) {
+		player->currentConsumableIndex = 0;
+	}
+
+	if (player->currentConsumableIndex < 0) {
+		player->currentConsumableIndex = (int)consumables.size() - 1;
+	}
+
+	// 今のアイテムを取得
+	const Item& currentItem = consumables[player->currentConsumableIndex];
+
+	// 応用
+	ApplyConsumableItemEffect(currentItem.GetID());
+
+	// インベントリーから数を減らす
+	inventory->UseItem(currentItem.GetID(), ItemCategory::Consumable, 1);
+
+	// インデックスを調整
+	const std::vector<Item>& newConsumables = inventory->GetConsumables();
+	if (newConsumables.empty()) {
+		player->currentConsumableIndex = 0;
+	}
+	else if (player->currentConsumableIndex >= (int)newConsumables.size()) {
+		player->currentConsumableIndex = (int)newConsumables.size() - 1;
+	}
+}
+
+
+//先のItem切り替える
+void SwitchToPreviousItem() {
+	PLAYER* player = GetPlayer();
+	const std::vector<Item>& consumables = player->inventory.GetConsumables();
+
+	if (consumables.empty()) return;
+
+	player->currentConsumableIndex--;
+	if (player->currentConsumableIndex < 0) {
+		player->currentConsumableIndex = (int)consumables.size() - 1;
+	}
+}
+
+//次のItem切り替える
+void SwitchToNextItem() {
+	PLAYER* player = GetPlayer();
+	const std::vector<Item>& consumables = player->inventory.GetConsumables();
+
+	if (consumables.empty()) return;
+
+	player->currentConsumableIndex++;
+	if (player->currentConsumableIndex >= (int)consumables.size()) {
+		player->currentConsumableIndex = 0;
+	}
+}
+
+
+
+
+
+
+
+
+

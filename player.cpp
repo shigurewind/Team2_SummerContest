@@ -605,3 +605,14 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 	}
 	return false;
 }
+
+
+//プレイヤーのインベントリーを取得
+Inventory* GetPlayerInventory(void) {
+	PLAYER* player = GetPlayer();
+	return &(player->inventory);
+}
+
+
+
+

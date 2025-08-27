@@ -1,11 +1,13 @@
 #include "itemDatabase.h"
 
-
+//アイテムのIDとテクスチャパスのマッピングを保持するクラス
+// 
 // アイテムデータベースのコンストラクタ
 ItemDatabase::ItemDatabase() {
 	texturePaths[ITEM_APPLE] = "data/2Dpicture/item/apple.png";
 	texturePaths[ITEM_SAN] = "data/2Dpicture/item/san.png";
 	texturePaths[ITEM_BULLET] = "data/2Dpicture/item/bullet.png";
+	texturePaths[ITEM_SPEED_UP] = "data/2Dpicture/item/.png";
 
 }
 
@@ -22,11 +24,5 @@ const std::string& ItemDatabase::GetTexturePath(int itemID) const {
 }
 
 
-//使用例
-//ItemDatabase db;
-//int itemId = ITEM_APPLE;
-//std::string path = db.GetTexturePath(itemId);
-//
-//// 例：DirectXでスプライト描画に使う
-//DrawTexture(path, x, y);
+
 

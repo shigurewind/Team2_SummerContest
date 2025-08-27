@@ -8,6 +8,7 @@
 #include "model.h"
 #include "bullet.h"
 #include "object.h"
+#include "inventory.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -75,6 +76,11 @@ public:
 	//武器関連
 	WeaponType currentWeapon;
 	BulletType currentBullet;
+
+
+	//インベントリ
+	Inventory inventory;
+	int currentConsumableIndex;//現在選択している消費アイテムのインデックス
 };
 
 
@@ -91,6 +97,8 @@ void DrawPlayer(void);
 
 WeaponType GetCurrentWeaponType(void);
 BulletType GetCurrentBulletType(void);
+
+Inventory* GetPlayerInventory(void);
 
 
 PLAYER* GetPlayer(void);

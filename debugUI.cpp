@@ -156,7 +156,7 @@ void ShowDebugUI()
 		if (ImGui::Button(u8"ƒAƒCƒeƒ€’Ç‰Á"))
 		{
 			CAMERA* cam = GetCamera();
-			SetItem(cam->pos, selectedItemID);
+			SpawnItem(cam->pos, selectedItemID);
 		}
 
 		if (ImGui::Button(u8"•Û‘¶")) {

@@ -42,6 +42,36 @@ bool Inventory::AddItem(const Item& item) {
 	return false; // 容量オーバー
 }
 
+// アイテムを使用する関数
+bool Inventory::UseItem(int itemId, ItemCategory category, int useCount) {
+	std::vector<Item>* target = nullptr;
+
+	switch (category) {
+	case ItemCategory::WeaponPart_Ammo:      target = &ammoParts; break;
+	case ItemCategory::WeaponPart_FireType:  target = &fireTypeParts; break;
+	case ItemCategory::Consumable:           target = &consumables; break;
+	}
+
+	if (!target) return false;
+
+	// アイテムを検索して使用
+	for (auto it = target->begin(); it != target->end(); ++it) {
+		if (it->GetID() == itemId) {
+			int newCount = it->GetCount() - useCount;
+			if (newCount <= 0) {
+				// 使い切り
+				target->erase(it);
+			}
+			else {
+				// 数を更新
+				it->SetCount(newCount);
+			}
+			return true;
+		}
+	}
+
+	return false;  // 見当たらない
+}
 
 // アイテムを削除する関数
 bool Inventory::RemoveItem(int itemId, ItemCategory category) {
