@@ -299,16 +299,33 @@ void PLAYER::HandleInput()
 	}
 
 
-	//武器切り替え
 	//キーボードの1　武器の切り替え
 	if (GetKeyboardTrigger(DIK_1))
 	{
-		currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
+		switch (currentWeapon)
+		{
+		case WEAPON_REVOLVER:
+			currentWeapon = WEAPON_SHOTGUN;
+			break;
+		case WEAPON_SHOTGUN:
+			currentWeapon = WEAPON_ROCKET_LAUNCHER;
+			break;
+		case WEAPON_ROCKET_LAUNCHER:
+			currentWeapon = WEAPON_REVOLVER;
+			break;
+		}
 	}
 	//キーボードの2　弾の切り替え
 	if (GetKeyboardTrigger(DIK_2))
 	{
-		currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
+		if (currentBullet == BULLET_NORMAL)
+		{
+			currentBullet = BULLET_FIRE;
+		}
+		else
+		{
+			currentBullet = BULLET_NORMAL;
+		}
 	}
 
 
@@ -448,7 +465,7 @@ void PLAYER::HandleShooting()
 {
 	// 弾発射処理
 	int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
-	if (g_pInputManager->IsActionTriggered(ACTION_SHOOT) && currentAmmo > 0)
+	if (IsMouseLeftTriggered() && *currentAmmo > 0)
 	{
 		XMFLOAT3 pos = GetGunMuzzlePosition();
 		XMFLOAT3 rot = GetGunMuzzleRotation();
@@ -456,10 +473,15 @@ void PLAYER::HandleShooting()
 		{
 			SetRevolverBullet(currentBullet, pos, rot);
 		}
-		else {
+		else if (currentWeapon == WEAPON_SHOTGUN)
+		{
 			SetShotgunBullet(currentBullet, pos, rot);
 		}
-		(currentAmmo)--;
+		else if (currentWeapon == WEAPON_ROCKET_LAUNCHER)
+		{
+			SetRocketLauncherBullet(currentBullet, pos, rot);
+		}
+		(*currentAmmo)--;
 	}
 }
 
@@ -469,11 +491,24 @@ void PLAYER::HandleReload()
 	// Rキーでリロード処理
 	if (GetKeyboardTrigger(DIK_R))
 	{
-		Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
+		Weapon* weapon = nullptr;
+		switch (currentWeapon)
+		{
+		case WEAPON_REVOLVER:
+			weapon = GetRevolver();
+			break;
+		case WEAPON_SHOTGUN:
+			weapon = GetShotgun();
+			break;
+		case WEAPON_ROCKET_LAUNCHER:
+			weapon = GetRocket_Launcher();
+			break;
+		}
+
 		int clipSize = weapon->clipSize;
 
-		int* ammo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
-		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &maxAmmoNormal : &maxAmmoFire;
+		int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
+		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
 
 		if (*ammo < clipSize && *maxAmmo > 0)
 		{

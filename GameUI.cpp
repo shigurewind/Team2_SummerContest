@@ -16,7 +16,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(6)		// テクスチャの数
+#define TEXTURE_MAX					(8)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -37,6 +37,9 @@ static char* g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/revolver.png",
 	"data/TEXTURE/shotgun.png",
 	"data/2Dpicture/enemy/enemyWeb.png",
+	"data/TEXTURE/rocket_launcher.png",
+
+
 };
 
 
@@ -171,15 +174,15 @@ void DrawScore(void)
 
 
 
-
+	PLAYER* player = GetPlayer();
 
 	//ケージのHPバー
 	{// テクスチャ設定
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
 		//ゲージの位置やテクスチャー座標を反映
 		float pw = 280;		// ゲージの表示幅
-		pw = pw * ((float)GetPlayer()->HP / GetPlayer()->HP_MAX);
-		float x = ((float)GetPlayer()->HP / GetPlayer()->HP_MAX);
+		pw = pw * ((float)player->HP / player->HP_MAX);
+		float x = ((float)player->HP / player->HP_MAX);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
 		SetSpriteLeftTop(g_VertexBuffer, 2.0f, 6.0f, pw, 60, 0.0f, 0.0f, x, 1.0f);
@@ -228,19 +231,34 @@ void DrawScore(void)
 //========================================================
 void DrawAmmoUI(void)
 {
+	PLAYER* player = GetPlayer();
+	Weapon* weapon = nullptr;
+	int weaponTexNo = 0;
 
-	Weapon* weapon = (GetCurrentWeaponType() == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
+	switch (GetCurrentWeaponType()) {
+	case WEAPON_REVOLVER:
+		weapon = GetRevolver();
+		weaponTexNo = 3;  // revolver.png
+		break;
+	case WEAPON_SHOTGUN:
+		weapon = GetShotgun();
+		weaponTexNo = 4;  // shotgun.png
+		break;
+	case WEAPON_ROCKET_LAUNCHER:
+		weapon = GetRocket_Launcher();
+		weaponTexNo = 6;  // rocket_launcher.png
+		break;
+	}
 
 	// === 武器アイコン表示 ===
 	const float weaponIconX = 1025.0f;  //表示位置
 	const float weaponIconY = 610.0f;
 
-	int weaponTexNo = (GetCurrentWeaponType() == WEAPON_REVOLVER) ? 3 : 4;
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[weaponTexNo]);
 
 	SetSprite(g_VertexBuffer,
 		weaponIconX, weaponIconY,
-		60, 60,  // サイズ
+		90, 60,  // サイズ
 		0.0f, 0.0f, 1.0f, 1.0f
 	);
 	GetDeviceContext()->Draw(4, 0);
@@ -252,12 +270,12 @@ void DrawAmmoUI(void)
 	int ammoSpare = 0;
 
 	if (GetCurrentBulletType() == BULLET_NORMAL) {
-		ammoInClip = Min2(GetPlayer()->ammoNormal, clipSize);
-		ammoSpare = GetPlayer()->maxAmmoNormal;
+		ammoInClip = Min2(player->ammoNormal, clipSize);
+		ammoSpare = player->maxAmmoNormal;
 	}
 	else {
-		ammoInClip = Min2(GetPlayer()->ammoFire, clipSize);
-		ammoSpare = GetPlayer()->maxAmmoFire;
+		ammoInClip = Min2(player->ammoFire, clipSize);
+		ammoSpare = player->maxAmmoFire;
 	}
 
 	// マテリアル設定
@@ -265,10 +283,10 @@ void DrawAmmoUI(void)
 	ZeroMemory(&material, sizeof(material));
 
 	if (GetCurrentBulletType() == BULLET_FIRE) {
-		material.Diffuse = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);  //  赤
+		material.Diffuse = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);  // ?? 赤
 	}
 	else {
-		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  //  白（ノーマル弾）
+		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // ? 白（ノーマル弾）
 	}
 
 	SetMaterial(material);
