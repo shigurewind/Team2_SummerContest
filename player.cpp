@@ -62,8 +62,8 @@ static bool tutorialTriggered = false;
 
 
 //weponÇ∆bulletíeÇÃèÛë‘
-static WeaponType currentWeapon = WEAPON_REVOLVER;
-static BulletType currentBullet = BULLET_NORMAL;
+//static WeaponType currentWeapon = WEAPON_REVOLVER;
+//static BulletType currentBullet = BULLET_NORMAL;
 
 
 
@@ -611,12 +611,12 @@ PLAYER* GetPlayer(void)
 
 WeaponType GetCurrentWeaponType(void)
 {
-	return currentWeapon;
+	return g_Player.currentWeapon;
 }
 
 BulletType GetCurrentBulletType(void)
 {
-	return currentBullet;
+	return g_Player.currentBullet;
 }
 
 
