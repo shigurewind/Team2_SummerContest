@@ -181,15 +181,30 @@ void UpdatePlayer(void)
 
 	// ポイントライトのテスト
 	{
+		CAMERA* cam = GetCamera();
 		LIGHT* light = GetLightData(1);
-		XMFLOAT3 pos = g_Player.GetPosition();
-		pos.y += 20.0f;
+
+		// 位置：プレイヤーの頭付近（カメラ位置）
+		XMFLOAT3 pos = cam->pos;
+		// 少し上げたいなら pos.y += 2.0f; など
+
+		// 向き：カメラが向いている方向（at - pos）を正規化
+		XMFLOAT3 dir = { cam->at.x - cam->pos.x, cam->at.y - cam->pos.y, cam->at.z - cam->pos.z };
+		float len = sqrtf(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+		if (len > 0.0001f) { dir.x /= len; dir.y /= len; dir.z /= len; }
+		else { dir = { 0,0,1 }; }
 
 		light->Position = pos;
-		light->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		light->Ambient = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		light->Type = LIGHT_TYPE_POINT;
+		light->Direction = dir;
+		light->Diffuse = XMFLOAT4(1, 1, 1, 1);     // 色はお好みで
+		light->Ambient = XMFLOAT4(0, 0, 0, 0);     // 懐中電灯なので環境光は0でOK
+		light->Attenuation = 500.0f;                 // 距離（到達範囲）
+		light->SpotInnerCos = cosf(XMConvertToRadians(20.0f)); // 内側（明るい）コーン
+		light->SpotOuterCos = cosf(XMConvertToRadians(25.0f)); // 外側（薄暗くなる）コーン
+		light->SpotExponent = 5.0f;                  // 縁の落ち方の鋭さ
+		light->Type = LIGHT_TYPE_SPOT;       // ★ スポットに変更
 		light->Enable = TRUE;
+
 		SetLightData(1, light);
 	}
 

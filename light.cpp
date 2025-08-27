@@ -51,7 +51,7 @@ void InitLight(void)
 	// 並行光源の設定（世界を照らす光）
 	g_Light[0].Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);		// 光の向き
 	g_Light[0].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);	// 光の色
-	g_Light[0].Ambient = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);	// 環境光の色
+	g_Light[0].Ambient = XMFLOAT4(0.05f, 0.05f, 0.05f, 1.0f);	// 環境光の色
 	g_Light[0].Type = LIGHT_TYPE_DIRECTIONAL;					// 並行光源
 	g_Light[0].Enable = TRUE;									// このライトをON
 	SetLight(0, &g_Light[0]);									// これで設定している
@@ -65,6 +65,7 @@ void InitLight(void)
 	SetFog(&g_Fog);
 	SetFogEnable(g_FogEnable);				// 他の場所もチェックする shadow
 
+	SetLightEnable(TRUE);
 }
 
 

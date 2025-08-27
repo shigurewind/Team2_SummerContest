@@ -330,7 +330,14 @@ void SetLight(int index, LIGHT* pLight)
 	g_Light.Ambient[index] = pLight->Ambient;
 	g_Light.Flags[index].Type = pLight->Type;
 	g_Light.Flags[index].OnOff = pLight->Enable;
-	g_Light.Attenuation[index].x = pLight->Attenuation;
+
+	// ‚±‚±‚ðŠg’£Fx=‹——£, y=“à‘¤cos, z=ŠO‘¤cos, w=Žw”
+	g_Light.Attenuation[index] = XMFLOAT4(
+		pLight->Attenuation,
+		pLight->SpotInnerCos,
+		pLight->SpotOuterCos,
+		pLight->SpotExponent
+	);
 
 	SetLightBuffer();
 }
