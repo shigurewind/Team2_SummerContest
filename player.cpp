@@ -119,6 +119,8 @@ void PLAYER::Init()
 	currentWeapon = WEAPON_REVOLVER;
 	currentBullet = BULLET_NORMAL;
 
+	currentConsumableIndex = 0;
+
 	load = TRUE;
 	LoadModel(MODEL_PLAYER, &model);
 
@@ -298,6 +300,20 @@ void PLAYER::HandleInput()
 		}
 	}
 
+	//Item関連
+	if (g_pInputManager->IsActionTriggered(ACTION_USE_ITEM)) {
+		UseCurrentItem();  // 今のアイテムを使用
+	}
+
+	if (g_pInputManager->IsActionTriggered(ACTION_LAST_ITEM)) {
+		SwitchToPreviousItem();  // 先のアイテム
+	}
+
+	if (g_pInputManager->IsActionTriggered(ACTION_NEXT_ITEM)) {
+		SwitchToNextItem();  // 次のアイテム
+	}
+
+	
 
 	//武器切り替え
 	//キーボードの1　武器の切り替え

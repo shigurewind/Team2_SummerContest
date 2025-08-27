@@ -40,6 +40,58 @@ void ShowDebugUI()
 		ImGui::SliderFloat(u8"移動速度", &GetPlayer()->speed, 0.0f, 20.0f);
 		ImGui::InputFloat(u8"速度入力", &GetPlayer()->speed, 0.1f, 1.0f, "%.2f");
 
+		ImGui::Separator();
+		ImGui::Text(u8"=== インベントリ情報 ===");
+
+		Inventory* inventory = GetPlayerInventory();
+
+		// 選択中のアイテム表示
+		const std::vector<Item>& consumables = inventory->GetConsumables();
+		if (!consumables.empty()) {
+			int currentIndex = GetPlayer()->currentConsumableIndex;
+			if (currentIndex >= 0 && currentIndex < (int)consumables.size()) {
+				const Item& currentItem = consumables[currentIndex];
+				ImGui::Text(u8"選択中アイテム: %s (数量: %d)",
+					currentItem.GetName().c_str(), currentItem.GetCount());
+			}
+		}
+		else {
+			ImGui::Text(u8"選択中アイテム: なし");
+		}
+
+		// アイテム一覧表示
+		if (ImGui::TreeNode(u8"消耗品")) {
+			for (const auto& item : consumables) {
+				ImGui::Text(u8"・%s x%d", item.GetName().c_str(), item.GetCount());
+			}
+			if (consumables.empty()) {
+				ImGui::Text(u8"アイテムなし");
+			}
+			ImGui::TreePop();
+		}
+
+		if (ImGui::TreeNode(u8"弾薬パーツ")) {
+			const std::vector<Item>& ammoParts = inventory->GetAmmoParts();
+			for (const auto& item : ammoParts) {
+				ImGui::Text(u8"・%s x%d", item.GetName().c_str(), item.GetCount());
+			}
+			if (ammoParts.empty()) {
+				ImGui::Text(u8"アイテムなし");
+			}
+			ImGui::TreePop();
+		}
+
+		if (ImGui::TreeNode(u8"発射方法パーツ")) {
+			const std::vector<Item>& fireTypeParts = inventory->GetFireTypeParts();
+			for (const auto& item : fireTypeParts) {
+				ImGui::Text(u8"・%s x%d", item.GetName().c_str(), item.GetCount());
+			}
+			if (fireTypeParts.empty()) {
+				ImGui::Text(u8"アイテムなし");
+			}
+			ImGui::TreePop();
+		}
+
 	}
 
 	//カメラ視点の制御
