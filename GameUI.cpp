@@ -259,7 +259,7 @@ void DrawAmmoUI(void)
 		break;
 	case WEAPON_ROCKET_LAUNCHER:
 		weapon = GetRocket_Launcher();
-		weaponTexNo = 6;  // rocket_launcher.png
+		weaponTexNo = 7;  // rocket_launcher.png
 		break;
 	}
 
