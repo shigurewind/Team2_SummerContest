@@ -13,6 +13,10 @@ enum GameAction
     ACTION_MOVE_RIGHT,
     ACTION_JUMP,
 
+    // ëÄçÏ
+    ACTION_LIGHT_SWITCH,
+
+
 	// çUåÇ
 	ACTION_SHOOT,
 	ACTION_MELEE,

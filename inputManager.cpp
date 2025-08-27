@@ -39,6 +39,10 @@ void InputManager::InitializeDefaultBindings()
     BindAction(ACTION_JUMP, InputBinding(INPUTDEVICE_KEYBOARD, DIK_SPACE));
     BindAction(ACTION_JUMP, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_A, 0));
 
+    //ëÄçÏ---------------------------------------------------------------
+    BindAction(ACTION_LIGHT_SWITCH, InputBinding(INPUTDEVICE_KEYBOARD, DIK_T));
+    BindAction(ACTION_LIGHT_SWITCH, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_A, 0));
+
 	// çUåÇ---------------------------------------------------------------
     //éÀåÇ
     BindAction(ACTION_SHOOT, InputBinding(INPUTDEVICE_MOUSE, 0, 0));
