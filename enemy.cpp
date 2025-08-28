@@ -42,10 +42,34 @@ static BOOL g_bAlphaTestEnemy;
 //*****************************************************************************
 // 
 //*****************************************************************************
-BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
+BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false),
+isDying(false), dissolveTimer(0.0f), dissolveAmount(0.0f), hasDroppedItems(false), dissolveTexture(nullptr)
+{
 	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+
+	//dissolveテクスチャ読み込み
+	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(
+		GetDevice(),
+		"data/TEXTURE/sampleNoise.png",
+		NULL, NULL, &dissolveTexture, NULL);
+
+#ifdef _DEBUG
+	if (FAILED(hr)) {
+		PrintDebugProc("Failed to load dissolve texture! HRESULT: %x\n", hr);
+	}
+	else {
+		PrintDebugProc("Dissolve texture loaded successfully\n");
+	}
+#endif
+
 }
-BaseEnemy::~BaseEnemy() {}
+BaseEnemy::~BaseEnemy() {
+	//dissolveテクスチャ解放
+	if (dissolveTexture) {
+		dissolveTexture->Release();
+		dissolveTexture = nullptr;
+	}
+}
 
 SpiderEnemy::SpiderEnemy() :
 	texture(nullptr), width(100.0f), height(100.0f)
@@ -110,6 +134,26 @@ void SpiderEnemy::Init() {
 
 void SpiderEnemy::Update() {
 	if (!use) return;
+
+	//dissolve処理
+	if (isDying) {
+		dissolveTimer -= 1.0f / 60.0f;  // 60fps
+		dissolveAmount = 1.0f - (dissolveTimer / 1.0f);  // 0～1
+
+		// 半分溶解したらアイテムを落とす
+		if (dissolveAmount >= 0.5f && !hasDroppedItems) {
+			DropItems(pos, SPIDER);
+			hasDroppedItems = true;
+		}
+
+		// dissolve完了したら消える
+		if (dissolveTimer <= 0.0f) {
+			use = false;
+			return;  
+		}
+
+		return;  // 死亡したら他のロジックを実行しない
+	}
 
 
 	if (isAttacking)    //攻撃のアニメーション処理
@@ -183,10 +227,16 @@ void SpiderEnemy::Update() {
 		{
 			bullet[i].use = false;
 			HP -= 1;
+
+			//死亡処理
 			if (HP <= 0)
 			{
-				use = false;
-				DropItems(pos, SPIDER);
+				if (!isDying) {
+					isDying = true;
+					dissolveTimer = 1.0f;  // 1秒dissolve
+					dissolveAmount = 0.0f;
+					hasDroppedItems = false;
+				}
 			}
 		}
 
@@ -205,6 +255,7 @@ void SpiderEnemy::Draw() {
 
 	if (!use || !texture || !g_VertexBufferEnemy) return;
 
+	
 
 	SetLightEnable(FALSE);
 
@@ -268,8 +319,42 @@ void SpiderEnemy::Draw() {
 	SetMaterial(*material);
 	GetDeviceContext()->PSSetShaderResources(0, 1, &texture);
 
+	// dissolveテクスチャセット
+	if (dissolveTexture) {
+		GetDeviceContext()->PSSetShaderResources(1, 1, &dissolveTexture);
 
-	GetDeviceContext()->Draw(4, 0);
+	}
+
+	ShaderManager::SetDefaultShader();
+
+	//dissolve処理
+	if (isDying) {
+		XMFLOAT4 dissolveColor = { 1.0f, 0.5f, 0.0f, 1.0f };
+		EffectManager::SetDissolveEffect(dissolveAmount, dissolveColor);
+		EffectManager::ApplyEffects();
+
+#ifdef _DEBUG
+		// 
+		PrintDebugProc("Before Draw - C++ dissolveAmount: %f\n",
+			EffectManager::GetEffectParams()->dissolveAmount);
+		PrintDebugProc("Before Draw - C++ effectFlags: %d\n",
+			EffectManager::GetEffectParams()->effectFlags);
+#endif
+
+		GetDeviceContext()->Draw(4, 0);
+
+		// 
+		EffectManager::ClearDissolveEffect();
+		EffectManager::ApplyEffects();
+	}
+	else
+	{
+		EffectManager::ClearDissolveEffect();
+		EffectManager::ApplyEffects();
+		GetDeviceContext()->Draw(4, 0);
+	}
+
+
 
 }
 void SpiderEnemy::NormalMovement()

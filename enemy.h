@@ -34,15 +34,23 @@ public:
 	void SetScale(const XMFLOAT3& s);
 	XMFLOAT3 GetScale() const;
 
+	ID3D11ShaderResourceView* dissolveTexture;// ディゾルブ用テクスチャ
 
 protected:
 	XMFLOAT3 pos;
 	XMFLOAT3 scl;
 	XMFLOAT4X4 mtxWorld;
 	bool use;
+
 	float minDistance;
 	float dropRate;
 	int HP, maxHP;
+
+	//ディゾルブ関連
+	bool isDying;
+	float dissolveTimer;
+	float dissolveAmount;   // dissolve程度
+	bool hasDroppedItems;
 
 };
 

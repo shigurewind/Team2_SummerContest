@@ -32,6 +32,8 @@ float4 PixelShaderPolygon(VertexOutput input) : SV_Target
      //ƒfƒBƒ]ƒ‹ƒuˆ—
     if (g_EffectFlags & EFFECT_DISSOLVE)
     {
+        
+        
         float dissolveResult = CalculateDissolve(input.TexCoord, g_DissolveAmount);
         if (dissolveResult < 0.1f)
             discard; // Remove dissolved parts

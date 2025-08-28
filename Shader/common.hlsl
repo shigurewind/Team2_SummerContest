@@ -93,7 +93,7 @@ cbuffer EffectBuffer : register(b8)
     float4 g_DissolveColor; // edge color
 
       // ŒŒ­ (ƒ}ƒbƒv‚É)
-    float3 g_BloodPositions[4]; // up to 4 blood positions
+    float4 g_BloodPositions[4]; // up to 4 blood positions
     float g_BloodRadii[4]; // corresponding radii
     float g_BloodIntensity; // overall blood intensity
     int g_BloodCount; // current blood stain count
@@ -154,7 +154,12 @@ float CalculateDissolve(float2 uv, float dissolveAmount)
         return 1.0f;
 
     float dissolveVal = g_DissolveMap.Sample(g_SamplerState, uv).r;
-    return dissolveVal > dissolveAmount ? 1.0f : 0.0f;
+    //return dissolveVal > dissolveAmount ? 1.0f : 0.0f;
+    float edge = 0.1f; // 
+    return saturate((dissolveVal - dissolveAmount + edge) / edge);
+    
+    
+    
 }
 
   // Calculate blood stain effect for terrain

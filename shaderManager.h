@@ -126,25 +126,25 @@ public:
 struct EffectParams
 {
     UINT effectFlags;
-    float padding1[3];
+    
 
     // ディゾルブ効果
     float dissolveAmount;
-    float padding2[3];        // 16バイト
+            // 16バイト
     XMFLOAT4 dissolveColor;
 
     // 血痕効果
     XMFLOAT4 bloodPositions[4];  // XMFLOAT3 -> XMFLOAT4
-    XMFLOAT4 bloodRadii;         // float[4] -> XMFLOAT4
+    XMFLOAT4 bloodRadii;          // float[4] -> XMFLOAT4
     float bloodIntensity;
     int bloodCount;
-    float padding3[2];
+    
 
     // カスタマイズパラメータ
     XMFLOAT4 customParam1;
     XMFLOAT4 customParam2;
 
-    
+    float padding[12];
 };
 
 

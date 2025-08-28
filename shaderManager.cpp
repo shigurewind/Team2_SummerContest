@@ -706,11 +706,11 @@ void EffectManager::AddBloodStain(XMFLOAT3 position, float radius)
     int index = s_EffectParams.bloodCount;
 
     s_EffectParams.bloodPositions[index] = XMFLOAT4(position.x, position.y, position.z, 1.0f);
-
     if (index == 0) s_EffectParams.bloodRadii.x = radius;
     else if (index == 1) s_EffectParams.bloodRadii.y = radius;
     else if (index == 2) s_EffectParams.bloodRadii.z = radius;
     else if (index == 3) s_EffectParams.bloodRadii.w = radius;
+
     s_EffectParams.bloodCount++;
 }
 
