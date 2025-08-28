@@ -43,6 +43,7 @@ HRESULT InitBullet(void)
     for (int i = 0; i < MAX_BULLET; i++)
     {
         g_Bullet[i].use = FALSE;
+        g_Bullet[i].isLoaded = FALSE;
     }
 
     // •Ší‚²‚Æ‚Ì’e‚ðƒZƒbƒg 
@@ -69,7 +70,12 @@ void UninitBullet()
 {
     for (int i = 0; i < MAX_BULLET; i++)
     {
-        UnloadModel(&g_Bullet[i].model);
+        if (g_Bullet[i].isLoaded)
+        {
+            UnloadModel(&g_Bullet[i].model);
+            g_Bullet[i].isLoaded = FALSE;
+        }
+        g_Bullet[i].use = FALSE;
     }
 }
 
@@ -88,6 +94,7 @@ int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data, WeaponType firedBy)
             g_Bullet[i].spd = data.speed;
             g_Bullet[i].size = data.size;
             LoadModel(const_cast<char*>(data.modelPath), &g_Bullet[i].model);
+            g_Bullet[i].isLoaded = TRUE;
             g_Bullet[i].fWidth = 1.0f;
             g_Bullet[i].fHeight = 1.0f;
             g_Bullet[i].lifetime = data.lifetime;
@@ -201,6 +208,12 @@ void UpdateBullet(void)
             if (g_Bullet[i].lifetime <= 0)
             {
                 g_Bullet[i].use = FALSE;
+
+                if (g_Bullet[i].isLoaded)
+                {
+                    UnloadModel(&g_Bullet[i].model);
+                    g_Bullet[i].isLoaded = FALSE;
+                }
             }
         }
     }

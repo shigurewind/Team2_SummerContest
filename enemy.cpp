@@ -38,8 +38,6 @@ static BOOL g_bAlphaTestEnemy;
 
 
 
-//PLAYER* player = GetPlayer();
-BULLET* bullet = GetBullet();
 
 //*****************************************************************************
 // 
@@ -172,6 +170,7 @@ void SpiderEnemy::Update() {
 		NormalMovement();
 	}
 
+	BULLET* bullet = GetBullet();
 
 	//íeÇ∆ìñÇΩÇËîªíËÅH
 	for (int i = 0; i < MAX_BULLET; i++)
@@ -335,7 +334,7 @@ void InitEnemy() {
 	for (int i = 0; i < ENEMY_MAX; ++i) {
 
 		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
-		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
+		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
 	}
 }
@@ -650,6 +649,7 @@ void GhostEnemy::Update()
 
 	}
 
+	BULLET* bullet = GetBullet();
 	//íeÇ∆ìñÇΩÇËîªíËÅH
 	for (int i = 0; i < MAX_BULLET; i++)
 	{

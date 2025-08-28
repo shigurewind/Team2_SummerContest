@@ -14,6 +14,7 @@
 #include "player.h"
 #include "enemy.h"
 #include "game.h"
+#include "game1.h"
 #include "fade.h"
 #include "title.h"
 #include "result.h"
@@ -410,8 +411,12 @@ void Update(void)
 		UpdateTitle();
 		break;
 
-	case MODE_GAME:			// ゲーム画面の更新
+	case MODE_TUTORIAL:			// ゲーム画面の更新
 		UpdateGame();
+		break;
+
+	case MODE_GAME:			// ゲーム画面の更新
+		UpdateGame1();
 		break;
 
 	case MODE_RESULT:		// リザルト画面の更新
@@ -457,8 +462,12 @@ void Draw(void)
 		SetDepthEnable(TRUE);
 		break;
 
-	case MODE_GAME:			// ゲーム画面の描画
+	case MODE_TUTORIAL:			// ゲーム画面の描画
 		DrawGame();
+		break;
+
+	case MODE_GAME:			// ゲーム画面の描画
+		DrawGame1();
 		break;
 
 	case MODE_RESULT:		// リザルト画面の描画
@@ -554,6 +563,9 @@ void SetMode(int mode)
 	// ゲーム画面の終了処理
 	UninitGame();
 
+	// ゲーム画面の終了処理
+	UninitGame1();
+
 	// リザルト画面の終了処理
 	UninitResult();
 
@@ -567,12 +579,20 @@ void SetMode(int mode)
 		InitTitle();
 		break;
 
-	case MODE_GAME:
+	case MODE_TUTORIAL:
 		// カメラもここで初期化しておく事にした
 		UninitCamera();
 		InitCamera();
 		// ゲーム画面の初期化
 		InitGame();
+		break;
+
+	case MODE_GAME:
+		// カメラもここで初期化しておく事にした
+		UninitCamera();
+		InitCamera();
+		// ゲーム画面の初期化
+		InitGame1();
 		break;
 
 	case MODE_RESULT:
