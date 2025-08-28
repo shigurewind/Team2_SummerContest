@@ -75,12 +75,10 @@ HRESULT InitGame(void)
 
 	
 
-	
-
 	// 弾の初期化
 	InitBullet();
 
-	// スコアの初期化
+	// UIの初期化
 	InitGameUI();
 
 	InitOverlay2D();
@@ -110,8 +108,9 @@ void UninitGame(void)
 	// パーティクルの終了処理
 	UninitParticle();
 
-	// スコアの終了処理
+	// UIの終了処理
 	UnInitGameUI();
+
 	UninitOverlay2D();
 	// 弾の終了処理
 	UninitBullet();
@@ -194,7 +193,8 @@ void UpdateGame(void)
 	// 当たり判定処理
 	CheckHit();
 	UpdateOverlay2D();
-	// スコアの更新処理
+
+	// UIの更新処理
 	UpdateGameUI();
 
 	UpdateFBXTestModel();
@@ -275,8 +275,9 @@ void DrawGame0(void)
 	// ライティングを無効
 	SetLightEnable(FALSE);
 
-	// スコアの描画処理
+	// UIの描画処理
 	DrawGameUI();
+
 	DrawOverlay2D();
 	
 
