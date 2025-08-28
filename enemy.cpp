@@ -126,7 +126,7 @@ void SpiderEnemy::Init() {
 
 	minDistance = 100.0f;
 
-	HP = 1;
+	HP = 5;
 
 	EnableGravity(true);
 	SetMaxFallSpeed(6.0f);
@@ -228,6 +228,16 @@ void SpiderEnemy::Update() {
 			bullet[i].use = false;
 			HP -= 1;
 
+			//血痕エフェクト
+			XMFLOAT3 groundNormal = { 0.0f, 1.0f, 0.0f };
+			XMFLOAT3 bulletDir = { 0.0f, -1.0f, 0.0f };   
+			EffectManager::CreateBloodSplatter(XMFLOAT3(pos.x, -60.0f, pos.z), groundNormal, bulletDir, 2.0f);
+			
+			EffectManager::ApplyEffects();
+
+			
+
+
 			//死亡処理
 			if (HP <= 0)
 			{
@@ -240,7 +250,9 @@ void SpiderEnemy::Update() {
 			}
 		}
 
+
 	}
+
 
 
 #ifdef _DEBUG

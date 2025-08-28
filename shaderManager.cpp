@@ -636,6 +636,8 @@ bool EffectManager::Initialize()
     ZeroMemory(&s_EffectParams, sizeof(EffectParams));
     //MessageBox(NULL, "EffectParams initialized", "EffectManager Debug", MB_OK);
 
+	s_EffectParams.bloodIntensity = 1.0f;// 血痕のデフォルト強度（掛け算なので）
+
     // 効果パラメーター用定数バッファ作成
     D3D11_BUFFER_DESC bufferDesc;
     ZeroMemory(&bufferDesc, sizeof(bufferDesc));
@@ -700,18 +702,8 @@ void EffectManager::ClearDissolveEffect()
 
 void EffectManager::AddBloodStain(XMFLOAT3 position, float radius)
 {
-    if (s_EffectParams.bloodCount >= 4) return; // 最大4つまで
-
-    EnableEffect(EFFECT_BLOOD_STAIN);
-    int index = s_EffectParams.bloodCount;
-
-    s_EffectParams.bloodPositions[index] = XMFLOAT4(position.x, position.y, position.z, 1.0f);
-    if (index == 0) s_EffectParams.bloodRadii.x = radius;
-    else if (index == 1) s_EffectParams.bloodRadii.y = radius;
-    else if (index == 2) s_EffectParams.bloodRadii.z = radius;
-    else if (index == 3) s_EffectParams.bloodRadii.w = radius;
-
-    s_EffectParams.bloodCount++;
+    XMFLOAT3 defaultProjection = { 0.0f, 1.0f, 0.0f }; // 上
+    AddBloodProjection(position, radius, defaultProjection, 1.0f);
 }
 
 void EffectManager::ClearBloodStains()
@@ -723,6 +715,58 @@ void EffectManager::ClearBloodStains()
 void EffectManager::SetBloodIntensity(float intensity)
 {
     s_EffectParams.bloodIntensity = intensity;
+}
+
+//血痕投影の追加
+void EffectManager::AddBloodProjection(XMFLOAT3 position, float radius,
+    XMFLOAT3 projectionDirection, float intensity)
+{
+    
+    EnableEffect(EFFECT_BLOOD_STAIN);
+    int index = s_EffectParams.bloodCount;
+
+	// 位置と半径を保存
+    if (s_EffectParams.bloodCount < 8) {
+        index = s_EffectParams.bloodCount;
+        s_EffectParams.bloodCount++;
+    }
+    else {
+		// 8個を超えたら古いものから上書き
+        static int replaceIndex = 0;
+        index = replaceIndex;
+        replaceIndex = (replaceIndex + 1) % 8;  // loop
+    }
+
+	// 投影方向と強度を保存
+    s_EffectParams.bloodPositions[index] = XMFLOAT4(position.x, position.y, position.z, 1.0f);
+    s_EffectParams.bloodProjections[index] = XMFLOAT4(
+        projectionDirection.x, projectionDirection.y, projectionDirection.z, intensity
+    );
+
+	// 半径を保存
+    if (index < 4) {
+        if (index == 0) s_EffectParams.bloodRadii[0].x = radius;
+        else if (index == 1) s_EffectParams.bloodRadii[0].y = radius;
+        else if (index == 2) s_EffectParams.bloodRadii[0].z = radius;
+        else if (index == 3) s_EffectParams.bloodRadii[0].w = radius;
+    }
+    else {
+        if (index == 4) s_EffectParams.bloodRadii[1].x = radius;
+        else if (index == 5) s_EffectParams.bloodRadii[1].y = radius;
+        else if (index == 6) s_EffectParams.bloodRadii[1].z = radius;
+        else if (index == 7) s_EffectParams.bloodRadii[1].w = radius;
+    }
+}
+
+
+void EffectManager::CreateBloodSplatter(XMFLOAT3 hitPos, XMFLOAT3 hitNormal,
+    XMFLOAT3 bulletDirection, float intensity)
+{
+	// ヒット位置に血痕投影を追加
+    AddBloodProjection(hitPos, 50.0f, hitNormal, intensity);
+
+    // 
+    // 
 }
 
 void EffectManager::SetGlowEffect(float intensity, XMFLOAT3 color)

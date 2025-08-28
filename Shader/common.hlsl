@@ -87,22 +87,27 @@ cbuffer EffectBuffer : register(b8)
 {
       // Effect control flags (bitwise)
     uint g_EffectFlags;
+    
 
       // ディゾルブ (敵)
     float g_DissolveAmount; // 0.0 - 1.0
+    float2 padding1;
     float4 g_DissolveColor; // edge color
 
       // 血痕 (マップに)
-    float4 g_BloodPositions[4]; // up to 4 blood positions
-    float g_BloodRadii[4]; // corresponding radii
+    float4 g_BloodPositions[8]; // up to 4 blood positions
+    float4 g_BloodRadii[2]; // corresponding radii
     float g_BloodIntensity; // overall blood intensity
     int g_BloodCount; // current blood stain count
+    float2 padding2;
+    
+    float4 g_BloodProjections[8];
 
       // Custom effect parameters
     float4 g_CustomParam1;
     float4 g_CustomParam2;
 
-    float2 g_EffectPadding; // 16バイト用
+    float4 padding3; // 16バイト用
 };
 
 //*****************************************************************************
@@ -147,7 +152,7 @@ SamplerState g_SamplerState : register(s0);
 // ツール関数
 //*****************************************************************************
 
-  // Calculate dissolve effect
+  // ディゾルブエフェクト計算
 float CalculateDissolve(float2 uv, float dissolveAmount)
 {
     if (!(g_EffectFlags & EFFECT_DISSOLVE))
@@ -162,7 +167,7 @@ float CalculateDissolve(float2 uv, float dissolveAmount)
     
 }
 
-  // Calculate blood stain effect for terrain
+  // マップの血痕エフェクト計算
 float CalculateBloodStain(float3 worldPos)
 {
     if (!(g_EffectFlags & EFFECT_BLOOD_STAIN))
@@ -170,10 +175,62 @@ float CalculateBloodStain(float3 worldPos)
 
     float totalBlood = 0.0f;
 
-    for (int i = 0; i < g_BloodCount && i < 4; i++)
+    for (int i = 0; i < g_BloodCount && i < 8; i++)
     {
-        float distance = length(worldPos - g_BloodPositions[i]);
-        float bloodFactor = saturate(1.0f - (distance / g_BloodRadii[i]));
+        float3 bloodCenter = g_BloodPositions[i].xyz;
+        float3 projDir = g_BloodProjections[i].xyz;
+        float intensity = g_BloodProjections[i].w;
+
+          // 半径の取得
+        float radius;
+        if (i < 4)
+        {
+            if (i == 0)
+                radius = g_BloodRadii[0].x;
+            else if (i == 1)
+                radius = g_BloodRadii[0].y;
+            else if (i == 2)
+                radius = g_BloodRadii[0].z;
+            else if (i == 3)
+                radius = g_BloodRadii[0].w;
+        }
+        else
+        {
+            if (i == 4)
+                radius = g_BloodRadii[1].x;
+            else if (i == 5)
+                radius = g_BloodRadii[1].y;
+            else if (i == 6)
+                radius = g_BloodRadii[1].z;
+            else if (i == 7)
+                radius = g_BloodRadii[1].w;
+        }
+
+          // 血痕の中心からピクセルまでの距離
+        float3 toPixel = worldPos - bloodCenter;
+        float distance = length(toPixel);
+
+          // 距離に基づく血痕の強度（半径内で最大、外で0）
+        float bloodFactor = saturate(1.0f - (distance / radius));
+
+          // 投影方向が指定されている場合、その方向に基づいて血痕を強調
+        if (length(projDir) > 0.1f) // ある
+        {
+            float3 normalizedProjDir = normalize(projDir);
+            float3 normalizedToPixel = normalize(toPixel);
+
+              
+            float projectionFactor = saturate(1.0f + dot(normalizedToPixel, normalizedProjDir) * 0.5f);
+            bloodFactor *= projectionFactor;
+        }
+
+          // 強度を調整
+        bloodFactor *= intensity;
+
+          // エッジを滑らかにフェードアウト
+        float edgeFade = smoothstep(0.9f, 0.3f, distance / radius);
+        bloodFactor *= edgeFade;
+
         totalBlood += bloodFactor;
     }
 
