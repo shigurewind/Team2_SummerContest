@@ -146,6 +146,7 @@ struct VertexOutput
 //*****************************************************************************
 Texture2D g_Texture : register(t0);
 Texture2D g_DissolveMap : register(t1); // ノイズテクスチャ
+Texture2D g_BloodTexture : register(t2); // 血痕テクスチャ
 SamplerState g_SamplerState : register(s0);
 
 //*****************************************************************************
@@ -209,9 +210,19 @@ float CalculateBloodStain(float3 worldPos)
           // 血痕の中心からピクセルまでの距離
         float3 toPixel = worldPos - bloodCenter;
         float distance = length(toPixel);
+        
+        if (distance > radius)
+            continue;
+        
+        // 血痕テクスチャのUV座標（中心が(0.5,0.5)になるように調整）
+        float2 bloodUV = (toPixel.xz / radius) * 0.5f + 0.5f;
+        float bloodTexSample = g_BloodTexture.Sample(g_SamplerState, bloodUV).r;
+        
 
           // 距離に基づく血痕の強度（半径内で最大、外で0）
         float bloodFactor = saturate(1.0f - (distance / radius));
+        
+        bloodFactor *= bloodTexSample; // テクスチャ応用
 
           // 投影方向が指定されている場合、その方向に基づいて血痕を強調
         if (length(projDir) > 0.1f) // ある

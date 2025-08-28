@@ -765,8 +765,29 @@ void EffectManager::CreateBloodSplatter(XMFLOAT3 hitPos, XMFLOAT3 hitNormal,
 	// ヒット位置に血痕投影を追加
     AddBloodProjection(hitPos, 50.0f, hitNormal, intensity);
 
-    // 
-    // 
+    for (int i = 0; i < 2; i++) {
+		// ランダムな方向を生成
+        XMFLOAT3 splatterDir = {
+            bulletDirection.x + ((rand() % 200 - 100) / 500.0f), // ±0.2
+            bulletDirection.y + ((rand() % 200 - 100) / 500.0f),
+            bulletDirection.z + ((rand() % 200 - 100) / 500.0f)
+        };
+
+        // 正規化
+        XMVECTOR splatterVec = XMVector3Normalize(XMLoadFloat3(&splatterDir));
+        XMStoreFloat3(&splatterDir, splatterVec);
+
+		// ヒットポイントからランダムな距離に飛ばす
+        XMFLOAT3 splatterPos = {
+            hitPos.x + splatterDir.x * (10.0f + rand() % 40), // 10-50
+            hitPos.y + splatterDir.y * (10.0f + rand() % 40),
+            hitPos.z + splatterDir.z * (10.0f + rand() % 40)
+        };
+
+        AddBloodProjection(splatterPos, 20.0f + rand() % 20, splatterDir,
+            intensity * (0.3f + (rand() % 40) / 100.0f)); // 30-70%
+    }
+
 }
 
 void EffectManager::SetGlowEffect(float intensity, XMFLOAT3 color)

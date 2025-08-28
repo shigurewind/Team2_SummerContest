@@ -36,6 +36,7 @@ static BOOL g_bAlphaTestEnemy;
 #define ENEMY_OFFSET_Y  (-50.0f)
 
 
+ID3D11ShaderResourceView* BaseEnemy::s_BloodTexture = nullptr;
 
 
 
@@ -53,21 +54,38 @@ isDying(false), dissolveTimer(0.0f), dissolveAmount(0.0f), hasDroppedItems(false
 		"data/TEXTURE/sampleNoise.png",
 		NULL, NULL, &dissolveTexture, NULL);
 
-#ifdef _DEBUG
-	if (FAILED(hr)) {
-		PrintDebugProc("Failed to load dissolve texture! HRESULT: %x\n", hr);
-	}
-	else {
-		PrintDebugProc("Dissolve texture loaded successfully\n");
-	}
-#endif
+	
 
 }
+
+
 BaseEnemy::~BaseEnemy() {
 	//dissolveテクスチャ解放
 	if (dissolveTexture) {
 		dissolveTexture->Release();
 		dissolveTexture = nullptr;
+	}
+}
+
+bool BaseEnemy::LoadBloodTexture()
+{
+	if (s_BloodTexture) return true; 
+
+	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(
+		GetDevice(),
+		"data/TEXTURE/bloodStain.png",  
+		NULL, NULL, &s_BloodTexture, NULL);
+
+
+
+	return SUCCEEDED(hr);
+}
+
+void BaseEnemy::UnloadBloodTexture()
+{
+	if (s_BloodTexture) {
+		s_BloodTexture->Release();
+		s_BloodTexture = nullptr;
 	}
 }
 
@@ -228,14 +246,20 @@ void SpiderEnemy::Update() {
 			bullet[i].use = false;
 			HP -= 1;
 
+			
 			//血痕エフェクト
-			XMFLOAT3 groundNormal = { 0.0f, 1.0f, 0.0f };
-			XMFLOAT3 bulletDir = { 0.0f, -1.0f, 0.0f };   
-			EffectManager::CreateBloodSplatter(XMFLOAT3(pos.x, -60.0f, pos.z), groundNormal, bulletDir, 2.0f);
-			
-			EffectManager::ApplyEffects();
+			XMFLOAT3 bulletDirection = {
+		  bullet[i].vel.x,  
+		  bullet[i].vel.y,
+		  bullet[i].vel.z
+			};// 弾のベクトルを使用
 
+			XMVECTOR bulletDir = XMVector3Normalize(XMLoadFloat3(&bulletDirection));
+			XMFLOAT3 normalizedBulletDir;
+			XMStoreFloat3(&normalizedBulletDir, bulletDir);
 			
+			EffectManager::CreateBloodSplatter(pos, normalizedBulletDir, normalizedBulletDir, 1.5f);
+			EffectManager::ApplyEffects();
 
 
 			//死亡処理
@@ -427,6 +451,9 @@ void SpiderEnemy::Attack()
 //*****************************************************************************
 void InitEnemy() {
 	MakeVertexEnemy();
+
+	BaseEnemy::LoadBloodTexture();
+
 	g_enemies.clear();
 	for (int i = 0; i < ENEMY_MAX; ++i) {
 
@@ -466,6 +493,8 @@ void UninitEnemy() {
 		delete enemy;
 	}
 	g_enemies.clear();
+
+	BaseEnemy::UnloadBloodTexture();
 
 	if (g_VertexBufferEnemy) {
 		g_VertexBufferEnemy->Release();

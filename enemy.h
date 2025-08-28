@@ -35,6 +35,11 @@ public:
 	XMFLOAT3 GetScale() const;
 
 	ID3D11ShaderResourceView* dissolveTexture;// ディゾルブ用テクスチャ
+	static ID3D11ShaderResourceView* s_BloodTexture;// 血痕テクスチャ
+
+	static bool LoadBloodTexture();    
+	static void UnloadBloodTexture();
+	
 
 protected:
 	XMFLOAT3 pos;
@@ -52,6 +57,8 @@ protected:
 	float dissolveAmount;   // dissolve程度
 	bool hasDroppedItems;
 
+
+	
 };
 
 //*****************************************************************************

@@ -1,6 +1,7 @@
 #include "FBXmodel.h"
 #include "Octree.h"
 #include "shaderManager.h"
+#include "enemy.h"
 
 
 //-------------------------------------------------------------------------
@@ -165,6 +166,10 @@ void DrawFBXTestModel(void)
 	// 縁取りの設定
 	//SetFuchi(1);
 
+	// 血痕テクスチャの設定
+	if (BaseEnemy::s_BloodTexture) {
+		GetDeviceContext()->PSSetShaderResources(2, 1, &BaseEnemy::s_BloodTexture);
+	}
 
 	// モデル描画
 	ModelDraw(g_FBXTestModel.model);
