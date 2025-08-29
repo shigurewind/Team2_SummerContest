@@ -31,13 +31,14 @@ float4 PixelShaderPolygon(VertexOutput input) : SV_Target
     //ŒŒ­
     if (g_EffectFlags & EFFECT_BLOOD_STAIN)
     {
-        float bloodMask = CalculateBloodMask(input.WorldPos.xyz);
+        float4 bloodEffect = CalculateBloodEffect(input.WorldPos.xyz);
 
-        if (bloodMask > 0.01f) 
+        if (bloodEffect.a > 0.01f) 
         {
       
-            float3 bloodColor = GetBloodColor(input.WorldPos.xyz);
-            color.rgb = bloodColor; 
+            //color.rgb = lerp(color.rgb, bloodEffect.rgb, bloodEffect.a);
+            color.rgb = bloodEffect.rgb;
+
         }
     }
     

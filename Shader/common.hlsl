@@ -168,20 +168,21 @@ float CalculateDissolve(float2 uv, float dissolveAmount)
     
 }
 
-  // マップの血痕エフェクトマスク計算
-float CalculateBloodMask(float3 worldPos)
+  // マップの血痕エフェクト計算
+float4 CalculateBloodEffect(float3 worldPos)
 {
     if (!(g_EffectFlags & EFFECT_BLOOD_STAIN))
-        return 0.0f;
+        return float4(1.0f, 1.0f, 1.0f, 0.0f); // RGB=白色, A=0透明
 
-    float maxBloodMask = 0.0f;
+    float4 finalBlood = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float maxAlpha = 0.0f;
 
     for (int i = 0; i < g_BloodCount && i < 8; i++)
     {
         float3 bloodCenter = g_BloodPositions[i].xyz;
         float3 toPixel = worldPos - bloodCenter;
 
-          // 半径の取得
+          // 半径を取得
         float radius;
         if (i < 4)
         {
@@ -209,121 +210,28 @@ float CalculateBloodMask(float3 worldPos)
         float distance = length(toPixel);
         if (distance > radius)
             continue;
-        
-        float2 bloodUV = (toPixel.xz / radius) * 0.5f + 0.5f;
-        float textureAlpha = g_BloodTexture.Sample(g_SamplerState, bloodUV).a;
 
-          // マスク計算（距離に基づく）
+          // サンプリング
+        float2 bloodUV = (toPixel.xz / radius) * 0.5f + 0.5f;
+        float4 bloodSample = g_BloodTexture.Sample(g_SamplerState, bloodUV);
+
+          // 距離によるフェード
         float distanceFade = saturate(1.0f - (distance / radius));
         distanceFade = pow(distanceFade, 0.7f);
 
-          // 最終マスク値
-        float finalMask = textureAlpha * distanceFade * g_BloodIntensity;
+          // アルファ計算
+        float currentAlpha = bloodSample.a * distanceFade * g_BloodIntensity;
 
-        maxBloodMask = max(maxBloodMask, finalMask);
+          // 最大のアルファを使用して重ねる
+        if (currentAlpha > maxAlpha)
+        {
+            maxAlpha = currentAlpha;
+            finalBlood.rgb = bloodSample.rgb; 
+            finalBlood.a = currentAlpha; 
+        }
     }
 
-    return saturate(maxBloodMask);
-}
-
-// マップの血痕の色取得
-float3 GetBloodColor(float3 worldPos)
-{
-    if (!(g_EffectFlags & EFFECT_BLOOD_STAIN))
-        return float3(1.0f, 1.0f, 1.0f); // 白色（血痕なし）
-
-    for (int i = 0; i < g_BloodCount && i < 8; i++)
-    {
-        float3 bloodCenter = g_BloodPositions[i].xyz;
-        float3 toPixel = worldPos - bloodCenter;
-
-          // 半径
-        float radius;
-        if (i < 4)
-        {
-            if (i == 0)
-                radius = g_BloodRadii[0].x;
-            else if (i == 1)
-                radius = g_BloodRadii[0].y;
-            else if (i == 2)
-                radius = g_BloodRadii[0].z;
-            else if (i == 3)
-                radius = g_BloodRadii[0].w;
-        }
-        else
-        {
-            if (i == 4)
-                radius = g_BloodRadii[1].x;
-            else if (i == 5)
-                radius = g_BloodRadii[1].y;
-            else if (i == 6)
-                radius = g_BloodRadii[1].z;
-            else if (i == 7)
-                radius = g_BloodRadii[1].w;
-        }
-
-        float distance = length(toPixel);
-        if (distance > radius)
-            continue;
-
-        // 血痕テクスチャサンプリング
-        float2 bloodUV = (toPixel.xz / radius) * 0.5f + 0.5f;
-        float4 bloodTexRGBA = g_BloodTexture.Sample(g_SamplerState, bloodUV);
-
-        return bloodTexRGBA.rgb; // テクスチャカラーを返す
-    }
-
-    return float3(1.0f, 1.0f, 1.0f); // 血痕なし
-}
-
-// アルファ値取得
-float GetBloodAlpha(float3 worldPos)
-{
-    if (!(g_EffectFlags & EFFECT_BLOOD_STAIN))
-        return 0.0f;
-
-    for (int i = 0; i < g_BloodCount && i < 8; i++)
-    {
-        float3 bloodCenter = g_BloodPositions[i].xyz;
-        float3 toPixel = worldPos - bloodCenter;
-
-          // 半径
-        float radius;
-        if (i < 4)
-        {
-            if (i == 0)
-                radius = g_BloodRadii[0].x;
-            else if (i == 1)
-                radius = g_BloodRadii[0].y;
-            else if (i == 2)
-                radius = g_BloodRadii[0].z;
-            else if (i == 3)
-                radius = g_BloodRadii[0].w;
-        }
-        else
-        {
-            if (i == 4)
-                radius = g_BloodRadii[1].x;
-            else if (i == 5)
-                radius = g_BloodRadii[1].y;
-            else if (i == 6)
-                radius = g_BloodRadii[1].z;
-            else if (i == 7)
-                radius = g_BloodRadii[1].w;
-        }
-
-        float distance = length(toPixel);
-        if (distance > radius)
-            continue;
-
-          // 
-        float2 bloodUV = (toPixel.xz / radius) * 0.5f + 0.5f;
-        float bloodAlpha = g_BloodTexture.Sample(g_SamplerState, bloodUV).a;
-
-        return bloodAlpha; 
-    }
-
-    return 0.0f;
+    return finalBlood;
 }
 
 
