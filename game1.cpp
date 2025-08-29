@@ -28,7 +28,7 @@
 
 #include "FBXmodel.h"
 #include "item.h"
-#include "dissolveTest.h"
+
 
 
 //*****************************************************************************
@@ -88,7 +88,7 @@ HRESULT InitGame1(void)
 
 	InitItem();
 
-	InitDissolveTest();
+	
 
 	// BGMçƒê∂
 	PlaySound(SOUND_LABEL_BGM_sample001);
@@ -130,7 +130,7 @@ void UninitGame1(void)
 
 	UninitItem();
 
-	UninitDissolveTest();
+	
 
 }
 
@@ -198,7 +198,7 @@ void UpdateGame1(void)
 
 	UpdateItem();
 
-	UpdateDissolveTest();
+	
 }
 
 //=============================================================================
@@ -234,7 +234,7 @@ void DrawGame01(void)
 
 	DrawItem();
 
-	DrawDissolveTest();
+	
 
 
 	// 2DÇÃï®Çï`âÊÇ∑ÇÈèàóù

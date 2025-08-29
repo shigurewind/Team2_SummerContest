@@ -28,7 +28,7 @@
 
 #include "FBXmodel.h"
 #include "item.h"
-#include "dissolveTest.h"
+
 
 #include "boundingBoxDebug.h"
 
@@ -89,7 +89,7 @@ HRESULT InitGame(void)
 
 	InitItem();
 
-	InitDissolveTest();
+	
 
 	// デバッグ用のバウンディングボックスの初期化
 	BoundingBoxDebugRenderer::GetInstance().Initialize();
@@ -133,7 +133,7 @@ void UninitGame(void)
 
 	UninitItem();
 
-	UninitDissolveTest();
+	
 
 	BoundingBoxDebugRenderer::GetInstance().Shutdown();
 
@@ -201,7 +201,7 @@ void UpdateGame(void)
 
 	UpdateItem();
 
-	UpdateDissolveTest();
+	
 
 	bool allDead = true;
 	for (auto enemy : GetEnemies())
@@ -261,7 +261,7 @@ void DrawGame0(void)
 
 	DrawItem();
 
-	DrawDissolveTest();
+	
 
 
 	//デバッグ用のバウンディングボックスの描画処理（全ての物描画した後）
