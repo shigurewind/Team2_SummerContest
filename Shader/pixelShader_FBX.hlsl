@@ -36,8 +36,8 @@ float4 PixelShaderPolygon(VertexOutput input) : SV_Target
         if (bloodEffect.a > 0.01f) 
         {
       
-            //color.rgb = lerp(color.rgb, bloodEffect.rgb, bloodEffect.a);
-            color.rgb = bloodEffect.rgb;
+            //color.rgb = lerp(color.rgb, bloodEffect.rgb, bloodEffect.a);//アルファブレンドあり
+            color.rgb = bloodEffect.rgb; //アルファブレンドなし
 
         }
     }
