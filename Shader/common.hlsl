@@ -216,13 +216,16 @@ float CalculateBloodStain(float3 worldPos)
         
         // 血痕テクスチャのUV座標（中心が(0.5,0.5)になるように調整）
         float2 bloodUV = (toPixel.xz / radius) * 0.5f + 0.5f;
-        float bloodTexSample = g_BloodTexture.Sample(g_SamplerState, bloodUV).r;
+        float3 bloodTexRGB = g_BloodTexture.Sample(g_SamplerState, bloodUV).rgb;
         
+        float bloodTexSample = dot(bloodTexRGB, float3(0.299, 0.587, 0.114));
+        bloodTexSample = pow(bloodTexSample, 0.5f);
 
           // 距離に基づく血痕の強度（半径内で最大、外で0）
         float bloodFactor = saturate(1.0f - (distance / radius));
         
-        bloodFactor *= bloodTexSample; // テクスチャ応用
+        bloodFactor = pow(bloodFactor, 0.7f); // エッジを強調
+        bloodFactor *= bloodTexSample * 1.5f; // 
 
           // 投影方向が指定されている場合、その方向に基づいて血痕を強調
         if (length(projDir) > 0.1f) // ある
@@ -246,6 +249,63 @@ float CalculateBloodStain(float3 worldPos)
     }
 
     return saturate(totalBlood * g_BloodIntensity);
+}
+
+// マップの血痕の色取得
+float3 GetBloodColor(float3 worldPos)
+{
+    if (!(g_EffectFlags & EFFECT_BLOOD_STAIN))
+        return float3(0.0f, 0.0f, 0.0f);
+
+    float3 finalBloodColor = float3(0.0f, 0.0f, 0.0f);
+    float totalWeight = 0.0f;
+
+    for (int i = 0; i < g_BloodCount && i < 8; i++)
+    {
+        float3 bloodCenter = g_BloodPositions[i].xyz;
+        float3 toPixel = worldPos - bloodCenter;
+
+          // 半径の取得
+        float radius;
+        if (i < 4)
+        {
+            if (i == 0)
+                radius = g_BloodRadii[0].x;
+            else if (i == 1)
+                radius = g_BloodRadii[0].y;
+            else if (i == 2)
+                radius = g_BloodRadii[0].z;
+            else if (i == 3)
+                radius = g_BloodRadii[0].w;
+        }
+        else
+        {
+            if (i == 4)
+                radius = g_BloodRadii[1].x;
+            else if (i == 5)
+                radius = g_BloodRadii[1].y;
+            else if (i == 6)
+                radius = g_BloodRadii[1].z;
+            else if (i == 7)
+                radius = g_BloodRadii[1].w;
+        }
+
+        float distance = length(toPixel);
+        if (distance > radius)
+            continue;
+
+          // ウェイト計算（距離に基づく）
+        float weight = saturate(1.0f - (distance / radius));
+
+          // テクスチャサンプリング
+        float2 bloodUV = (toPixel.xz / radius) * 0.5f + 0.5f;
+        float3 bloodTexRGB = g_BloodTexture.Sample(g_SamplerState, bloodUV).rgb;
+
+        finalBloodColor += bloodTexRGB * weight;
+        totalWeight += weight;
+    }
+
+    return totalWeight > 0.0f ? (finalBloodColor / totalWeight) : float3(0.0f, 0.0f, 0.0f);
 }
 
 

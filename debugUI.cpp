@@ -221,14 +221,14 @@ void ShowDebugUI()
 	}
 
 	//Shaderエディター
-	if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
+	/*if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
 	{
 
 
 		
 
 		
-	}
+	}*/
 
 	//ライトエディター
 	if (ImGui::CollapsingHeader(u8"ライトエディター"))
@@ -380,5 +380,5 @@ void ShowDebugUI()
 
 	//ShaderManager::ShowShaderDebugUI();
 
-	//ShaderManager::ShowEffectDebugUI();
+	ShaderManager::ShowEffectDebugUI();
 }

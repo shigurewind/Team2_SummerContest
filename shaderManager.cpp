@@ -512,6 +512,8 @@ void ShaderManager::ShowEffectDebugUI()
 
             if (dissolveEnabled)
             {
+                
+
                 ImGui::SliderFloat("Dissolve Amount", &params->dissolveAmount, 0.0f, 1.0f);
                 ImGui::ColorEdit4("Dissolve Color", &params->dissolveColor.x);
             }
@@ -531,7 +533,7 @@ void ShaderManager::ShowEffectDebugUI()
 
             if (bloodEnabled)
             {
-                ImGui::SliderFloat("Blood Intensity", &params->bloodIntensity, 0.0f, 2.0f);
+                ImGui::SliderFloat("Blood Intensity", &params->bloodIntensity, 0.0f, 3.0f);
                 ImGui::Text("Blood Count: %d", params->bloodCount);
 
                 if (ImGui::Button("Add Blood Stain"))
@@ -547,30 +549,7 @@ void ShaderManager::ShowEffectDebugUI()
             }
         }
 
-        // ”­ŒõŒø‰Ê
-        if (ImGui::CollapsingHeader("Glow Effect"))
-        {
-            bool glowEnabled = params->effectFlags & EFFECT_GLOW;
-            if (ImGui::Checkbox("Enable Glow", &glowEnabled))
-            {
-                if (glowEnabled)
-                    EffectManager::EnableEffect(EFFECT_GLOW);
-                else
-                    EffectManager::DisableEffect(EFFECT_GLOW);
-            }
-
-            if (glowEnabled)
-            {
-                ImGui::SliderFloat("Glow Intensity", &params->customParam1.x, 0.0f, 2.0f);
-                float glowColor[3] = { params->customParam1.y, params->customParam1.z, params->customParam1.w };
-                if (ImGui::ColorEdit3("Glow Color", glowColor))
-                {
-                    params->customParam1.y = glowColor[0];
-                    params->customParam1.z = glowColor[1];
-                    params->customParam1.w = glowColor[2];
-                }
-            }
-        }
+        
 
         ImGui::Separator();
         if (ImGui::Button("Apply Effects"))

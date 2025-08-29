@@ -31,21 +31,15 @@ float4 PixelShaderPolygon(VertexOutput input) : SV_Target
     //血痕
     if (g_EffectFlags & EFFECT_BLOOD_STAIN)
     {
-        float bloodFactor = CalculateBloodStain(input.WorldPos.xyz);
-        if (bloodFactor > 0.0f)
+        float bloodStain = CalculateBloodStain(input.WorldPos.xyz);
+
+        if (bloodStain > 0.0f)
         {
-          // もっともらしい血の色
-            float3 freshBlood = float3(0.6f, 0.1f, 0.1f); // 新鮮
-            float3 driedBlood = float3(0.3f, 0.05f, 0.05f); // 乾いた
+      
+            float3 bloodColor = GetBloodColor(input.WorldPos.xyz);
 
-          // ブレンド
-            float3 bloodColor = lerp(driedBlood, freshBlood, bloodFactor);
-
-          // ブレンド
-            color.rgb = lerp(color.rgb, bloodColor, bloodFactor);
-
-          // ハイライト
-            color.rgb += float3(0.1f, 0.02f, 0.02f) * bloodFactor * 0.5f;
+      
+            color.rgb = lerp(color.rgb, bloodColor, bloodStain);
         }
     }
     
