@@ -31,11 +31,11 @@ HRESULT InitFBXTestModel(void)
 		return E_FAIL;
 	}
 
-	char debugPos[128];
+	/*char debugPos[128];
 	sprintf_s(debugPos, "FBX pos.y = %.2f\n", g_FBXTestModel.pos.y);
-	OutputDebugStringA(debugPos);
+	OutputDebugStringA(debugPos);*/
 
-	
+
 
 
 	g_FBXTestModel.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -70,9 +70,10 @@ HRESULT InitFBXTestModel(void)
 			floorMaxY = max(floorMaxY, v.y);
 		}
 	}
-	char debugFloor[128];
+
+	/*char debugFloor[128];
 	sprintf_s(debugFloor, "Floor Y Range: min = %.2f, max = %.2f\n", floorMinY, floorMaxY);
-	OutputDebugStringA(debugFloor);
+	OutputDebugStringA(debugFloor);*/
 
 	XMFLOAT3 minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
 	XMFLOAT3 maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
@@ -89,15 +90,15 @@ HRESULT InitFBXTestModel(void)
 		};
 
 	for (const auto& tri : g_FloorTris) updateBounds(tri);
-	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 6,1);
-			
+	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 6, 1);
+
 	minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
 	maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 	for (const auto& tri : g_WallTris) updateBounds(tri);
 	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 6, 1);
 
 
-	
+
 
 	return S_OK;
 }
@@ -174,7 +175,7 @@ void DrawFBXTestModel(void)
 	// ÉÇÉfÉãï`âÊ
 	ModelDraw(g_FBXTestModel.model);
 
-	
+
 	//SetFuchi(0);
 
 	// ÉJÉäÉìÉOê›íËÇñﬂÇ∑
@@ -241,17 +242,17 @@ void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix)
 			}
 
 			g_TriangleList.push_back({ v[0], v[1], v[2], normal3, type });
-			char buf[128];
+			/*char buf[128];
 			sprintf_s(buf, "Normal Y: %.2f Type: %d\n", normal3.y, type);
-			OutputDebugStringA(buf);
+			OutputDebugStringA(buf);*/
 		}
 	}
 
 	char debugMsg[256];
 	sprintf_s(debugMsg, "ExtractTriangleData: %zu triangles extracted\n", g_TriangleList.size());
 	OutputDebugStringA(debugMsg);
-	
-	
+
+
 }
 
 const std::vector<TriangleData>& GetTriangleList()
