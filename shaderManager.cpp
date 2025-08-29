@@ -533,15 +533,18 @@ void ShaderManager::ShowEffectDebugUI()
 
             if (bloodEnabled)
             {
-                ImGui::SliderFloat("Blood Intensity", &params->bloodIntensity, 0.0f, 3.0f);
+                ImGui::SliderFloat("Blood Intensity", &params->bloodIntensity, 0.0f, 4.0f);
                 ImGui::Text("Blood Count: %d", params->bloodCount);
 
-                if (ImGui::Button("Add Blood Stain"))
-                {
-                    XMFLOAT3 pos = { 0.0f, 0.0f, 0.0f };
-                    EffectManager::AddBloodStain(pos, 2.0f);
-                }
-                ImGui::SameLine();
+                ImGui::Separator();
+                ImGui::Text("Blood Splatter Parameters:");
+                ImGui::SliderFloat("Main Blood Radius", &params->customParam1.x, 10.0f, 100.0f);
+                ImGui::SliderFloat("Splatter Radius", &params->customParam1.y, 5.0f, 50.0f);
+                ImGui::SliderFloat("Splatter Distance", &params->customParam1.z, 5.0f, 80.0f);
+                ImGui::SliderFloat("Splatter Intensity", &params->customParam1.w, 0.1f, 1.0f);
+                
+                ImGui::Separator();
+
                 if (ImGui::Button("Clear Blood Stains"))
                 {
                     EffectManager::ClearBloodStains();
@@ -638,6 +641,14 @@ bool EffectManager::Initialize()
 
     //MessageBox(NULL, "Buffer created successfully", "EffectManager Debug", MB_OK);
     s_IsInitialized = true;
+
+	//ŒŒ­ƒpƒ‰ƒ[ƒ^[‰Šú‰»
+    s_EffectParams.customParam1.x = 50.0f;  // ”¼Œa
+    s_EffectParams.customParam1.y = 30.0f;  // ŠgU”¼Œa
+    s_EffectParams.customParam1.z = 30.0f;  // ŠgU‹——£
+    s_EffectParams.customParam1.w = 0.5f;   // ‹­“xŒW”
+
+
     return true;
 }
 
@@ -689,6 +700,17 @@ void EffectManager::ClearBloodStains()
 {
     DisableEffect(EFFECT_BLOOD_STAIN);
     s_EffectParams.bloodCount = 0;
+
+    for (int i = 0; i < 8; i++) {
+        s_EffectParams.bloodPositions[i] = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+        s_EffectParams.bloodProjections[i] = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+    s_EffectParams.bloodRadii[0] = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+    s_EffectParams.bloodRadii[1] = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+
+    ApplyEffects();
+
 }
 
 void EffectManager::SetBloodIntensity(float intensity)
@@ -741,8 +763,13 @@ void EffectManager::AddBloodProjection(XMFLOAT3 position, float radius,
 void EffectManager::CreateBloodSplatter(XMFLOAT3 hitPos, XMFLOAT3 hitNormal,
     XMFLOAT3 bulletDirection, float intensity)
 {
+    float mainRadius = s_EffectParams.customParam1.x;        
+    float splatterRadius = s_EffectParams.customParam1.y;    
+    float splatterDistance = s_EffectParams.customParam1.z;  
+    float splatterIntensity = s_EffectParams.customParam1.w;
+
 	// ƒqƒbƒgˆÊ’u‚ÉŒŒ­“Š‰e‚ğ’Ç‰Á
-    AddBloodProjection(hitPos, 50.0f, hitNormal, intensity);
+    AddBloodProjection(hitPos, mainRadius, hitNormal, intensity);
 
     for (int i = 0; i < 2; i++) {
 		// ƒ‰ƒ“ƒ_ƒ€‚È•ûŒü‚ğ¶¬
@@ -757,14 +784,17 @@ void EffectManager::CreateBloodSplatter(XMFLOAT3 hitPos, XMFLOAT3 hitNormal,
         XMStoreFloat3(&splatterDir, splatterVec);
 
 		// ƒqƒbƒgƒ|ƒCƒ“ƒg‚©‚çƒ‰ƒ“ƒ_ƒ€‚È‹——£‚É”ò‚Î‚·
+        float randomDistance = splatterDistance * (0.3f + (rand() % 70) / 100.0f); // 30%-100%
         XMFLOAT3 splatterPos = {
-            hitPos.x + splatterDir.x * (10.0f + rand() % 40), // 10-50
-            hitPos.y + splatterDir.y * (10.0f + rand() % 40),
-            hitPos.z + splatterDir.z * (10.0f + rand() % 40)
+            hitPos.x + splatterDir.x * randomDistance,
+            hitPos.y + splatterDir.y * randomDistance,
+            hitPos.z + splatterDir.z * randomDistance
         };
 
-        AddBloodProjection(splatterPos, 20.0f + rand() % 20, splatterDir,
-            intensity * (0.3f + (rand() % 40) / 100.0f)); // 30-70%
+        float randomRadius = splatterRadius * (0.5f + (rand() % 50) / 100.0f); // 50%-100%
+        float randomIntensity = intensity * splatterIntensity * (0.5f + (rand() % 50) / 100.0f);
+
+        AddBloodProjection(splatterPos, randomRadius, splatterDir, randomIntensity);
     }
 
 }
