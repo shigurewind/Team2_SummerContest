@@ -163,6 +163,10 @@ void UpdateGame(void)
 
 #endif
 
+	if (GetFade() == FADE_OUT) {
+		return;
+	}
+
 	if (g_bPause == TRUE)
 		return;
 	

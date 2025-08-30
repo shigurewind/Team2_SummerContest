@@ -108,10 +108,10 @@ void PLAYER::Init()
 	SetMaxFallSpeed(6.0f);
 	jumpPower = 8.0f;
 
-	ammoNormal = 50;
-	maxAmmoNormal = 0;
-	ammoFire = 30;
-	maxAmmoFire = 0;
+	ammoNormal = 6;   
+	maxAmmoNormal = 36;  
+	ammoFire = 0;
+	maxAmmoFire = 20;
 
 	HP = HP_MAX = 5;
 	alive = true;
@@ -255,7 +255,7 @@ void PLAYER::OnUpdate() {
 	HandleGroundCheck();    // 地面接地判定
 
 	HandleShooting();       // 弾発射
-	//HandleReload();         // Rでリロード
+	HandleReload();         // Rでリロード
 
 	EventCheck();          // イベントチェック
 }
@@ -320,12 +320,13 @@ void PLAYER::HandleInput()
 		//enemy 
 
 		auto& enemies = GetEnemies();
+		XMFLOAT3 p = GetPosition();
 		for (auto enemy : enemies) {
 			if (!enemy->IsUsed()) continue;
 
 			XMFLOAT3 ePos = enemy->GetPosition();
-			float dx = g_Player.pos.x - ePos.x;
-			float dz = g_Player.pos.z - ePos.z;
+			float dx = p.x - ePos.x;
+			float dz = p.z - ePos.z;
 			float distance = sqrtf(dx * dx + dz * dz);
 
 			if (distance > 100.0f) continue;
@@ -556,39 +557,39 @@ void PLAYER::HandleShooting()
 }
 
 
-//void PLAYER::HandleReload()
-//{
-//	// Rキーでリロード処理
-//	if (GetKeyboardTrigger(DIK_R))
-//	{
-//		Weapon* weapon = nullptr;
-//		switch (currentWeapon)
-//		{
-//		case WEAPON_REVOLVER:
-//			weapon = GetRevolver();
-//			break;
-//		case WEAPON_SHOTGUN:
-//			weapon = GetShotgun();
-//			break;
-//		case WEAPON_ROCKET_LAUNCHER:
-//			weapon = GetRocket_Launcher();
-//			break;
-//		}
-//
-//		int clipSize = weapon->clipSize;
-//
-//		int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
-//		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
-//
-//		if (*ammo < clipSize && *maxAmmo > 0)
-//		{
-//			int need = clipSize - *ammo;
-//			int reload = Min(need, *maxAmmo);
-//			*ammo += reload;
-//			*maxAmmo -= reload;
-//		}
-//	}
-//}
+void PLAYER::HandleReload()
+{
+	// Rキーでリロード処理
+	if (GetKeyboardTrigger(DIK_R))
+	{
+		Weapon* weapon = nullptr;
+		switch (currentWeapon)
+		{
+		case WEAPON_REVOLVER:
+			weapon = GetRevolver();
+			break;
+		case WEAPON_SHOTGUN:
+			weapon = GetShotgun();
+			break;
+		case WEAPON_ROCKET_LAUNCHER:
+			weapon = GetRocket_Launcher();
+			break;
+		}
+
+		int clipSize = weapon->clipSize;
+
+		int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
+		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
+
+		if (*ammo < clipSize && *maxAmmo > 0)
+		{
+			int need = clipSize - *ammo;
+			int reload = Min(need, *maxAmmo);
+			*ammo += reload;
+			*maxAmmo -= reload;
+		}
+	}
+}
 
 
 XMFLOAT3 PLAYER::GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector, float halfSize)
@@ -713,31 +714,28 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 
 void SavePlayerToFile() {
 	PlayerSaveData data;
-	data.weapon = (int)GetCurrentWeaponType();
-	data.bullet = (int)GetCurrentBulletType();
+	data.weapon = static_cast<int>(g_Player.currentWeapon); 
+	data.bullet = static_cast<int>(g_Player.currentBullet); 
 	data.ammoNormal = g_Player.ammoNormal;
 	data.ammoFire = g_Player.ammoFire;
 
 	std::ofstream out(SAVE_FILE_PATH, std::ios::binary);
 	if (out) {
-		out.write((char*)&data, sizeof(PlayerSaveData));
-		out.close();
+		out.write(reinterpret_cast<const char*>(&data), sizeof(PlayerSaveData));
 	}
 }
-void LoadPlayerFromFile() {
-	PlayerSaveData data;
 
+void LoadPlayerFromFile() {
+	PlayerSaveData data{};
 	std::ifstream in(SAVE_FILE_PATH, std::ios::binary);
 	if (in) {
-		in.read((char*)&data, sizeof(PlayerSaveData));
-		in.close();
+		in.read(reinterpret_cast<char*>(&data), sizeof(PlayerSaveData));
 
-		currentWeapon = (WeaponType)data.weapon;
-		currentBullet = (BulletType)data.bullet;
+		g_Player.currentWeapon = static_cast<WeaponType>(data.weapon);   
+		g_Player.currentBullet = static_cast<BulletType>(data.bullet);  
 		g_Player.ammoNormal = data.ammoNormal;
 		g_Player.ammoFire = data.ammoFire;
 	}
-}
 }
 
 
