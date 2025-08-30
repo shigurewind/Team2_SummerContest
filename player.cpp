@@ -197,8 +197,8 @@ void UpdatePlayer(void)
 	{
 		g_Player.HP = g_Player.HP_MAX;
 		g_Player.alive = true;
-		g_Player.pos = XMFLOAT3(0.0f, PLAYER_OFFSET_Y + 50.0f, 0.0f); 
-		LoadPlayerFromFile(); 
+		g_Player.SetPosition(XMFLOAT3(0.0f, PLAYER_OFFSET_Y + 50.0f, 0.0f));
+		LoadPlayerFromFile();
 	}
 
 #ifdef _DEBUG
@@ -485,7 +485,7 @@ void PLAYER::HandleShooting()
 {
 	// ’e”­ŽËˆ—
 	int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
-	if (IsMouseLeftTriggered() && currentAmmo > 0)
+	if (IsMouseLeftTriggered() && *currentAmmo > 0)
 	{
 		XMFLOAT3 pos = GetGunMuzzlePosition();
 		XMFLOAT3 rot = GetGunMuzzleRotation();
@@ -496,7 +496,7 @@ void PLAYER::HandleShooting()
 		else {
 			SetShotgunBullet(currentBullet, pos, rot);
 		}
-		(currentAmmo)--;
+		(*currentAmmo)--;
 	}
 }
 
