@@ -130,3 +130,4 @@ void SwitchToPreviousItem();
 void SwitchToNextItem();
 
 ID3D11ShaderResourceView* GetItemTexture(int itemID);
+void SpawnDefaultItemsStage();

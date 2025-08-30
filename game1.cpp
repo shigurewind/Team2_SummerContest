@@ -69,7 +69,7 @@ HRESULT InitGame1(void)
 
 	//// エネミーの初期化
 	InitEnemy();
-
+	SpawnDefaultEnemiesStage2();
 	
 
 	

@@ -223,8 +223,6 @@ HRESULT InitItem()
 
 	g_bAlpaTest = TRUE;
 
-	SpawnItem(XMFLOAT3(30.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
-	SpawnItem(XMFLOAT3(50.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
 
 
 
@@ -595,6 +593,10 @@ ID3D11ShaderResourceView* GetItemTexture(int itemID) {
 }
 
 
+void SpawnDefaultItemsStage() {
+	SpawnItem({ 30.0f, 0.0f, 20.0f }, ITEM_APPLE);
+	SpawnItem({ 50.0f, 0.0f, 0.0f }, ITEM_SAN);
+}
 
 
 

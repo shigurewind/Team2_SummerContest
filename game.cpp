@@ -72,7 +72,7 @@ HRESULT InitGame(void)
 
 	// エネミーの初期化
 	InitEnemy();
-
+	SpawnDefaultEnemiesStage1();
 	
 
 	// 弾の初期化
@@ -88,6 +88,7 @@ HRESULT InitGame(void)
 	InitFBXTestModel();
 
 	InitItem();
+	SpawnDefaultItemsStage();
 
 	
 

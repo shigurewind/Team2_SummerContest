@@ -455,12 +455,6 @@ void InitEnemy() {
 	BaseEnemy::LoadBloodTexture();
 
 	g_enemies.clear();
-	for (int i = 0; i < ENEMY_MAX; ++i) {
-
-		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
-		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
-
-	}
 }
 
 void UpdateEnemy() {
@@ -504,6 +498,16 @@ void UninitEnemy() {
 
 std::vector<BaseEnemy*>& GetEnemies() {
 	return g_enemies;
+}
+
+void SpawnDefaultEnemiesStage1() {
+	EnemySpawner(XMFLOAT3(-50.0f, -50.0f, 20.0f), SPIDER);
+}
+
+void SpawnDefaultEnemiesStage2() {
+	//EnemySpawner(XMFLOAT3(-50.0f, -50.0f, 20.0f), SPIDER);
+	//EnemySpawner(XMFLOAT3(30.0f, -50.0f, 40.0f), GHOST);
+
 }
 
 //*****************************************************************************

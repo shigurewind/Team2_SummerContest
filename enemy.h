@@ -172,3 +172,7 @@ void UninitEnemy();
 
 void EnemySpawner(XMFLOAT3 position, int type);
 void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType);
+
+void SpawnDefaultEnemiesStage1();
+void SpawnDefaultEnemiesStage2();
+
