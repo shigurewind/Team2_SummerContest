@@ -126,25 +126,21 @@ public:
 struct EffectParams
 {
     UINT effectFlags;
-    float padding1[3];
-
-    // ディゾルブ効果
-    float dissolveAmount;
-    float padding2[3];        // 16バイト
+    float dissolveAmount;      
+    float padding1[2];         
     XMFLOAT4 dissolveColor;
 
-    // 血痕効果
-    XMFLOAT4 bloodPositions[4];  // XMFLOAT3 -> XMFLOAT4
-    XMFLOAT4 bloodRadii;         // float[4] -> XMFLOAT4
+    XMFLOAT4 bloodPositions[8];
+    XMFLOAT4 bloodRadii[2];
     float bloodIntensity;
     int bloodCount;
-    float padding3[2];
+    float padding2[2];         
 
-    // カスタマイズパラメータ
+    XMFLOAT4 bloodProjections[8];
     XMFLOAT4 customParam1;
     XMFLOAT4 customParam2;
 
-    
+    float padding3[4];        
 };
 
 
@@ -180,6 +176,11 @@ public:
     static void AddBloodStain(XMFLOAT3 position, float radius);
     static void ClearBloodStains();
     static void SetBloodIntensity(float intensity);
+
+    static void AddBloodProjection(XMFLOAT3 position, float radius,
+        XMFLOAT3 projectionDirection, float intensity);
+    static void CreateBloodSplatter(XMFLOAT3 hitPos, XMFLOAT3 hitNormal,
+        XMFLOAT3 bulletDirection, float intensity = 1.0f);
 
     // Glow
     static void SetGlowEffect(float intensity, XMFLOAT3 color);

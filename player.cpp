@@ -19,6 +19,7 @@
 #include "collision.h"
 #include "overlay2D.h"
 #include "enemy.h"
+#include "inputManager.h"
 
 //*****************************************************************************
 // マクロ定義	
@@ -63,8 +64,8 @@ static bool tutorialTriggered = false;
 
 
 //weponとbullet弾の状態
-static WeaponType currentWeapon = WEAPON_REVOLVER;
-static BulletType currentBullet = BULLET_NORMAL;
+//static WeaponType currentWeapon = WEAPON_REVOLVER;
+//static BulletType currentBullet = BULLET_NORMAL;
 
 
 
@@ -107,10 +108,10 @@ void PLAYER::Init()
 	SetMaxFallSpeed(6.0f);
 	jumpPower = 8.0f;
 
-	ammoNormal = 0;
-	maxAmmoNormal = 30;
-	ammoFire = 0;
-	maxAmmoFire = 20;
+	ammoNormal = 50;
+	maxAmmoNormal = 0;
+	ammoFire = 30;
+	maxAmmoFire = 0;
 
 	HP = HP_MAX = 5;
 	alive = true;
@@ -119,6 +120,8 @@ void PLAYER::Init()
 
 	currentWeapon = WEAPON_REVOLVER;
 	currentBullet = BULLET_NORMAL;
+
+	currentConsumableIndex = 0;
 
 	load = TRUE;
 	LoadModel(MODEL_PLAYER, &model);
@@ -162,17 +165,10 @@ void UpdatePlayer(void)
 	{
 
 
-		/*g_Player.HandleInput();
-		g_Player.HandleShooting();
-		g_Player.HandleReload();
-		g_Player.HandleJump();
-		g_Player.HandleGroundCheck();*/
-
 		g_Player.OnUpdate(); // プレイヤーの更新処理
 
-		//g_Player.EventCheck(); // イベントチェック
-
-
+		//スポットライトの更新
+		UpdateSpotlight();
 
 
 
@@ -238,14 +234,11 @@ void UpdatePlayer(void)
 
 
 
-
-
-
 #ifdef _DEBUG
 	// デバッグ表示
 	//PrintDebugProc("Player X:%f Y:%f Z:%f \n\n", g_Player.pos.x, g_Player.pos.y, g_Player.pos.z);
 
-	PrintDebugProc("Rキーでリロード\n"
+	PrintDebugProc(
 		"1キーで武器切り替え\n"
 		"2キーで弾切り替え");
 #endif
@@ -262,14 +255,14 @@ void PLAYER::OnUpdate() {
 	HandleGroundCheck();    // 地面接地判定
 
 	HandleShooting();       // 弾発射
-	HandleReload();         // Rでリロード
+	//HandleReload();         // Rでリロード
 
 	EventCheck();          // イベントチェック
 }
 
 //ジャンプ
 void PLAYER::HandleJump() {
-	if (GetKeyboardTrigger(DIK_SPACE) && isGround) {
+	if (g_pInputManager->IsActionTriggered(ACTION_JUMP) && isGround) {
 		velocity.y = jumpPower;
 		isGround = false;
 	}
@@ -278,43 +271,49 @@ void PLAYER::HandleJump() {
 //移動処理
 void PLAYER::HandleInput()
 {
-	//移動処理TODO：変更必要
+	
 	CAMERA* cam = GetCamera();
 
-	//g_Player.speed *= 0.7f;
+	
 
 	// 移動処理
 	XMFLOAT3 move = {};
-	//bool isMoving = false;
+	XMFLOAT2 inputVector = {};
 
-	if (GetKeyboardPress(DIK_W)) {
-		move.x += sinf(cam->rot.y);
-		move.z += cosf(cam->rot.y);
-		//isMoving = true;
+	if (g_pInputManager->IsActionPressed(ACTION_MOVE_FORWARD)) {
+		inputVector.y += 1.0f;
 	}
-	if (GetKeyboardPress(DIK_S)) {
-		move.x -= sinf(cam->rot.y);
-		move.z -= cosf(cam->rot.y);
-		//isMoving = true;
+	if (g_pInputManager->IsActionPressed(ACTION_MOVE_BACKWARD)) {
+		inputVector.y -= 1.0f;
 	}
-	if (GetKeyboardPress(DIK_A)) {
-		move.x -= cosf(cam->rot.y);
-		move.z += sinf(cam->rot.y);
-		//isMoving = true;
+	if (g_pInputManager->IsActionPressed(ACTION_MOVE_LEFT)) {
+		inputVector.x -= 1.0f;
 	}
-	if (GetKeyboardPress(DIK_D)) {
-		move.x += cosf(cam->rot.y);
-		move.z -= sinf(cam->rot.y);
-		//isMoving = true;
+	if (g_pInputManager->IsActionPressed(ACTION_MOVE_RIGHT)) {
+		inputVector.x += 1.0f;
 	}
+
+	float stickX = g_pInputManager->GetLeftStickXValue();
+	float stickY = g_pInputManager->GetLeftStickYValue();
 	
+	if (fabs(stickX) > 0.1f || fabs(stickY) > 0.1f) {
+		inputVector.x = stickX;
+		inputVector.y = -stickY;
+	}
+
+	//カメラの向きに合わせて移動
+	if (inputVector.x != 0.0f || inputVector.y != 0.0f) {
+		move.x += sinf(cam->rot.y) * inputVector.y + cosf(cam->rot.y) * inputVector.x;
+		move.z += cosf(cam->rot.y) * inputVector.y - sinf(cam->rot.y) * inputVector.x;
+	}
+
 	velocity.x = move.x * speed;
 	velocity.z = move.z * speed;
 
 	
 
 	//近接攻撃
-	if (IsMouseRightTriggered() && meleeCooldown <= 0.0f)
+	if (g_pInputManager->IsActionTriggered(ACTION_MELEE) && meleeCooldown <= 0.0f)
 	{
 		meleeCooldown = meleeCDTime;
 		PlayMeleeAnimation();
@@ -335,17 +334,54 @@ void PLAYER::HandleInput()
 		}
 	}
 
+	//Item関連
+	if (g_pInputManager->IsActionTriggered(ACTION_USE_ITEM)) {
+		UseCurrentItem();  // 今のアイテムを使用
+	}
 
-	//武器切り替え
+	if (g_pInputManager->IsActionTriggered(ACTION_LAST_ITEM)) {
+		SwitchToPreviousItem();  // 先のアイテム
+	}
+
+	if (g_pInputManager->IsActionTriggered(ACTION_NEXT_ITEM)) {
+		SwitchToNextItem();  // 次のアイテム
+	}
+
+
+	//スポットライトの切り替え
+	if (g_pInputManager->IsActionTriggered(ACTION_LIGHT_SWITCH))
+	{
+		SetSpotlightEnabled(!GetSpotlightEnabled());
+	}
+
+
 	//キーボードの1　武器の切り替え
 	if (GetKeyboardTrigger(DIK_1))
 	{
-		currentWeapon = (currentWeapon == WEAPON_REVOLVER) ? WEAPON_SHOTGUN : WEAPON_REVOLVER;
+		switch (currentWeapon)
+		{
+		case WEAPON_REVOLVER:
+			currentWeapon = WEAPON_SHOTGUN;
+			break;
+		case WEAPON_SHOTGUN:
+			currentWeapon = WEAPON_ROCKET_LAUNCHER;
+			break;
+		case WEAPON_ROCKET_LAUNCHER:
+			currentWeapon = WEAPON_REVOLVER;
+			break;
+		}
 	}
 	//キーボードの2　弾の切り替え
 	if (GetKeyboardTrigger(DIK_2))
 	{
-		currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
+		if (currentBullet == BULLET_NORMAL)
+		{
+			currentBullet = BULLET_FIRE;
+		}
+		else
+		{
+			currentBullet = BULLET_NORMAL;
+		}
 	}
 
 
@@ -483,44 +519,76 @@ void PLAYER::EventCheck()
 
 void PLAYER::HandleShooting()
 {
-	// 弾発射処理
+	// 現在の弾種の“総弾数”ポインタを取得
 	int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
-	if (IsMouseLeftTriggered() && *currentAmmo > 0)
+
+	// 武器ごとの消費数
+	int requiredCost = 1;
+	switch (currentWeapon) {
+	case WEAPON_REVOLVER:         requiredCost = 1; break;
+	case WEAPON_SHOTGUN:          requiredCost = 3; break;
+	case WEAPON_ROCKET_LAUNCHER:  requiredCost = 5; break;
+	}
+
+	// クリックトリガ & 弾が足りる場合のみ発射
+	if (IsMouseLeftTriggered() && *currentAmmo >= requiredCost)
 	{
 		XMFLOAT3 pos = GetGunMuzzlePosition();
 		XMFLOAT3 rot = GetGunMuzzleRotation();
+
 		if (currentWeapon == WEAPON_REVOLVER)
 		{
 			SetRevolverBullet(currentBullet, pos, rot);
 		}
-		else {
-			SetShotgunBullet(currentBullet, pos, rot);
-		}
-		(*currentAmmo)--;
-	}
-}
-
-
-void PLAYER::HandleReload()
-{
-	// Rキーでリロード処理
-	if (GetKeyboardTrigger(DIK_R))
-	{
-		Weapon* weapon = (currentWeapon == WEAPON_REVOLVER) ? GetRevolver() : GetShotgun();
-		int clipSize = weapon->clipSize;
-
-		int* ammo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
-		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &maxAmmoNormal : &maxAmmoFire;
-
-		if (*ammo < clipSize && *maxAmmo > 0)
+		else if (currentWeapon == WEAPON_SHOTGUN)
 		{
-			int need = clipSize - *ammo;
-			int reload = Min(need, *maxAmmo);
-			*ammo += reload;
-			*maxAmmo -= reload;
+			SetShotgunBullet(currentBullet, pos, rot); // ばら撒きは既存のまま
 		}
+		else if (currentWeapon == WEAPON_ROCKET_LAUNCHER)
+		{
+			SetRocketLauncherBullet(currentBullet, pos, rot);
+		}
+
+		// 武器ごとのコストを消費
+		*currentAmmo -= requiredCost;
+		if (*currentAmmo < 0) *currentAmmo = 0; // 念のため
 	}
 }
+
+
+//void PLAYER::HandleReload()
+//{
+//	// Rキーでリロード処理
+//	if (GetKeyboardTrigger(DIK_R))
+//	{
+//		Weapon* weapon = nullptr;
+//		switch (currentWeapon)
+//		{
+//		case WEAPON_REVOLVER:
+//			weapon = GetRevolver();
+//			break;
+//		case WEAPON_SHOTGUN:
+//			weapon = GetShotgun();
+//			break;
+//		case WEAPON_ROCKET_LAUNCHER:
+//			weapon = GetRocket_Launcher();
+//			break;
+//		}
+//
+//		int clipSize = weapon->clipSize;
+//
+//		int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
+//		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
+//
+//		if (*ammo < clipSize && *maxAmmo > 0)
+//		{
+//			int need = clipSize - *ammo;
+//			int reload = Min(need, *maxAmmo);
+//			*ammo += reload;
+//			*maxAmmo -= reload;
+//		}
+//	}
+//}
 
 
 XMFLOAT3 PLAYER::GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector, float halfSize)
@@ -613,12 +681,12 @@ PLAYER* GetPlayer(void)
 
 WeaponType GetCurrentWeaponType(void)
 {
-	return currentWeapon;
+	return g_Player.currentWeapon;
 }
 
 BulletType GetCurrentBulletType(void)
 {
-	return currentBullet;
+	return g_Player.currentBullet;
 }
 
 
@@ -670,3 +738,15 @@ void LoadPlayerFromFile() {
 		g_Player.ammoFire = data.ammoFire;
 	}
 }
+}
+
+
+//プレイヤーのインベントリーを取得
+Inventory* GetPlayerInventory(void) {
+	PLAYER* player = GetPlayer();
+	return &(player->inventory);
+}
+
+
+
+

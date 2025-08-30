@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="bullet.cpp" />
@@ -42,6 +42,9 @@
     <ClCompile Include="title.cpp" />
     <ClCompile Include="tree.cpp" />
     <ClCompile Include="object.cpp" />
+    <ClCompile Include="boundingBoxDebug.cpp" />
+    <ClCompile Include="inputManager.cpp" />
+    <ClCompile Include="game1.cpp" />
     <ClCompile Include="blood.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -374,6 +377,9 @@
     <ClInclude Include="title.h" />
     <ClInclude Include="tree.h" />
     <ClInclude Include="object.h" />
+    <ClInclude Include="boundingBoxDebug.h" />
+    <ClInclude Include="inputManager.h" />
+    <ClInclude Include="game1.h" />
     <ClInclude Include="blood.h" />
   </ItemGroup>
 </Project>

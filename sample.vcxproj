@@ -118,7 +118,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>false</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
     </ClCompile>
     <Link>
@@ -135,7 +135,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>false</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -144,6 +144,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="boundingBoxDebug.h" />
     <ClInclude Include="blood.h" />
     <ClInclude Include="bullet.h" />
     <ClInclude Include="camera.h" />
@@ -437,11 +438,11 @@
     <ClInclude Include="Dependenceis\nlohmann\json_fwd.hpp" />
     <ClInclude Include="Dependenceis\nlohmann\ordered_map.hpp" />
     <ClInclude Include="DirectXTex.h" />
-    <ClInclude Include="dissolveTest.h" />
     <ClInclude Include="enemy.h" />
     <ClInclude Include="fade.h" />
     <ClInclude Include="FBXmodel.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="game1.h" />
     <ClInclude Include="imconfig.h" />
     <ClInclude Include="imgui.h" />
     <ClInclude Include="imgui_impl_dx11.h" />
@@ -451,6 +452,7 @@
     <ClInclude Include="imstb_textedit.h" />
     <ClInclude Include="imstb_truetype.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="inputManager.h" />
     <ClInclude Include="inventory.h" />
     <ClInclude Include="item.h" />
     <ClInclude Include="itemDatabase.h" />
@@ -476,17 +478,18 @@
     <ClInclude Include="tree.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="boundingBoxDebug.cpp" />
     <ClCompile Include="blood.cpp" />
     <ClCompile Include="bullet.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="debugproc.cpp" />
     <ClCompile Include="debugUI.cpp" />
-    <ClCompile Include="dissolveTest.cpp" />
     <ClCompile Include="enemy.cpp" />
     <ClCompile Include="fade.cpp" />
     <ClCompile Include="FBXmodel.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="game1.cpp" />
     <ClCompile Include="GameUI.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
@@ -496,6 +499,7 @@
     <ClCompile Include="imgui_tables.cpp" />
     <ClCompile Include="imgui_widgets.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="inputManager.cpp" />
     <ClCompile Include="inventory.cpp" />
     <ClCompile Include="item.cpp" />
     <ClCompile Include="itemDatabase.cpp" />

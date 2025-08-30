@@ -434,6 +434,12 @@ HRESULT InitializePad(void)			// パッド初期化
 		diprg.diph.dwObj		= DIJOFS_Y;
 		pGamePad[i]->SetProperty(DIPROP_RANGE, &diprg.diph);
 
+		//右スティックの範囲を設定
+		diprg.diph.dwObj = DIJOFS_Z;
+		pGamePad[i]->SetProperty(DIPROP_RANGE, &diprg.diph);
+		diprg.diph.dwObj = DIJOFS_RZ;
+		pGamePad[i]->SetProperty(DIPROP_RANGE, &diprg.diph);
+
 		// 各軸ごとに、無効のゾーン値を設定する。
 		// 無効ゾーンとは、中央からの微少なジョイスティックの動きを無視する範囲のこと。
 		// 指定する値は、10000に対する相対値(2000なら20パーセント)。
@@ -447,6 +453,12 @@ HRESULT InitializePad(void)			// パッド初期化
 		pGamePad[i]->SetProperty( DIPROP_DEADZONE, &dipdw.diph);
 		//Y軸の無効ゾーンを設定
 		dipdw.diph.dwObj		= DIJOFS_Y;
+		pGamePad[i]->SetProperty(DIPROP_DEADZONE, &dipdw.diph);
+
+		//右スティックの無効ゾーンを設定
+		dipdw.diph.dwObj = DIJOFS_Z;
+		pGamePad[i]->SetProperty(DIPROP_DEADZONE, &dipdw.diph);
+		dipdw.diph.dwObj = DIJOFS_RZ;
 		pGamePad[i]->SetProperty(DIPROP_DEADZONE, &dipdw.diph);
 			
 		//ジョイスティック入力制御開始
@@ -471,6 +483,18 @@ void UninitPad(void)
 
 //------------------------------------------ 更新
 float GY, GX;
+
+//スティック
+static float leftStickX[GAMEPADMAX] = { 0 };
+static float leftStickY[GAMEPADMAX] = { 0 };
+static float rightStickX[GAMEPADMAX] = { 0 };
+static float rightStickY[GAMEPADMAX] = { 0 };
+
+//十字キー
+static DWORD dpadState[GAMEPADMAX] = { 0 };
+static DWORD dpadTrigger[GAMEPADMAX] = { 0 };
+
+
 
 void UpdatePad(void)
 {
@@ -499,14 +523,34 @@ void UpdatePad(void)
 		}
 
 		// ３２の各ビットに意味を持たせ、ボタン押下に応じてビットをオンにする
-		//* y-axis (forward)
-		if ( dijs.lY < 0 )					padState[i] |= BUTTON_UP;
-		//* y-axis (backward)
-		if ( dijs.lY > 0 )					padState[i] |= BUTTON_DOWN;
-		//* x-axis (left)
-		if ( dijs.lX < 0 )					padState[i] |= BUTTON_LEFT;
-		//* x-axis (right)
-		if ( dijs.lX > 0 )					padState[i] |= BUTTON_RIGHT;
+		// 
+		DWORD lastDPadState = dpadState[i];
+		dpadState[i] = 0;
+
+		// スティックの値を取得
+		leftStickX[i] = (float)dijs.lX / 1000.0f;
+		leftStickY[i] = (float)dijs.lY / 1000.0f;
+
+		rightStickX[i] = (float)dijs.lZ / 1000.0f;
+		rightStickY[i] = (float)dijs.lRz / 1000.0f;
+
+
+#ifdef _DEBUG
+		PrintDebugProc("lRx: %d, lRy: %d, lZ: %d, lRz: %d\n",
+			dijs.lRx, dijs.lRy, dijs.lZ, dijs.lRz);
+#endif
+
+		// 十字キー
+		if (dijs.rgdwPOV[0] != (DWORD)-1) {
+			DWORD pov = dijs.rgdwPOV[0];
+			if (pov >= 31500 || pov <= 4500) dpadState[i] |= BUTTON_UP;
+			if (pov >= 4500 && pov <= 13500) dpadState[i] |= BUTTON_RIGHT;
+			if (pov >= 13500 && pov <= 22500) dpadState[i] |= BUTTON_DOWN;
+			if (pov >= 22500 && pov <= 31500) dpadState[i] |= BUTTON_LEFT;
+		}
+		// Trigger設定
+		dpadTrigger[i] = ((lastDPadState ^ dpadState[i]) & dpadState[i]);
+
 		//* Ｘボタン
 		if (dijs.rgbButtons[rgbButtons_X] & 0x80)	padState[i] |= BUTTON_X;
 		//* Ａボタン
@@ -546,4 +590,64 @@ BOOL IsButtonTriggered(int padNo,DWORD button)
 	return (button & padTrigger[padNo]);
 }
 
+
+// スティックの値を取得
+float GetLeftStickX(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return 0.0f;
+	return leftStickX[padNo];
+}
+
+float GetLeftStickY(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return 0.0f;
+	return leftStickY[padNo];
+}
+
+float GetRightStickX(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return 0.0f;
+	float value = rightStickX[padNo];
+
+	// dead zone
+	if (fabs(value) < 0.2f) return 0.0f;
+
+	return value;
+}
+
+float GetRightStickY(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return 0.0f;
+	float value = rightStickY[padNo];
+
+	// dead zone
+	if (fabs(value) < 0.2f) return 0.0f;
+
+	return value;
+}
+
+// 十字キーの状態を取得
+BOOL IsDPadUpTriggered(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return FALSE;
+	return (dpadTrigger[padNo] & BUTTON_UP) ? TRUE : FALSE;
+}
+
+BOOL IsDPadDownTriggered(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return FALSE;
+	return (dpadTrigger[padNo] & BUTTON_DOWN) ? TRUE : FALSE;
+}
+
+BOOL IsDPadLeftTriggered(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return FALSE;
+	return (dpadTrigger[padNo] & BUTTON_LEFT) ? TRUE : FALSE;
+}
+
+BOOL IsDPadRightTriggered(int padNo)
+{
+	if (padNo >= GAMEPADMAX) return FALSE;
+	return (dpadTrigger[padNo] & BUTTON_RIGHT) ? TRUE : FALSE;
+}
 

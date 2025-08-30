@@ -17,6 +17,7 @@ enum LIGHT_TYPE
 	LIGHT_TYPE_NONE,		//ライト無し
 	LIGHT_TYPE_DIRECTIONAL,	//ディレクショナルライト
 	LIGHT_TYPE_POINT,		//ポイントライト
+	LIGHT_TYPE_SPOT,
 
 	LIGHT_TYPE_NUM
 };
@@ -72,6 +73,11 @@ struct LIGHT {
 	XMFLOAT4	Diffuse;	// 拡散光の色
 	XMFLOAT4	Ambient;	// 環境光の色
 	float		Attenuation;// 減衰率
+
+	float    SpotInnerCos;   // y: 内側コーンの cosθ
+	float    SpotOuterCos;   // z: 外側コーンの cosθ
+	float    SpotExponent;   // w: フェードの鋭さ
+
 	int			Type;		// ライト種別・有効フラグ
 	int			Enable;		// ライト種別・有効フラグ
 };

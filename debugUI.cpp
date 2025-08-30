@@ -9,10 +9,11 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-#include "dissolveTest.h"
+
 #include "shaderManager.h"
 
 #include "light.h"
+#include "boundingBoxDebug.h"
 
 
 // item.cppにあるアイテム配列
@@ -39,9 +40,61 @@ void ShowDebugUI()
 		ImGui::SliderFloat(u8"移動速度", &GetPlayer()->speed, 0.0f, 20.0f);
 		ImGui::InputFloat(u8"速度入力", &GetPlayer()->speed, 0.1f, 1.0f, "%.2f");
 
+		ImGui::Separator();
+		ImGui::Text(u8"=== インベントリ情報 ===");
+
+		Inventory* inventory = GetPlayerInventory();
+
+		// 選択中のアイテム表示
+		const std::vector<Item>& consumables = inventory->GetConsumables();
+		if (!consumables.empty()) {
+			int currentIndex = GetPlayer()->currentConsumableIndex;
+			if (currentIndex >= 0 && currentIndex < (int)consumables.size()) {
+				const Item& currentItem = consumables[currentIndex];
+				ImGui::Text(u8"選択中アイテム: %s (数量: %d)",
+					currentItem.GetName().c_str(), currentItem.GetCount());
+			}
+		}
+		else {
+			ImGui::Text(u8"選択中アイテム: なし");
+		}
+
+		// アイテム一覧表示
+		if (ImGui::TreeNode(u8"消耗品")) {
+			for (const auto& item : consumables) {
+				ImGui::Text(u8"・%s x%d", item.GetName().c_str(), item.GetCount());
+			}
+			if (consumables.empty()) {
+				ImGui::Text(u8"アイテムなし");
+			}
+			ImGui::TreePop();
+		}
+
+		if (ImGui::TreeNode(u8"弾薬パーツ")) {
+			const std::vector<Item>& ammoParts = inventory->GetAmmoParts();
+			for (const auto& item : ammoParts) {
+				ImGui::Text(u8"・%s x%d", item.GetName().c_str(), item.GetCount());
+			}
+			if (ammoParts.empty()) {
+				ImGui::Text(u8"アイテムなし");
+			}
+			ImGui::TreePop();
+		}
+
+		if (ImGui::TreeNode(u8"発射方法パーツ")) {
+			const std::vector<Item>& fireTypeParts = inventory->GetFireTypeParts();
+			for (const auto& item : fireTypeParts) {
+				ImGui::Text(u8"・%s x%d", item.GetName().c_str(), item.GetCount());
+			}
+			if (fireTypeParts.empty()) {
+				ImGui::Text(u8"アイテムなし");
+			}
+			ImGui::TreePop();
+		}
+
 	}
 
-	//カメラの制御
+	//カメラ視点の制御
 	if (ImGui::CollapsingHeader(u8"カメラ制御"))
 	{
 		CAMERA* cam = GetCamera();
@@ -49,6 +102,7 @@ void ShowDebugUI()
 		ImGui::Checkbox(u8"第一人称視点 (Tabキーでも切替可)", &isFirstPersonMode);
 
 		ImGui::SliderFloat(u8"マウス感度", &sensitivity, 0.0001f, 0.005f, "%.4f");
+		ImGui::SliderFloat(u8"コントローラー感度", &controllerSensitivity, 0.01f, 0.3f, "%.3f");
 
 		ImGui::DragFloat3(u8"カメラ座標", (float*)&cam->pos, 0.5f);
 
@@ -154,7 +208,7 @@ void ShowDebugUI()
 		if (ImGui::Button(u8"アイテム追加"))
 		{
 			CAMERA* cam = GetCamera();
-			SetItem(cam->pos, selectedItemID);
+			SpawnItem(cam->pos, selectedItemID);
 		}
 
 		if (ImGui::Button(u8"保存")) {
@@ -167,16 +221,14 @@ void ShowDebugUI()
 	}
 
 	//Shaderエディター
-	if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
+	/*if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
 	{
 
 
-		DissolveTest* dissolveTest = GetDissolveTest();
-		ImGui::Checkbox(u8"ディゾルブ有効", &dissolveTest->isDissolving);
-		ImGui::DragFloat(u8"ディゾルブ値", &dissolveTest->dissolve, 0.01f, 0.0f, 1.0f, "%.2f");
+		
 
 		
-	}
+	}*/
 
 	//ライトエディター
 	if (ImGui::CollapsingHeader(u8"ライトエディター"))
@@ -244,7 +296,82 @@ void ShowDebugUI()
 		}
 
 
+	}
 
+
+	//バウンディングボックスデバッグ
+	if (ImGui::CollapsingHeader(u8"バウンディングボックス"))
+	{
+		BoundingBoxDebugRenderer& debugRenderer = BoundingBoxDebugRenderer::GetInstance();
+
+		bool globalEnable = debugRenderer.GetGlobalEnable();
+		if (ImGui::Checkbox(u8"バウンディングボックス起用", &globalEnable)) {
+			debugRenderer.SetGlobalEnable(globalEnable);
+		}
+
+		if (globalEnable) {
+			bool playerBox = debugRenderer.GetPlayerBoxEnable();
+			if (ImGui::Checkbox(u8"プレイヤーボックス", &playerBox)) {
+				debugRenderer.SetPlayerBoxEnable(playerBox);
+			}
+
+			bool enemyBox = debugRenderer.GetEnemyBoxEnable();
+			if (ImGui::Checkbox(u8"エネミーボックス", &enemyBox)) {
+				debugRenderer.SetEnemyBoxEnable(enemyBox);
+			}
+
+			bool itemBox = debugRenderer.GetItemBoxEnable();
+			if (ImGui::Checkbox(u8"アイテムボックス", &itemBox)) {
+				debugRenderer.SetItemBoxEnable(itemBox);
+			}
+
+			bool terrainBox = debugRenderer.GetTerrainBoxEnable();
+			if (ImGui::Checkbox(u8"マップボックス", &terrainBox)) {
+				debugRenderer.SetTerrainBoxEnable(terrainBox);
+			}
+			//説明
+			if (terrainBox) {
+				int depthLimit = debugRenderer.GetOctreeDepthLimit();
+				if (ImGui::SliderInt(u8"八分木描画深度", &depthLimit, 0, 6)) {
+					debugRenderer.SetOctreeDepthLimit(depthLimit);
+				}
+				ImGui::Text(u8"深度高いほど描画が詳しいが、ボックスを数が増える");
+				ImGui::Text(u8"色情報：赤（0）緑（1）青（2）黄（3）");
+			}
+
+			ImGui::Separator();
+
+			//法線ベクトル表示
+			bool normalVector = debugRenderer.GetNormalVectorEnable();
+			if (ImGui::Checkbox(u8"法線ベクトル描画", &normalVector)) {
+				debugRenderer.SetNormalVectorEnable(normalVector);
+			}
+
+			if (normalVector) {
+				bool floorNormal = debugRenderer.GetFloorNormalEnable();
+				if (ImGui::Checkbox(u8"床の法線ベクトル（緑）", &floorNormal)) {
+					debugRenderer.SetFloorNormalEnable(floorNormal);
+				}
+
+				bool wallNormal = debugRenderer.GetWallNormalEnable();
+				if (ImGui::Checkbox(u8"壁の法線ベクトル（赤）", &wallNormal)) {
+					debugRenderer.SetWallNormalEnable(wallNormal);
+				}
+
+				float normalLength = debugRenderer.GetNormalLength();
+				if (ImGui::SliderFloat(u8"法線の長さ", &normalLength, 1.0f, 20.0f)) {
+					debugRenderer.SetNormalLength(normalLength);
+				}
+
+				float normalRange = debugRenderer.GetNormalDisplayRange();
+				if (ImGui::SliderFloat(u8"描画範囲", &normalRange, 10.0f, 200.0f)) {
+					debugRenderer.SetNormalDisplayRange(normalRange);
+				}
+
+				ImGui::Text(u8"床の法線は緑、壁のは赤");
+				
+			}
+		}
 	}
 
 
@@ -253,5 +380,5 @@ void ShowDebugUI()
 
 	//ShaderManager::ShowShaderDebugUI();
 
-	//ShaderManager::ShowEffectDebugUI();
+	ShaderManager::ShowEffectDebugUI();
 }

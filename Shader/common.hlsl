@@ -87,22 +87,27 @@ cbuffer EffectBuffer : register(b8)
 {
       // Effect control flags (bitwise)
     uint g_EffectFlags;
+    
 
       // ディゾルブ (敵)
     float g_DissolveAmount; // 0.0 - 1.0
+    float2 padding1;
     float4 g_DissolveColor; // edge color
 
       // 血痕 (マップに)
-    float3 g_BloodPositions[4]; // up to 4 blood positions
-    float g_BloodRadii[4]; // corresponding radii
+    float4 g_BloodPositions[8]; // up to 4 blood positions
+    float4 g_BloodRadii[2]; // corresponding radii
     float g_BloodIntensity; // overall blood intensity
     int g_BloodCount; // current blood stain count
+    float2 padding2;
+    
+    float4 g_BloodProjections[8];
 
       // Custom effect parameters
     float4 g_CustomParam1;
     float4 g_CustomParam2;
 
-    float2 g_EffectPadding; // 16バイト用
+    float4 padding3; // 16バイト用
 };
 
 //*****************************************************************************
@@ -141,39 +146,122 @@ struct VertexOutput
 //*****************************************************************************
 Texture2D g_Texture : register(t0);
 Texture2D g_DissolveMap : register(t1); // ノイズテクスチャ
+Texture2D g_BloodTexture : register(t2); // 血痕テクスチャ
 SamplerState g_SamplerState : register(s0);
 
 //*****************************************************************************
 // ツール関数
 //*****************************************************************************
 
-  // Calculate dissolve effect
+  // ディゾルブエフェクト計算
 float CalculateDissolve(float2 uv, float dissolveAmount)
 {
     if (!(g_EffectFlags & EFFECT_DISSOLVE))
         return 1.0f;
 
     float dissolveVal = g_DissolveMap.Sample(g_SamplerState, uv).r;
-    return dissolveVal > dissolveAmount ? 1.0f : 0.0f;
+    //return dissolveVal > dissolveAmount ? 1.0f : 0.0f;
+    float edge = 0.1f; // 
+    return saturate((dissolveVal - dissolveAmount + edge) / edge);
+    
+    
+    
 }
 
-  // Calculate blood stain effect for terrain
-float CalculateBloodStain(float3 worldPos)
+  // マップの血痕エフェクト計算
+float4 CalculateBloodEffect(float3 worldPos)
 {
     if (!(g_EffectFlags & EFFECT_BLOOD_STAIN))
-        return 0.0f;
+        return float4(1.0f, 1.0f, 1.0f, 0.0f); // RGB=白色, A=0透明
 
-    float totalBlood = 0.0f;
+    float4 finalBlood = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float maxAlpha = 0.0f;
 
-    for (int i = 0; i < g_BloodCount && i < 4; i++)
+    for (int i = 0; i < g_BloodCount && i < 8; i++)
     {
-        float distance = length(worldPos - g_BloodPositions[i]);
-        float bloodFactor = saturate(1.0f - (distance / g_BloodRadii[i]));
-        totalBlood += bloodFactor;
+        float3 bloodCenter = g_BloodPositions[i].xyz;
+        float3 toPixel = worldPos - bloodCenter;
+
+          // 半径を取得
+        float radius;
+        if (i < 4)
+        {
+            if (i == 0)
+                radius = g_BloodRadii[0].x;
+            else if (i == 1)
+                radius = g_BloodRadii[0].y;
+            else if (i == 2)
+                radius = g_BloodRadii[0].z;
+            else if (i == 3)
+                radius = g_BloodRadii[0].w;
+        }
+        else
+        {
+            if (i == 4)
+                radius = g_BloodRadii[1].x;
+            else if (i == 5)
+                radius = g_BloodRadii[1].y;
+            else if (i == 6)
+                radius = g_BloodRadii[1].z;
+            else if (i == 7)
+                radius = g_BloodRadii[1].w;
+        }
+
+        float distance = length(toPixel);
+        if (distance > radius)
+            continue;
+
+          // サンプリング
+        float2 bloodUV = (toPixel.xz / radius) * 0.5f + 0.5f;
+        float4 bloodSample = g_BloodTexture.Sample(g_SamplerState, bloodUV);
+
+          // 距離によるフェード
+        float distanceFade = saturate(1.0f - (distance / radius));
+        distanceFade = pow(distanceFade, 0.7f);
+
+          // アルファ計算
+        float currentAlpha = bloodSample.a * distanceFade * g_BloodIntensity;
+
+          // 最大のアルファを使用して重ねる
+        if (currentAlpha > maxAlpha)
+        {
+            maxAlpha = currentAlpha;
+            finalBlood.rgb = bloodSample.rgb; 
+            finalBlood.a = currentAlpha; 
+        }
     }
 
-    return saturate(totalBlood * g_BloodIntensity);
+    return finalBlood;
 }
+
+
+// スポットライト寄与計算
+float3 SpotContribution(int i, float3 worldPos, float3 N, float4 baseColor)
+{
+    // L: 表面→光
+    float3 Lvec = Light.Position[i].xyz - worldPos;
+    float dist = length(Lvec);
+    float3 L = Lvec / max(dist, 1e-5);
+
+    // 距離減衰（range = Attenuation.x）
+    float range = Light.Attenuation[i].x;
+    float atten = saturate((range - dist) / max(range, 1e-5));
+
+    // 角度減衰（内外コーン）
+    float3 spotDir = normalize(Light.Direction[i].xyz); // ライトが向いている方向
+    float c = dot(-L, spotDir); // 光軸とのcos角
+    float inner = Light.Attenuation[i].y; // 内側コーンのcos
+    float outer = Light.Attenuation[i].z; // 外側コーンのcos
+    float t = saturate((c - outer) / max(inner - outer, 1e-5));
+    float expo = Light.Attenuation[i].w; // フェードの鋭さ
+    float spot = pow(t, expo);
+
+    // ランバート
+    float ndotl = saturate(dot(N, L));
+
+    return (baseColor.rgb * Light.Diffuse[i].rgb) * (ndotl * atten * spot);
+}
+
 
   // 光源計算関数
 float4 CalculateLighting(float4 worldPos, float4 normal, float4 baseColor)
@@ -181,50 +269,79 @@ float4 CalculateLighting(float4 worldPos, float4 normal, float4 baseColor)
     if (Light.Enable == 0)
     {
         return baseColor * Material.Diffuse;
-        
     }
+
+    // 正規化は1回だけやっておくと軽い
+    float3 N = normalize(normal.xyz);
 
     float4 finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
+    // NOTE: ループ上限 5 は環境に合わせて（いまのコードに揃えました）
     for (int i = 0; i < 5; i++)
     {
-        if (Light.Flags[i].y == 1) // light is enabled
+        if (Light.Flags[i].y == 1) // enabled
         {
-            float4 tempColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
-            
-            
+            float4 tempColor = float4(0, 0, 0, 0);
 
-            if (Light.Flags[i].x == 1) // 平行光
+            if (Light.Flags[i].x == 1) // 1: 平行光
             {
-                float3 lightDir = normalize(-Light.Direction[i].xyz);
-                float lightIntensity = max(0.0f, dot(lightDir, normalize(normal.xyz)));
-                
-                float4 diffuse = baseColor * Light.Diffuse[i] * lightIntensity;
-                
-                //環境光
-                float4 ambient = baseColor * Light.Ambient[i];
-                
+                float3 L = normalize(-Light.Direction[i].xyz);
+                float ndotl = max(0.0f, dot(L, N));
+
+                float4 diffuse = baseColor * Light.Diffuse[i] * ndotl;
+                float4 ambient = baseColor * Light.Ambient[i]; // 既存仕様どおり
+
                 tempColor = diffuse + ambient;
-                
             }
-            else if (Light.Flags[i].x == 2) // ポイントライト
+            else if (Light.Flags[i].x == 2)      // 2: ポイント
             {
-                float3 lightDir = normalize(Light.Position[i].xyz - worldPos.xyz);
-                float lightIntensity = max(0.0f, dot(lightDir, normalize(normal.xyz)));
+                float3 Lvec = Light.Position[i].xyz - worldPos.xyz;
+                float dist = length(Lvec);
+                float3 L = Lvec / max(dist, 1e-5);
 
-                  // attenuation
-                float distance = length(Light.Position[i].xyz - worldPos.xyz);
-                float attenuation = saturate((Light.Attenuation[i].x - distance) / Light.Attenuation[i].x);
+                float ndotl = max(0.0f, dot(L, N));
 
-                tempColor = baseColor * Light.Diffuse[i] * lightIntensity * attenuation;
+                // 距離減衰：Attenuation[i].x を「到達距離(range)」として線形減衰
+                float range = Light.Attenuation[i].x;
+                float atten = saturate((range - dist) / max(range, 1e-5));
+
+                tempColor = baseColor * Light.Diffuse[i] * (ndotl * atten);
+            }
+            else if (Light.Flags[i].x == 3)       // 3: スポット（★追加）
+            {
+                // L: 表面→光
+                float3 Lvec = Light.Position[i].xyz - worldPos.xyz;
+                float dist = length(Lvec);
+                float3 L = Lvec / max(dist, 1e-5);
+
+                // 距離減衰（ポイントと同じ式を再利用）
+                float range = Light.Attenuation[i].x; // x = 距離（到達範囲）
+                float atten = saturate((range - dist) / max(range, 1e-5));
+
+                // 角度減衰：Attenuation[i].y/z/w を使用
+                //   y = 内側コーンの cosθ, z = 外側コーンの cosθ, w = 縁の鋭さ(指数)
+                float3 spotDir = normalize(Light.Direction[i].xyz); // ライトの向き（軸）
+                float c = dot(-L, spotDir); // 光軸との cosθ
+                float inner = Light.Attenuation[i].y;
+                float outer = Light.Attenuation[i].z;
+                float expo = Light.Attenuation[i].w;
+
+                // 内外コーンの間をスムーズに補間（外側→0, 内側→1）
+                float t = saturate((c - outer) / max(inner - outer, 1e-5));
+                float spot = pow(t, expo);
+
+                float ndotl = max(0.0f, dot(L, N));
+
+                // 懐中電灯らしく環境光は加算しない（必要なら Ambient を足してもOK）
+                tempColor = baseColor * Light.Diffuse[i] * (ndotl * atten * spot);
             }
 
             finalColor += tempColor;
         }
     }
-    
-    finalColor = min(finalColor, 1.0f);
 
+    finalColor = min(finalColor, 1.0f);
     finalColor.a = baseColor.a * Material.Diffuse.a;
     return finalColor;
+
 }

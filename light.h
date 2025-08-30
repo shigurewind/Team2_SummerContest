@@ -23,3 +23,7 @@ BOOL GetFogEnable(void);
 
 LIGHT *GetLightData(int index);
 
+// スポットライト用
+void UpdateSpotlight(void);
+BOOL GetSpotlightEnabled(void);
+void SetSpotlightEnabled(BOOL enable);

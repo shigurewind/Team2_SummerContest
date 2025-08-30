@@ -1,6 +1,6 @@
 //=============================================================================
 //
-// スコア処理 [score.h]
+// スコア処理 [score.h]Update
 // Author : 
 //
 //=============================================================================
@@ -10,8 +10,6 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define SCORE_MAX			(99999)		// スコアの最大値
-#define SCORE_DIGIT			(5)			// 桁数
 
 
 
@@ -19,15 +17,20 @@
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
-HRESULT InitScore(void);
-void UninitScore(void);
-void UpdateScore(void);
-void DrawScore(void);
+HRESULT InitGameUI(void);
+void UnInitGameUI(void);
+void UpdateGameUI(void);
+void DrawGameUI(void);
 
-void AddScore(int add);
-int GetScore(void);
+
+void DrawHPBar();
+void DrawHP();
+
 
 void DrawAmmoUI(void);
 
 void ShowWebEffect(float time);
+
+void DrawItemSlot(void);
+
 

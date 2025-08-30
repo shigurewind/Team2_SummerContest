@@ -35,7 +35,8 @@ struct BulletData {
 // 武器種別 
 enum WeaponType {
     WEAPON_REVOLVER,
-    WEAPON_SHOTGUN
+    WEAPON_SHOTGUN,
+    WEAPON_ROCKET_LAUNCHER
 };
 
 // 武器構造体 
@@ -50,16 +51,19 @@ struct Weapon {
 //=============================================================================
 struct BULLET {
     bool use;
+    bool isLoaded;
     XMFLOAT3 pos;
     XMFLOAT3 rot;
     float spd;
     float size;
-    float lifetime; 
+    float lifetime;
     DX11_MODEL model;
     XMFLOAT3 vel; // ← 速度ベクトルを追加
     float fWidth;
     float fHeight;
     XMMATRIX mtxWorld;
+
+    WeaponType firedByWeapon;
 
     //XMFLOAT3 color;  // ← 弾の色を保持するための変数
 
@@ -72,11 +76,14 @@ HRESULT InitBullet(void);
 void UninitBullet();
 void UpdateBullet(void);
 void DrawBullet(void);
-int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data);
-int SetBulletWithData(const BulletData& data, XMFLOAT3 pos, XMFLOAT3 rot);
+int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data, WeaponType firedBy);
+int SetBulletWithData(const BulletData& data, XMFLOAT3 pos, XMFLOAT3 rot, WeaponType firedBy);
 void SetRevolverBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot);
 void SetShotgunBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot);
+void SetRocketLauncherBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot);
+
 
 BULLET* GetBullet(void);
 Weapon* GetRevolver(void);
 Weapon* GetShotgun(void);
+Weapon* GetRocket_Launcher(void);

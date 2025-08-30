@@ -512,6 +512,8 @@ void ShaderManager::ShowEffectDebugUI()
 
             if (dissolveEnabled)
             {
+                
+
                 ImGui::SliderFloat("Dissolve Amount", &params->dissolveAmount, 0.0f, 1.0f);
                 ImGui::ColorEdit4("Dissolve Color", &params->dissolveColor.x);
             }
@@ -531,15 +533,18 @@ void ShaderManager::ShowEffectDebugUI()
 
             if (bloodEnabled)
             {
-                ImGui::SliderFloat("Blood Intensity", &params->bloodIntensity, 0.0f, 2.0f);
+                ImGui::SliderFloat("Blood Intensity", &params->bloodIntensity, 0.0f, 4.0f);
                 ImGui::Text("Blood Count: %d", params->bloodCount);
 
-                if (ImGui::Button("Add Blood Stain"))
-                {
-                    XMFLOAT3 pos = { 0.0f, 0.0f, 0.0f };
-                    EffectManager::AddBloodStain(pos, 2.0f);
-                }
-                ImGui::SameLine();
+                ImGui::Separator();
+                ImGui::Text("Blood Splatter Parameters:");
+                ImGui::SliderFloat("Main Blood Radius", &params->customParam1.x, 10.0f, 100.0f);
+                ImGui::SliderFloat("Splatter Radius", &params->customParam1.y, 5.0f, 50.0f);
+                ImGui::SliderFloat("Splatter Distance", &params->customParam1.z, 5.0f, 80.0f);
+                ImGui::SliderFloat("Splatter Intensity", &params->customParam1.w, 0.1f, 1.0f);
+                
+                ImGui::Separator();
+
                 if (ImGui::Button("Clear Blood Stains"))
                 {
                     EffectManager::ClearBloodStains();
@@ -547,30 +552,7 @@ void ShaderManager::ShowEffectDebugUI()
             }
         }
 
-        // î≠åıå¯â 
-        if (ImGui::CollapsingHeader("Glow Effect"))
-        {
-            bool glowEnabled = params->effectFlags & EFFECT_GLOW;
-            if (ImGui::Checkbox("Enable Glow", &glowEnabled))
-            {
-                if (glowEnabled)
-                    EffectManager::EnableEffect(EFFECT_GLOW);
-                else
-                    EffectManager::DisableEffect(EFFECT_GLOW);
-            }
-
-            if (glowEnabled)
-            {
-                ImGui::SliderFloat("Glow Intensity", &params->customParam1.x, 0.0f, 2.0f);
-                float glowColor[3] = { params->customParam1.y, params->customParam1.z, params->customParam1.w };
-                if (ImGui::ColorEdit3("Glow Color", glowColor))
-                {
-                    params->customParam1.y = glowColor[0];
-                    params->customParam1.z = glowColor[1];
-                    params->customParam1.w = glowColor[2];
-                }
-            }
-        }
+        
 
         ImGui::Separator();
         if (ImGui::Button("Apply Effects"))
@@ -636,6 +618,8 @@ bool EffectManager::Initialize()
     ZeroMemory(&s_EffectParams, sizeof(EffectParams));
     //MessageBox(NULL, "EffectParams initialized", "EffectManager Debug", MB_OK);
 
+	s_EffectParams.bloodIntensity = 1.0f;// ååç≠ÇÃÉfÉtÉHÉãÉgã≠ìxÅiä|ÇØéZÇ»ÇÃÇ≈Åj
+
     // å¯â ÉpÉâÉÅÅ[É^Å[ópíËêîÉoÉbÉtÉ@çÏê¨
     D3D11_BUFFER_DESC bufferDesc;
     ZeroMemory(&bufferDesc, sizeof(bufferDesc));
@@ -657,6 +641,14 @@ bool EffectManager::Initialize()
 
     //MessageBox(NULL, "Buffer created successfully", "EffectManager Debug", MB_OK);
     s_IsInitialized = true;
+
+	//ååç≠ÉpÉâÉÅÅ[É^Å[èâä˙âª
+    s_EffectParams.customParam1.x = 50.0f;  // îºåa
+    s_EffectParams.customParam1.y = 30.0f;  // ägéUîºåa
+    s_EffectParams.customParam1.z = 30.0f;  // ägéUãóó£
+    s_EffectParams.customParam1.w = 0.5f;   // ã≠ìxåWêî
+
+
     return true;
 }
 
@@ -700,29 +692,111 @@ void EffectManager::ClearDissolveEffect()
 
 void EffectManager::AddBloodStain(XMFLOAT3 position, float radius)
 {
-    if (s_EffectParams.bloodCount >= 4) return; // ç≈ëÂ4Ç¬Ç‹Ç≈
-
-    EnableEffect(EFFECT_BLOOD_STAIN);
-    int index = s_EffectParams.bloodCount;
-
-    s_EffectParams.bloodPositions[index] = XMFLOAT4(position.x, position.y, position.z, 1.0f);
-
-    if (index == 0) s_EffectParams.bloodRadii.x = radius;
-    else if (index == 1) s_EffectParams.bloodRadii.y = radius;
-    else if (index == 2) s_EffectParams.bloodRadii.z = radius;
-    else if (index == 3) s_EffectParams.bloodRadii.w = radius;
-    s_EffectParams.bloodCount++;
+    XMFLOAT3 defaultProjection = { 0.0f, 1.0f, 0.0f }; // è„
+    AddBloodProjection(position, radius, defaultProjection, 1.0f);
 }
 
 void EffectManager::ClearBloodStains()
 {
     DisableEffect(EFFECT_BLOOD_STAIN);
     s_EffectParams.bloodCount = 0;
+
+    for (int i = 0; i < 8; i++) {
+        s_EffectParams.bloodPositions[i] = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+        s_EffectParams.bloodProjections[i] = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+    s_EffectParams.bloodRadii[0] = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+    s_EffectParams.bloodRadii[1] = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+
+    ApplyEffects();
+
 }
 
 void EffectManager::SetBloodIntensity(float intensity)
 {
     s_EffectParams.bloodIntensity = intensity;
+}
+
+//ååç≠ìäâeÇÃí«â¡
+void EffectManager::AddBloodProjection(XMFLOAT3 position, float radius,
+    XMFLOAT3 projectionDirection, float intensity)
+{
+    
+    EnableEffect(EFFECT_BLOOD_STAIN);
+    int index = s_EffectParams.bloodCount;
+
+	// à íuÇ∆îºåaÇï€ë∂
+    if (s_EffectParams.bloodCount < 8) {
+        index = s_EffectParams.bloodCount;
+        s_EffectParams.bloodCount++;
+    }
+    else {
+		// 8å¬Çí¥Ç¶ÇΩÇÁå√Ç¢Ç‡ÇÃÇ©ÇÁè„èëÇ´
+        static int replaceIndex = 0;
+        index = replaceIndex;
+        replaceIndex = (replaceIndex + 1) % 8;  // loop
+    }
+
+	// ìäâeï˚å¸Ç∆ã≠ìxÇï€ë∂
+    s_EffectParams.bloodPositions[index] = XMFLOAT4(position.x, position.y, position.z, 1.0f);
+    s_EffectParams.bloodProjections[index] = XMFLOAT4(
+        projectionDirection.x, projectionDirection.y, projectionDirection.z, intensity
+    );
+
+	// îºåaÇï€ë∂
+    if (index < 4) {
+        if (index == 0) s_EffectParams.bloodRadii[0].x = radius;
+        else if (index == 1) s_EffectParams.bloodRadii[0].y = radius;
+        else if (index == 2) s_EffectParams.bloodRadii[0].z = radius;
+        else if (index == 3) s_EffectParams.bloodRadii[0].w = radius;
+    }
+    else {
+        if (index == 4) s_EffectParams.bloodRadii[1].x = radius;
+        else if (index == 5) s_EffectParams.bloodRadii[1].y = radius;
+        else if (index == 6) s_EffectParams.bloodRadii[1].z = radius;
+        else if (index == 7) s_EffectParams.bloodRadii[1].w = radius;
+    }
+}
+
+
+void EffectManager::CreateBloodSplatter(XMFLOAT3 hitPos, XMFLOAT3 hitNormal,
+    XMFLOAT3 bulletDirection, float intensity)
+{
+    float mainRadius = s_EffectParams.customParam1.x;        
+    float splatterRadius = s_EffectParams.customParam1.y;    
+    float splatterDistance = s_EffectParams.customParam1.z;  
+    float splatterIntensity = s_EffectParams.customParam1.w;
+
+	// ÉqÉbÉgà íuÇ…ååç≠ìäâeÇí«â¡
+    AddBloodProjection(hitPos, mainRadius, hitNormal, intensity);
+
+    for (int i = 0; i < 2; i++) {
+		// ÉâÉìÉ_ÉÄÇ»ï˚å¸Çê∂ê¨
+        XMFLOAT3 splatterDir = {
+            bulletDirection.x + ((rand() % 200 - 100) / 500.0f), // Å}0.2
+            bulletDirection.y + ((rand() % 200 - 100) / 500.0f),
+            bulletDirection.z + ((rand() % 200 - 100) / 500.0f)
+        };
+
+        // ê≥ãKâª
+        XMVECTOR splatterVec = XMVector3Normalize(XMLoadFloat3(&splatterDir));
+        XMStoreFloat3(&splatterDir, splatterVec);
+
+		// ÉqÉbÉgÉ|ÉCÉìÉgÇ©ÇÁÉâÉìÉ_ÉÄÇ»ãóó£Ç…îÚÇŒÇ∑
+        float randomDistance = splatterDistance * (0.3f + (rand() % 70) / 100.0f); // 30%-100%
+        XMFLOAT3 splatterPos = {
+            hitPos.x + splatterDir.x * randomDistance,
+            hitPos.y + splatterDir.y * randomDistance,
+            hitPos.z + splatterDir.z * randomDistance
+        };
+
+        float randomRadius = splatterRadius * (0.5f + (rand() % 50) / 100.0f); // 50%-100%
+        float randomIntensity = intensity * splatterIntensity * (0.5f + (rand() % 50) / 100.0f);
+
+        AddBloodProjection(splatterPos, randomRadius, splatterDir, randomIntensity);
+    }
+
 }
 
 void EffectManager::SetGlowEffect(float intensity, XMFLOAT3 color)
