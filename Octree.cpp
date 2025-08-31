@@ -75,33 +75,26 @@ bool TriangleRayIntersect(XMVECTOR rayOrigin, XMVECTOR rayDir, XMVECTOR v0, XMVE
 	return false;
 }
 
-OctreeNode* BuildOctree(const std::vector<TriangleData>& triangleList, const XMFLOAT3& minBound, const XMFLOAT3& maxBound, int depth, int maxDepth, int minTri)
+OctreeNode* BuildOctree(const std::vector<TriangleData>& triangleList, const XMFLOAT3& minBound, const XMFLOAT3& maxBound, int depth, int maxDepth,	int minTri)
 {
 	OctreeNode* node = new OctreeNode;
 	node->minBound = minBound;
 	node->maxBound = maxBound;
 	node->isSubdivided = false;
 
+	//今のノードに含まれる三角形を調べる
 	for (int i = 0; i < triangleList.size(); ++i) {
 		if (TriangleInBox(triangleList[i], minBound, maxBound)) {
 			node->triangleIndices.push_back(i);
 		}
 	}
 
-	/*if (depth == 0) {
-		XMFLOAT3 center = {
-			(minBound.x + maxBound.x) * 0.5f,
-			(minBound.y + maxBound.y) * 0.5f,
-			(minBound.z + maxBound.z) * 0.5f
-		};
-		for (int i = 0; i < 8; i++) {
-			XMFLOAT3 cmin = minBound, cmax = center;
-			if (i & 1) { cmin.x = center.x; cmax.x = maxBound.x; }
-			if (i & 2) { cmin.y = center.y; cmax.y = maxBound.y; }
-			if (i & 4) { cmin.z = center.z; cmax.z = maxBound.z; }
-			node->children[i] = BuildOctree(triangleList, cmin, cmax, depth + 1, 1, minTri);
-		}
-	}*/
+	//今分割する(メモリが多くなるが、スピードが上がる)
+	if (depth < maxDepth && node->triangleIndices.size() > minTri) {
+		//プレビルド
+		Subdivide(node, triangleList, depth, maxDepth, minTri);
+	}
+	
 
 	return node;
 }
@@ -117,9 +110,7 @@ bool RayHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleLis
 	if (!RayIntersectAABB(rayOrigin, rayDir, node->minBound, node->maxBound))
 		return false;
 
-	if (!node->isSubdivided && node->triangleIndices.size() > minTri && depth < maxDepth) {
-		Subdivide(node, triangleList, depth, maxDepth, minTri);
-	}
+	
 
 	bool hit = false;
 	float minDist = *closestDist;
@@ -184,6 +175,8 @@ bool RayHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleLis
 	}
 	return hit;
 }
+
+
 void DeleteOctree(OctreeNode* node)
 {
 	if (!node) return;
@@ -232,9 +225,7 @@ bool AABBHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleLi
 
 	if (!overlap) return false;
 
-	if (!node->isSubdivided && node->triangleIndices.size() > minTri && depth < maxDepth) {
-		Subdivide(node, triangleList, depth, maxDepth, minTri);
-	}
+	
 
 	for (int idx : node->triangleIndices) {
 		const TriangleData& tri = triangleList[idx];
