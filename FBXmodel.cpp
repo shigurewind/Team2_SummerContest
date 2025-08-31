@@ -5,6 +5,7 @@
 
 #include <fstream>
 #include <string>
+#include "camera.h"
 
 //-------------------------------------------------------------------------
 static std::vector<TriangleData> g_TriangleList;
@@ -21,6 +22,12 @@ static std::vector<TriangleData> g_WallTris;
 
 const std::vector<TriangleData>& GetFloorTriangles() { return g_FloorTris; }
 const std::vector<TriangleData>& GetWallTriangles() { return g_WallTris; }
+
+
+//LODパラメータ
+static float g_LOD_NearDistance = 50.0f;
+static float g_LOD_FarDistance = 150.0f;
+
 
 HRESULT InitFBXTestModel(void)
 {
@@ -363,3 +370,93 @@ void SaveTriangleCache(const std::string& fbxPath)
 		OutputDebugStringA("Exception while saving triangle cache\n");
 	}
 }
+
+
+
+//LOD
+
+int GetLODLevel(float cameraDistance)
+{
+	if (cameraDistance < g_LOD_NearDistance) {
+		return 1; // すべての三角形を検出
+	}
+	else if (cameraDistance < g_LOD_FarDistance) {
+		return 2; // 半分
+	}
+	else {
+		return 4; // 四分の一
+	}
+}
+
+
+void SetLODParameters(float nearDist, float farDist)
+{
+	g_LOD_NearDistance = nearDist;
+	g_LOD_FarDistance = farDist;
+}
+
+
+// レイと地形の当たり判定（LOD対応版）
+bool CheckGroundCollisionLOD(const XMFLOAT3& rayOrigin, const XMFLOAT3& rayDir,
+	float* hitDistance, XMFLOAT3* hitPos, XMFLOAT3* hitNormal)
+{
+	// カメラ位置
+	CAMERA* camera = GetCamera();
+	float cameraDistance = sqrtf(
+		(rayOrigin.x - camera->pos.x) * (rayOrigin.x - camera->pos.x) +
+		(rayOrigin.y - camera->pos.y) * (rayOrigin.y - camera->pos.y) +
+		(rayOrigin.z - camera->pos.z) * (rayOrigin.z - camera->pos.z)
+	);
+
+	int lodLevel = GetLODLevel(cameraDistance);
+
+	return RayHitOctreeLOD(g_FloorTree, g_FloorTris, rayOrigin, rayDir,
+		hitDistance, hitPos, hitNormal, 0, 6, 1, lodLevel);
+}
+
+// ボックスと壁の当たり判定（LOD対応版）
+bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax)
+{
+	// ボックス中心とカメラ位置から距離を計算
+	CAMERA* camera = GetCamera();
+	XMFLOAT3 boxCenter = {
+			(boxMin.x + boxMax.x) * 0.5f,
+			(boxMin.y + boxMax.y) * 0.5f,
+			(boxMin.z + boxMax.z) * 0.5f
+	};
+
+	float cameraDistance = sqrtf(
+		(boxCenter.x - camera->pos.x) * (boxCenter.x - camera->pos.x) +
+		(boxCenter.y - camera->pos.y) * (boxCenter.y - camera->pos.y) +
+		(boxCenter.z - camera->pos.z) * (boxCenter.z - camera->pos.z)
+	);
+
+	int lodLevel = GetLODLevel(cameraDistance);
+
+	return AABBHitOctreeLOD(g_WallTree, g_WallTris, boxMin, boxMax, 0, 6, 1, lodLevel);
+}
+
+
+XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance)
+{
+	// LODレベルを決定
+	CAMERA* camera = GetCamera();
+	float cameraDistance = sqrtf(
+		(rayStart.x - camera->pos.x) * (rayStart.x - camera->pos.x) +
+		(rayStart.y - camera->pos.y) * (rayStart.y - camera->pos.y) +
+		(rayStart.z - camera->pos.z) * (rayStart.z - camera->pos.z)
+	);
+
+	int lodLevel = GetLODLevel(cameraDistance);
+
+	float closestDist = maxDistance;
+	XMFLOAT3 hitPos, hitNormal = { 0.0f, 0.0f, 0.0f };
+
+	if (RayHitOctreeLOD(GetWallTree(), GetWallTriangles(), rayStart, rayDir,
+		&closestDist, &hitPos, &hitNormal, 0, 6, 1, lodLevel)) {
+		return hitNormal;
+	}
+
+	return { 0.0f, 0.0f, 0.0f };
+}
+

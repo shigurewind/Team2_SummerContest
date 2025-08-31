@@ -281,3 +281,120 @@ void Subdivide(OctreeNode* node, const std::vector<TriangleData>& triangleList, 
 
 	node->triangleIndices.clear(); 
 }
+
+
+
+bool RayHitOctreeLOD(OctreeNode* node, const std::vector<TriangleData>& triangleList,
+	const XMFLOAT3& origin, const XMFLOAT3& dir,
+	float* closestDist, XMFLOAT3* hitPos, XMFLOAT3* hitNormal,
+	int depth, int maxDepth, int minTri, int lodLevel)
+{
+	XMVECTOR rayOrigin = XMLoadFloat3(&origin);
+	XMVECTOR rayDir = XMVector3Normalize(XMLoadFloat3(&dir));
+
+	if (!RayIntersectAABB(rayOrigin, rayDir, node->minBound, node->maxBound))
+		return false;
+
+	bool hit = false;
+	float minDist = *closestDist;
+
+	// 距離によってLODレベルを調整
+	for (int i = 0; i < node->triangleIndices.size(); i += lodLevel) {
+		int idx = node->triangleIndices[i];
+		const TriangleData& tri = triangleList[idx];
+		float dist;
+		if (TriangleRayIntersect(
+			rayOrigin, rayDir,
+			XMLoadFloat3(&tri.v0),
+			XMLoadFloat3(&tri.v1),
+			XMLoadFloat3(&tri.v2),
+			&dist)) {
+
+			if (dist < minDist && dist > 0.0f) {
+				minDist = dist;
+
+				XMVECTOR hitPoint = XMVectorAdd(rayOrigin, XMVectorScale(rayDir, dist));
+				XMStoreFloat3(hitPos, hitPoint);
+
+				XMVECTOR v0 = XMLoadFloat3(&tri.v0);
+				XMVECTOR v1 = XMLoadFloat3(&tri.v1);
+				XMVECTOR v2 = XMLoadFloat3(&tri.v2);
+				XMVECTOR edge1 = XMVectorSubtract(v1, v0);
+				XMVECTOR edge2 = XMVectorSubtract(v2, v0);
+				XMVECTOR normal = XMVector3Normalize(XMVector3Cross(edge1, edge2));
+
+				if (XMVectorGetX(XMVector3Dot(rayDir, normal)) > 0) {
+					normal = XMVectorNegate(normal);
+				}
+
+				XMStoreFloat3(hitNormal, normal);
+				hit = true;
+			}
+		}
+	}
+
+	// 子ノードも再帰チェック
+	if (node->isSubdivided) {
+		for (int i = 0; i < 8; ++i) {
+			if (!node->children[i]) continue;
+
+			XMFLOAT3 childHitPos;
+			XMFLOAT3 childHitNormal;
+			float childMinDist = minDist;
+
+			if (RayHitOctreeLOD(node->children[i], triangleList, origin, dir,
+				&childMinDist, &childHitPos, &childHitNormal,
+				depth + 1, maxDepth, minTri, lodLevel)) {
+
+				if (childMinDist < minDist) {
+					minDist = childMinDist;
+					*hitPos = childHitPos;
+					*hitNormal = childHitNormal;
+					hit = true;
+				}
+			}
+		}
+	}
+
+	if (hit) {
+		*closestDist = minDist;
+	}
+	return hit;
+}
+
+
+bool AABBHitOctreeLOD(OctreeNode* node, const std::vector<TriangleData>& triangleList,
+	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
+	int depth, int maxDepth, int minTri, int lodLevel)
+{
+	XMFLOAT3 nmin = node->minBound;
+	XMFLOAT3 nmax = node->maxBound;
+
+	bool overlap =
+		!(nmax.x < boxMin.x || nmin.x > boxMax.x ||
+			nmax.y < boxMin.y || nmin.y > boxMax.y ||
+			nmax.z < boxMin.z || nmin.z > boxMax.z);
+
+	if (!overlap) return false;
+
+	// 距離によってLODレベルを調整
+	for (int i = 0; i < node->triangleIndices.size(); i += lodLevel) {
+		int idx = node->triangleIndices[i];
+		const TriangleData& tri = triangleList[idx];
+		if (AABBvsTriangle(boxMin, boxMax, tri.v0, tri.v1, tri.v2)) {
+			return true;
+		}
+	}
+
+	if (node->isSubdivided) {
+		for (int i = 0; i < 8; i++) {
+			if (!node->children[i]) continue;
+			if (AABBHitOctreeLOD(node->children[i], triangleList, boxMin, boxMax,
+				depth + 1, maxDepth, minTri, lodLevel)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}

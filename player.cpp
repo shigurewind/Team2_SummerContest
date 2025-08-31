@@ -401,7 +401,7 @@ void PLAYER::ApplyCollision()
 	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
 	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
 
-	if (AABBHitOctree(GetWallTree(), GetWallTriangles(), min, max, 0, 5, 5))
+	if (CheckWallCollisionLOD(min, max))
 	{
 		// 壁に沿ってスライド
 		//velocity-(velocity・normal)*normal
@@ -446,7 +446,7 @@ void PLAYER::ApplyCollision()
 			XMFLOAT3 testMin = { testPos.x - halfSize, pos.y - 0.1f, testPos.z - halfSize };
 			XMFLOAT3 testMax = { testPos.x + halfSize, pos.y + 0.1f, testPos.z + halfSize };
 
-			if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), testMin, testMax, 0, 5, 5))
+			if (!CheckWallCollisionLOD(min, max))
 			{
 				// スライド応用
 				velocity.x = slideVelocity.x;
@@ -594,26 +594,12 @@ void PLAYER::HandleReload()
 
 XMFLOAT3 PLAYER::GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector, float halfSize)
 {
-	//rayの開始位置
 	XMFLOAT3 rayStart = currentPos;
 	rayStart.y += 1.0f;
 
-	XMFLOAT3 rayEnd = rayStart;
-	rayEnd.x += moveVector.x * 2.0f;
-	rayEnd.z += moveVector.z * 2.0f;
+	XMFLOAT3 rayDir = { moveVector.x * 2.0f, 0.0f, moveVector.z * 2.0f };
 
-	XMFLOAT3 rayDir = { rayEnd.x - rayStart.x, rayEnd.y - rayStart.y, rayEnd.z - rayStart.z };
-
-	//一番近いの壁
-	float closestDist = 100.0f;
-	XMFLOAT3 hitPos, hitNormal = { 0.0f, 0.0f, 0.0f };
-
-	if (RayHitOctree(GetWallTree(), GetWallTriangles(), rayStart, rayDir, &closestDist, &hitPos, &hitNormal, 0, 5, 5))
-	{
-		return hitNormal;
-	}
-
-	return { 0.0f, 0.0f, 0.0f };
+	return GetWallCollisionNormalLOD(rayStart, rayDir, 100.0f);
 }
 
 
