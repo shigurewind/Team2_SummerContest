@@ -71,7 +71,7 @@ bool LoadTriangleCache(const std::string& fbxPath);
 void SaveTriangleCache(const std::string& fbxPath);
 
 
-//LODä÷òA
+//LODä÷òA----------------------------------------------
 
 struct SimpleLOD {
 	float distance;
@@ -92,3 +92,6 @@ bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax);
 
 // ñ@ê¸ÇéÊìæ(LODî≈)
 XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance);
+
+
+

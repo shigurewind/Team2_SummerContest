@@ -679,22 +679,21 @@ BulletType GetCurrentBulletType(void)
 
 bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 {
-	const auto& tris = GetFloorTriangles();
-
+	// LODî≈ÇÃínñ îªíË
 	XMFLOAT3 rayStart = pos;
 	rayStart.y += 50.0f;
-	XMFLOAT3 rayEnd = pos;
-	rayEnd.y -= 100.0f;
 
-	XMFLOAT3 hit, normal;
-	for (const auto& tri : tris)
+	XMFLOAT3 rayDir = { 0.0f, -10.0f, 0.0f }; // ÇµÇΩÇ÷10.0fÇÃéÀê¸
+
+	float hitDistance = 10.0f;
+	XMFLOAT3 hitPos, hitNormal;
+
+	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal))
 	{
-		if (RayCast(tri.v0, tri.v1, tri.v2, rayStart, rayEnd, &hit, &normal))
-		{
-			groundY = hit.y;
-			return true;
-		}
+		groundY = hitPos.y;
+		return true;
 	}
+
 	return false;
 }
 

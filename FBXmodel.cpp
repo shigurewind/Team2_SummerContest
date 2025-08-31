@@ -303,7 +303,7 @@ bool LoadTriangleCache(const std::string& fbxPath)
 		size_t triangleCount;
 		file.read(reinterpret_cast<char*>(&triangleCount), sizeof(triangleCount));
 
-		if (triangleCount == 0 || triangleCount > 1000000) { // êßå¿
+		if (triangleCount == 0 || triangleCount > 10000000) { // êßå¿
 			OutputDebugStringA("Invalid triangle count in cache\n");
 			return false;
 		}
