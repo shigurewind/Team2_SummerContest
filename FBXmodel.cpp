@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include "camera.h"
+#include "player.h"
 
 //-------------------------------------------------------------------------
 static std::vector<TriangleData> g_TriangleList;
@@ -400,15 +401,13 @@ void SetLODParameters(float nearDist, float farDist)
 bool CheckGroundCollisionLOD(const XMFLOAT3& rayOrigin, const XMFLOAT3& rayDir,
 	float* hitDistance, XMFLOAT3* hitPos, XMFLOAT3* hitNormal)
 {
-	// カメラ位置
-	CAMERA* camera = GetCamera();
-	float cameraDistance = sqrtf(
-		(rayOrigin.x - camera->pos.x) * (rayOrigin.x - camera->pos.x) +
-		(rayOrigin.y - camera->pos.y) * (rayOrigin.y - camera->pos.y) +
-		(rayOrigin.z - camera->pos.z) * (rayOrigin.z - camera->pos.z)
-	);
+	PLAYER* player = GetPlayer();
+	XMFLOAT3 velocity = player->GetVelocity();
+	float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
 
-	int lodLevel = GetLODLevel(cameraDistance);
+	int lodLevel = 1; 
+	if (speed > 3.0f) lodLevel = 2; 
+	if (speed > 6.0f) lodLevel = 3; // 移動速度によってLODレベルを上げる
 
 	return RayHitOctreeLOD(g_FloorTree, g_FloorTris, rayOrigin, rayDir,
 		hitDistance, hitPos, hitNormal, 0, 6, 1, lodLevel);
@@ -417,21 +416,12 @@ bool CheckGroundCollisionLOD(const XMFLOAT3& rayOrigin, const XMFLOAT3& rayDir,
 // ボックスと壁の当たり判定（LOD対応版）
 bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax)
 {
-	// ボックス中心とカメラ位置から距離を計算
-	CAMERA* camera = GetCamera();
-	XMFLOAT3 boxCenter = {
-			(boxMin.x + boxMax.x) * 0.5f,
-			(boxMin.y + boxMax.y) * 0.5f,
-			(boxMin.z + boxMax.z) * 0.5f
-	};
+	PLAYER* player = GetPlayer();
+	XMFLOAT3 velocity = player->GetVelocity();
+	float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
 
-	float cameraDistance = sqrtf(
-		(boxCenter.x - camera->pos.x) * (boxCenter.x - camera->pos.x) +
-		(boxCenter.y - camera->pos.y) * (boxCenter.y - camera->pos.y) +
-		(boxCenter.z - camera->pos.z) * (boxCenter.z - camera->pos.z)
-	);
-
-	int lodLevel = GetLODLevel(cameraDistance);
+	int lodLevel = 1; 
+	if (speed > 3.0f) lodLevel = 2; // 移動速度によってLODレベルを上げる
 
 	return AABBHitOctreeLOD(g_WallTree, g_WallTris, boxMin, boxMax, 0, 6, 1, lodLevel);
 }
@@ -440,14 +430,9 @@ bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax)
 XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance)
 {
 	// LODレベルを決定
-	CAMERA* camera = GetCamera();
-	float cameraDistance = sqrtf(
-		(rayStart.x - camera->pos.x) * (rayStart.x - camera->pos.x) +
-		(rayStart.y - camera->pos.y) * (rayStart.y - camera->pos.y) +
-		(rayStart.z - camera->pos.z) * (rayStart.z - camera->pos.z)
-	);
-
-	int lodLevel = GetLODLevel(cameraDistance);
+	int lodLevel = 1;
+	if (maxDistance > 50.0f) lodLevel = 2;
+	if (maxDistance > 100.0f) lodLevel = 3;
 
 	float closestDist = maxDistance;
 	XMFLOAT3 hitPos, hitNormal = { 0.0f, 0.0f, 0.0f };
@@ -460,3 +445,7 @@ XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& ray
 	return { 0.0f, 0.0f, 0.0f };
 }
 
+
+// LODパラメータ取得
+float GetLODNearDistance() { return g_LOD_NearDistance; }
+float GetLODFarDistance() { return g_LOD_FarDistance; }
