@@ -3,6 +3,8 @@
 #include "shaderManager.h"
 #include "enemy.h"
 
+#include <fstream>
+#include <string>
 
 //-------------------------------------------------------------------------
 static std::vector<TriangleData> g_TriangleList;
@@ -52,7 +54,21 @@ HRESULT InitFBXTestModel(void)
 
 	XMMATRIX world = mtxScl * mtxRot * mtxQuat * mtxTrans;
 
-	ExtractTriangleData(g_FBXTestModel.model, world);
+	std::string currentMapFile = "data/MODEL/stage111.fbx"; // マップファイル名
+	bool cacheLoaded = LoadTriangleCache(currentMapFile);
+
+	if (!cacheLoaded) {
+		// Cacheいない
+		OutputDebugStringA("Extracting triangle data from FBX model...\n");
+		ExtractTriangleData(g_FBXTestModel.model, world);
+
+		// データを保存
+		SaveTriangleCache(currentMapFile);
+	}
+	else {
+		OutputDebugStringA("Triangle data loaded from cache\n");
+	}
+	
 
 
 
@@ -262,3 +278,88 @@ const std::vector<TriangleData>& GetTriangleList()
 
 OctreeNode* GetWallTree() { return g_WallTree; }
 OctreeNode* GetFloorTree() { return g_FloorTree; }
+
+
+//三角形データCache用
+bool LoadTriangleCache(const std::string& fbxPath)
+{
+	std::string cachePath = fbxPath + ".tricache";
+	std::ifstream file(cachePath, std::ios::binary);
+
+	if (!file.is_open()) {
+		OutputDebugStringA("Triangle cache file not found\n");
+		return false;
+	}
+
+	try {
+		// 三角形の数を読み込む
+		size_t triangleCount;
+		file.read(reinterpret_cast<char*>(&triangleCount), sizeof(triangleCount));
+
+		if (triangleCount == 0 || triangleCount > 1000000) { // 制限
+			OutputDebugStringA("Invalid triangle count in cache\n");
+			return false;
+		}
+
+		// 三角形リストのサイズを調整
+		g_TriangleList.clear();
+		g_TriangleList.resize(triangleCount);
+
+		// すべての三角形データを読み込む
+		file.read(reinterpret_cast<char*>(g_TriangleList.data()),
+			triangleCount * sizeof(TriangleData));
+
+		if (!file.good()) {
+			OutputDebugStringA("Failed to read triangle cache data\n");
+			g_TriangleList.clear();
+			return false;
+		}
+
+		char debugMsg[256];
+		sprintf_s(debugMsg, "Loaded %zu triangles from cache\n", triangleCount);
+		OutputDebugStringA(debugMsg);
+
+		return true;
+	}
+	catch (...) {
+		OutputDebugStringA("Exception while loading triangle cache\n");
+		g_TriangleList.clear();
+		return false;
+	}
+}
+
+
+void SaveTriangleCache(const std::string& fbxPath)
+{
+	std::string cachePath = fbxPath + ".tricache";
+	std::ofstream file(cachePath, std::ios::binary);
+
+	if (!file.is_open()) {
+		OutputDebugStringA("Failed to create triangle cache file\n");
+		return;
+	}
+
+	try {
+		// 三角形の数を書き込む
+		size_t triangleCount = g_TriangleList.size();
+		file.write(reinterpret_cast<const char*>(&triangleCount), sizeof(triangleCount));
+
+		// 三角形のデータを書き込む
+		if (triangleCount > 0) {
+			file.write(reinterpret_cast<const char*>(g_TriangleList.data()),
+				triangleCount * sizeof(TriangleData));
+		}
+
+		if (file.good()) {
+			char debugMsg[256];
+			sprintf_s(debugMsg, "Saved %zu triangles to cache\n", triangleCount);
+			OutputDebugStringA(debugMsg);
+		}
+		else {
+			OutputDebugStringA("Failed to write triangle cache\n");
+		}
+	}
+	catch (...) {
+		OutputDebugStringA("Exception while saving triangle cache\n");
+	}
+}

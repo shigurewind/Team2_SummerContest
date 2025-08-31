@@ -64,3 +64,8 @@ OctreeNode* GetWallTree();
 OctreeNode* GetFloorTree();
 const std::vector<TriangleData>& GetFloorTriangles();
 const std::vector<TriangleData>& GetWallTriangles();
+
+
+//三角形データCache
+bool LoadTriangleCache(const std::string& fbxPath);
+void SaveTriangleCache(const std::string& fbxPath);
