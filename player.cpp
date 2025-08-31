@@ -681,7 +681,7 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 {
 	// LOD”Å‚Ì’n–Ê”»’è
 	XMFLOAT3 rayStart = pos;
-	rayStart.y += 50.0f;
+	rayStart.y += 10.0f;
 
 	XMFLOAT3 rayDir = { 0.0f, -10.0f, 0.0f }; // ‚µ‚½‚Ö10.0f‚ÌËü
 

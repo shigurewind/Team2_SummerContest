@@ -365,9 +365,9 @@ void BoundingBoxDebugRenderer::AddTerrainBoxes() {
 void BoundingBoxDebugRenderer::TraverseOctreeNode(OctreeNode* node, int currentDepth) {
     if (!node || currentDepth > m_octreeDepthLimit) return;
 
-	// 葉ノードまたは深度制限に達した場合、ボックスを追加
-    bool shouldDraw = (node->IsLeaf() || currentDepth == m_octreeDepthLimit)
-        && !node->triangleIndices.empty();
+	// 葉ノード
+    //bool shouldDraw = (node->IsLeaf() || currentDepth == m_octreeDepthLimit);
+    bool shouldDraw = (currentDepth <= m_octreeDepthLimit);
 
     if (shouldDraw) {
 		// 深度に応じて色を変更

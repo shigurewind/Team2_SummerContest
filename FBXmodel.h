@@ -93,6 +93,4 @@ bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax);
 // 法線を取得(LOD版)
 XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance);
 
-// デバッグ用UIの表示
-float GetLODNearDistance();
-float GetLODFarDistance();
+

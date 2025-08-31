@@ -332,7 +332,7 @@ void ShowDebugUI()
 			//à–¾
 			if (terrainBox) {
 				int depthLimit = debugRenderer.GetOctreeDepthLimit();
-				if (ImGui::SliderInt(u8"”ª•ª–Ø•`‰æ[“x", &depthLimit, 0, 6)) {
+				if (ImGui::SliderInt(u8"”ª•ª–Ø•`‰æ[“x", &depthLimit, 0, 10)) {
 					debugRenderer.SetOctreeDepthLimit(depthLimit);
 				}
 				ImGui::Text(u8"[“x‚‚¢‚Ù‚Ç•`‰æ‚ªÚ‚µ‚¢‚ªAƒ{ƒbƒNƒX‚ğ”‚ª‘‚¦‚é");
