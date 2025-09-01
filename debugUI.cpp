@@ -23,6 +23,10 @@
 extern BOOL g_bPause;
 
 
+void ShowDetailedOctreeInfo(OctreeNode* node, int depth, int maxShow);
+
+
+
 void ShowDebugUI()
 {
 	ImGui::Begin("Debug Menu");
@@ -332,7 +336,7 @@ void ShowDebugUI()
 			//説明
 			if (terrainBox) {
 				int depthLimit = debugRenderer.GetOctreeDepthLimit();
-				if (ImGui::SliderInt(u8"八分木描画深度", &depthLimit, 0, 10)) {
+				if (ImGui::SliderInt(u8"八分木描画深度", &depthLimit, 0, 6)) {
 					debugRenderer.SetOctreeDepthLimit(depthLimit);
 				}
 				ImGui::Text(u8"深度高いほど描画が詳しいが、ボックスを数が増える");
@@ -374,6 +378,62 @@ void ShowDebugUI()
 		}
 	}
 
+	//LODシステムと八分木構造の解析
+	if (ImGui::CollapsingHeader(u8"LOD八分木システム情報"))
+	{
+		
+
+		ImGui::Separator();
+
+		
+		ImGui::Text(u8"=== 八分木構造解析 ===");
+
+		OctreeNode* wallTree = GetWallTree();
+		OctreeNode* floorTree = GetFloorTree();
+
+		if (wallTree) {
+			int wallDepth = 0, wallLeafCount = 0, wallNodeCount = 0;
+			AnalyzeOctreeStructure(wallTree, 0, wallDepth, wallLeafCount, wallNodeCount);
+			ImGui::Text(u8"壁八分木 - 最大深度: %d, リーフ数: %d, 総ノード数: %d",
+				wallDepth, wallLeafCount, wallNodeCount);
+		}
+
+		if (floorTree) {
+			int floorDepth = 0, floorLeafCount = 0, floorNodeCount = 0;
+			AnalyzeOctreeStructure(floorTree, 0, floorDepth, floorLeafCount, floorNodeCount);
+			ImGui::Text(u8"床八分木 - 最大深度: %d, リーフ数: %d, 総ノード数: %d",
+				floorDepth, floorLeafCount, floorNodeCount);
+		}
+
+		// 各深度のノード数をカウントして表示
+		ImGui::Text(u8"=== 深度別ノード統計 ===");
+		if (wallTree) {
+			std::vector<int> wallDepthCounts(10, 0);
+			CountNodesByDepth(wallTree, 0, wallDepthCounts);
+			for (int i = 0; i <= 6; i++) {
+				if (wallDepthCounts[i] > 0) {
+					ImGui::Text(u8"壁深度 %d: %d ノード", i, wallDepthCounts[i]);
+				}
+			}
+		}
+
+		if (floorTree) {
+			std::vector<int> floorDepthCounts(10, 0);
+			CountNodesByDepth(floorTree, 0, floorDepthCounts);
+			for (int i = 0; i <= 6; i++) {
+				if (floorDepthCounts[i] > 0) {
+					ImGui::Text(u8"床深度 %d: %d ノード", i, floorDepthCounts[i]);
+				}
+			}
+		}
+
+		ImGui::Text(u8"=== 詳細八分木情報 ===");
+		if (wallTree) {
+			ImGui::Text(u8"壁八分木:");
+			ShowDetailedOctreeInfo(wallTree, 0, 10);
+		}
+	}
+
 
 
 	ImGui::End();
@@ -382,3 +442,30 @@ void ShowDebugUI()
 
 	ShaderManager::ShowEffectDebugUI();
 }
+
+
+void ShowDetailedOctreeInfo(OctreeNode* node, int depth, int maxShow = 20) {
+	static int nodeCount = 0;
+	if (depth == 0) nodeCount = 0;
+
+	if (nodeCount >= maxShow) return;
+
+	ImGui::Text(u8"深度%d: %zu個三角形, 細分済み: %s",
+		depth, node->triangleIndices.size(),
+		node->isSubdivided ? u8"はい" : u8"いいえ");
+
+	nodeCount++;
+
+	if (node->isSubdivided) {
+		for (int i = 0; i < 8; i++) {
+			if (node->children[i]) {
+				ShowDetailedOctreeInfo(node->children[i], depth + 1, maxShow);
+			}
+		}
+	}
+}
+
+
+
+
+

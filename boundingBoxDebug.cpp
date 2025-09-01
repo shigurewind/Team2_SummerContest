@@ -367,7 +367,8 @@ void BoundingBoxDebugRenderer::TraverseOctreeNode(OctreeNode* node, int currentD
 
 	// 葉ノード
     //bool shouldDraw = (node->IsLeaf() || currentDepth == m_octreeDepthLimit);
-    bool shouldDraw = (currentDepth <= m_octreeDepthLimit);
+    //bool shouldDraw = (currentDepth <= m_octreeDepthLimit) && (!node->triangleIndices.empty() || currentDepth == m_octreeDepthLimit);
+    bool shouldDraw = (currentDepth <= m_octreeDepthLimit) && !node->triangleIndices.empty();
 
     if (shouldDraw) {
 		// 深度に応じて色を変更

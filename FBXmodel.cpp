@@ -423,3 +423,39 @@ XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& ray
 }
 
 
+
+
+
+// ”ª•ª–Ø\‘¢‚ð‰ðÍ‚·‚éŠÖ”
+void AnalyzeOctreeStructure(OctreeNode* node, int currentDepth, int& maxDepth, int& leafCount, int& nodeCount) {
+	if (!node) return;
+
+	nodeCount++;
+	maxDepth = max(maxDepth, currentDepth);
+
+	if (node->IsLeaf()) {
+		leafCount++;
+		return;
+	}
+
+
+	for (int i = 0; i < 8; i++) {
+		if (node->children[i]) {
+			AnalyzeOctreeStructure(node->children[i], currentDepth + 1, maxDepth, leafCount, nodeCount);
+		}
+	}
+}
+
+void CountNodesByDepth(OctreeNode* node, int currentDepth, std::vector<int>& depthCounts) {
+	if (!node || currentDepth >= depthCounts.size()) return;
+
+	depthCounts[currentDepth]++;
+
+
+	for (int i = 0; i < 8; i++) {
+		if (node->children[i]) {
+			CountNodesByDepth(node->children[i], currentDepth + 1, depthCounts);
+		}
+	}
+}
+

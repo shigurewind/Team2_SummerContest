@@ -277,9 +277,12 @@ void Subdivide(OctreeNode* node, const std::vector<TriangleData>& triangleList, 
 		}
 
 		node->children[i] = child;
+
+		// Ä‹A“I‚É•ªŠ„
+		Subdivide(child, triangleList, depth + 1, maxDepth, minTri);
 	}
 
-	node->triangleIndices.clear(); 
+	//node->triangleIndices.clear(); 
 }
 
 

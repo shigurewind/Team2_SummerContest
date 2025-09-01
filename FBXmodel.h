@@ -94,3 +94,9 @@ bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax);
 XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance);
 
 
+
+
+void AnalyzeOctreeStructure(OctreeNode* node, int currentDepth, int& maxDepth, int& leafCount, int& nodeCount);
+void CountNodesByDepth(OctreeNode* node, int currentDepth, std::vector<int>& depthCounts);
+
+
