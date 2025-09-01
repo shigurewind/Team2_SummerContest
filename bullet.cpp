@@ -57,7 +57,7 @@ HRESULT InitBullet(void)
 
     g_RocketLauncher.weaponType = WEAPON_ROCKET_LAUNCHER;
     g_RocketLauncher.bulletData = &bulletData_Normal;
-    g_RocketLauncher.clipSize = 1;
+    g_RocketLauncher.clipSize = 5;
 
     return S_OK;
 }

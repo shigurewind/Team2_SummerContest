@@ -108,9 +108,9 @@ void PLAYER::Init()
 	SetMaxFallSpeed(6.0f);
 	jumpPower = 8.0f;
 
-	ammoNormal = 6;   
+	ammoNormal = 20;   
 	maxAmmoNormal = 36;  
-	ammoFire = 0;
+	ammoFire = 20;
 	maxAmmoFire = 20;
 
 	HP = HP_MAX = 5;
