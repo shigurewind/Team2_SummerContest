@@ -112,3 +112,5 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);
 
 void SavePlayerToFile();
 void LoadPlayerFromFile();
+
+void SetLoadOnInit(bool enable);
