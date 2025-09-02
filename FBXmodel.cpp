@@ -112,12 +112,12 @@ HRESULT InitFBXTestModel(void)
 		};
 
 	for (const auto& tri : g_FloorTris) updateBounds(tri);
-	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 6, 1);
+	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 6, 50);
 
 	minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
 	maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 	for (const auto& tri : g_WallTris) updateBounds(tri);
-	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 6, 1);
+	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 6, 50);
 
 
 

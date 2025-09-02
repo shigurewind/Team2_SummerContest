@@ -446,7 +446,7 @@ void PLAYER::ApplyCollision()
 			XMFLOAT3 testMin = { testPos.x - halfSize, pos.y - 0.1f, testPos.z - halfSize };
 			XMFLOAT3 testMax = { testPos.x + halfSize, pos.y + 0.1f, testPos.z + halfSize };
 
-			if (!CheckWallCollisionLOD(min, max))
+			if (!CheckWallCollisionLOD(testMin, testMax))
 			{
 				// スライド応用
 				velocity.x = slideVelocity.x;
