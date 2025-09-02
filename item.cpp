@@ -11,6 +11,9 @@
 
 #include <fstream>
 #include <nlohmann/json.hpp>
+
+#include "Octree.h"
+
 using json = nlohmann::json;
 
 
@@ -75,6 +78,7 @@ void ITEM_OBJ::Update()
 	if (!use) return;
 
 	Object::Update(); // 重力
+	ApplyCollision(); // 壁との当たり判定
 	HandleGroundCheck(); // 地面判定
 
 	// すべり止め：接地している間は水平速度に摩擦をかける
@@ -119,7 +123,7 @@ void ITEM_OBJ::Update()
 
 	// 当たり判定
 	if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
-		
+
 		Inventory* playerInventory = GetPlayerInventory();
 
 		switch (item.GetCategory())
@@ -129,7 +133,7 @@ void ITEM_OBJ::Update()
 		case ItemCategory::Consumable:
 			//インベントリーに入れる
 			if (playerInventory->AddItem(item)) {
-				
+
 
 				use = false;  // アイテムを消す
 			}
@@ -148,11 +152,20 @@ void ITEM_OBJ::Update()
 void ITEM_OBJ::HandleGroundCheck()
 {
 	const float groundThreshold = 0.2f;
-	float groundY;
-	if (CheckItemGroundSimple(pos, ITEM_OFFSET_Y, groundY) && velocity.y <= 0.0f)
+
+	// 八分木で地面判定
+	XMFLOAT3 rayStart = pos;
+	rayStart.y += 10.0f;
+	XMFLOAT3 rayDir = { 0.0f, -20.0f, 0.0f }; // 下に20.0f
+	float hitDistance = 20.0f;
+	XMFLOAT3 hitPos, hitNormal;
+
+	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal) && velocity.y <= 0.0f)
 	{
+		float groundY = hitPos.y;
 		float targetY = groundY;
 		float distanceToGround = pos.y - targetY;
+
 		if (distanceToGround <= groundThreshold)
 		{
 			pos.y = targetY;
@@ -168,6 +181,96 @@ void ITEM_OBJ::HandleGroundCheck()
 	{
 		isGround = false;
 	}
+}
+
+
+// 壁にぶつかったとき
+void ITEM_OBJ::ApplyCollision()
+{
+	//次の位置を計算
+	XMFLOAT3 nextPos = pos;
+	nextPos.x += velocity.x;
+	nextPos.z += velocity.z;
+
+	//ボックスの範囲を計算
+	float halfSize = ITEM_SIZE * 0.5f;
+	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
+	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
+
+	//壁との当たり判定
+	if (CheckWallCollisionLOD(min, max))
+	{
+		//法線を取得
+		XMFLOAT3 rayStart = pos;
+		rayStart.y += 1.0f;
+		XMFLOAT3 rayDir = { velocity.x * 2.0f, 0.0f, velocity.z * 2.0f }; // 移動ベクトル
+		XMFLOAT3 wallNormal = GetWallCollisionNormalLOD(rayStart, rayDir, 100.0f);
+
+		if (wallNormal.x != 0.0f || wallNormal.z != 0.0f)
+		{
+			// 反発係数
+			const float bounceCoefficient = 0.6f;
+
+			// 速度ベクトル投影
+			XMVECTOR vel = XMLoadFloat3(&velocity);
+			XMVECTOR normal = XMLoadFloat3(&wallNormal);
+
+			float dotProduct = XMVectorGetX(XMVector3Dot(vel, normal));
+
+			// 壁に向かっている
+			if (dotProduct < 0.0f)
+			{
+				// スピード計算：velocity - 2 * (velocity ・ normal) * normal * bounceCoefficient
+				XMVECTOR bounceVel = XMVectorSubtract(vel,
+					XMVectorScale(normal, 2.0f * dotProduct * bounceCoefficient));
+
+				XMFLOAT3 newVelocity;
+				XMStoreFloat3(&newVelocity, bounceVel);
+
+				velocity.x = newVelocity.x;
+				velocity.z = newVelocity.z;
+				// yは変えない
+			}
+		}
+		else
+		{
+			velocity.x = 0;
+			velocity.z = 0;
+		}
+	}
+
+	ApplyFriction();
+}
+
+
+// 摩擦力
+void ITEM_OBJ::ApplyFriction()
+{
+	// 摩擦力係数
+	const float frictionCoefficient = 0.95f; // 毎フレーム5%下ろす
+	const float minVelocity = 0.2f; // これ以下なら停止
+
+	// 地面にいる場合
+	if (isGround)
+	{
+		velocity.x *= frictionCoefficient;
+		velocity.z *= frictionCoefficient;
+
+		// 止まる
+		float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
+		if (speed < minVelocity)
+		{
+			velocity.x = 0.0f;
+			velocity.z = 0.0f;
+		}
+	}
+	else// 空中にいる場合
+	{
+		const float airResistance = 0.98f;
+		velocity.x *= airResistance;
+		velocity.z *= airResistance;
+	}
+
 }
 
 
@@ -308,7 +411,7 @@ void DrawItem()
 
 			// スケールを反映
 			XMFLOAT3 scl = g_aItem[i].GetScale();
-			mtxScl = XMMatrixScaling(scl.x,scl.y,scl.z);
+			mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
 			mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
 			// 移動を反映
@@ -474,27 +577,6 @@ ITEM_OBJ* GetItemOBJ()
 int GetItemCount() { return MAX_ITEM; }
 
 
-bool CheckItemGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
-{
-	const auto& tris = GetFloorTriangles();
-
-	XMFLOAT3 rayStart = pos;
-	rayStart.y += 50.0f;
-	XMFLOAT3 rayEnd = pos;
-	rayEnd.y -= 100.0f;
-
-	XMFLOAT3 hit, normal;
-	for (const auto& tri : tris)
-	{
-		if (RayCast(tri.v0, tri.v1, tri.v2, rayStart, rayEnd, &hit, &normal))
-		{
-			groundY = hit.y;
-			return true;
-		}
-	}
-	return false;
-}
-
 
 
 // 即時効果を持つアイテムの効果を適用する関数
@@ -506,7 +588,7 @@ void ApplyInstantItemEffect(int itemID) {
 		// HPを回復
 		player->HP += 1.0f;//TODO：数値調整
 		if (player->HP > player->HP_MAX) {
-			player->HP = player->HP_MAX;  
+			player->HP = player->HP_MAX;
 		}
 		break;
 
@@ -514,13 +596,13 @@ void ApplyInstantItemEffect(int itemID) {
 		// 弾数補充
 		player->ammoNormal += 5;//TODO：数値調整
 		if (player->ammoNormal > player->maxAmmoNormal) {
-			player->ammoNormal = player->maxAmmoNormal;  
+			player->ammoNormal = player->maxAmmoNormal;
 		}
 		break;
 
-		
+
 	default:
-		
+
 		break;
 	}
 }

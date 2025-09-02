@@ -64,3 +64,39 @@ OctreeNode* GetWallTree();
 OctreeNode* GetFloorTree();
 const std::vector<TriangleData>& GetFloorTriangles();
 const std::vector<TriangleData>& GetWallTriangles();
+
+
+//三角形データCache
+bool LoadTriangleCache(const std::string& fbxPath);
+void SaveTriangleCache(const std::string& fbxPath);
+
+
+//LOD関連----------------------------------------------
+
+struct SimpleLOD {
+	float distance;
+	int skipFactor; // 三角形をスキップする割合
+};
+
+// LODレベルを取得
+int GetLODLevel(float cameraDistance);
+
+void SetLODParameters(float nearDist = 50.0f, float farDist = 150.0f);
+
+// マップとの当たり判定(LOD版)
+bool CheckGroundCollisionLOD(const XMFLOAT3& rayOrigin, const XMFLOAT3& rayDir,
+	float* hitDistance, XMFLOAT3* hitPos, XMFLOAT3* hitNormal);
+
+bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax);
+
+
+// 法線を取得(LOD版)
+XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance);
+
+
+
+
+void AnalyzeOctreeStructure(OctreeNode* node, int currentDepth, int& maxDepth, int& leafCount, int& nodeCount);
+void CountNodesByDepth(OctreeNode* node, int currentDepth, std::vector<int>& depthCounts);
+
+

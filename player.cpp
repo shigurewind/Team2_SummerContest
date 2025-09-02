@@ -113,7 +113,7 @@ void PLAYER::Init()
 	ammoFire = 20;
 	maxAmmoFire = 20;
 
-	HP = HP_MAX = 5;
+	HP = HP_MAX = 100;
 	alive = true;
 
 	meleeCDTime = 0.8f;
@@ -250,9 +250,9 @@ void PLAYER::OnUpdate() {
 	HandleInput();          // W/A/S/D移動 & 方向制御
 	HandleJump();           // スペースキー処理
 
-	ApplyCollision();      // 衝突判定と適用
+	ApplyCollision();      // 衝突判定と適用　TODO:時間かかりすぎ
 	Object::Update();
-	HandleGroundCheck();    // 地面接地判定
+	HandleGroundCheck();    // 地面接地判定 TODO:時間かかりすぎ
 
 	HandleShooting();       // 弾発射
 	HandleReload();         // Rでリロード
@@ -401,7 +401,7 @@ void PLAYER::ApplyCollision()
 	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
 	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
 
-	if (AABBHitOctree(GetWallTree(), GetWallTriangles(), min, max, 0, 5, 5))
+	if (CheckWallCollisionLOD(min, max))
 	{
 		// 壁に沿ってスライド
 		//velocity-(velocity・normal)*normal
@@ -446,7 +446,7 @@ void PLAYER::ApplyCollision()
 			XMFLOAT3 testMin = { testPos.x - halfSize, pos.y - 0.1f, testPos.z - halfSize };
 			XMFLOAT3 testMax = { testPos.x + halfSize, pos.y + 0.1f, testPos.z + halfSize };
 
-			if (!AABBHitOctree(GetWallTree(), GetWallTriangles(), testMin, testMax, 0, 5, 5))
+			if (!CheckWallCollisionLOD(testMin, testMax))
 			{
 				// スライド応用
 				velocity.x = slideVelocity.x;
@@ -594,26 +594,12 @@ void PLAYER::HandleReload()
 
 XMFLOAT3 PLAYER::GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector, float halfSize)
 {
-	//rayの開始位置
 	XMFLOAT3 rayStart = currentPos;
 	rayStart.y += 1.0f;
 
-	XMFLOAT3 rayEnd = rayStart;
-	rayEnd.x += moveVector.x * 2.0f;
-	rayEnd.z += moveVector.z * 2.0f;
+	XMFLOAT3 rayDir = { moveVector.x * 2.0f, 0.0f, moveVector.z * 2.0f };
 
-	XMFLOAT3 rayDir = { rayEnd.x - rayStart.x, rayEnd.y - rayStart.y, rayEnd.z - rayStart.z };
-
-	//一番近いの壁
-	float closestDist = 100.0f;
-	XMFLOAT3 hitPos, hitNormal = { 0.0f, 0.0f, 0.0f };
-
-	if (RayHitOctree(GetWallTree(), GetWallTriangles(), rayStart, rayDir, &closestDist, &hitPos, &hitNormal, 0, 5, 5))
-	{
-		return hitNormal;
-	}
-
-	return { 0.0f, 0.0f, 0.0f };
+	return GetWallCollisionNormalLOD(rayStart, rayDir, 100.0f);
 }
 
 
@@ -693,22 +679,21 @@ BulletType GetCurrentBulletType(void)
 
 bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 {
-	const auto& tris = GetFloorTriangles();
-
+	// LOD版の地面判定
 	XMFLOAT3 rayStart = pos;
-	rayStart.y += 50.0f;
-	XMFLOAT3 rayEnd = pos;
-	rayEnd.y -= 100.0f;
+	rayStart.y += 10.0f;
 
-	XMFLOAT3 hit, normal;
-	for (const auto& tri : tris)
+	XMFLOAT3 rayDir = { 0.0f, -10.0f, 0.0f }; // したへ10.0fの射線
+
+	float hitDistance = 10.0f;
+	XMFLOAT3 hitPos, hitNormal;
+
+	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal))
 	{
-		if (RayCast(tri.v0, tri.v1, tri.v2, rayStart, rayEnd, &hit, &normal))
-		{
-			groundY = hit.y;
-			return true;
-		}
+		groundY = hitPos.y;
+		return true;
 	}
+
 	return false;
 }
 
