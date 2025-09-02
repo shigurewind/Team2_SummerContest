@@ -68,7 +68,15 @@ static bool tutorialTriggered = false;
 //static BulletType currentBullet = BULLET_NORMAL;
 
 
+// Init時にロードするかどうかの内部フラグ（既定 false）
+namespace {
+	bool g_LoadOnInit = false;
+}
 
+// 外部から切り替えるための関数
+void SetLoadOnInit(bool enable) {
+	g_LoadOnInit = enable;
+}
 
 
 
@@ -88,8 +96,9 @@ HRESULT InitPlayer(void)
 
 
 
-	LoadPlayerFromFile();
-
+	if (g_LoadOnInit) {
+		LoadPlayerFromFile();
+	}
 	return S_OK;
 }
 
@@ -108,7 +117,7 @@ void PLAYER::Init()
 	SetMaxFallSpeed(6.0f);
 	jumpPower = 8.0f;
 
-	ammoNormal = 20;   
+	ammoNormal = 30;   
 	maxAmmoNormal = 36;  
 	ammoFire = 20;
 	maxAmmoFire = 20;
@@ -255,7 +264,7 @@ void PLAYER::OnUpdate() {
 	HandleGroundCheck();    // 地面接地判定
 
 	HandleShooting();       // 弾発射
-	HandleReload();         // Rでリロード
+	//HandleReload();         // Rでリロード
 
 	EventCheck();          // イベントチェック
 }
@@ -557,39 +566,39 @@ void PLAYER::HandleShooting()
 }
 
 
-void PLAYER::HandleReload()
-{
-	// Rキーでリロード処理
-	if (GetKeyboardTrigger(DIK_R))
-	{
-		Weapon* weapon = nullptr;
-		switch (currentWeapon)
-		{
-		case WEAPON_REVOLVER:
-			weapon = GetRevolver();
-			break;
-		case WEAPON_SHOTGUN:
-			weapon = GetShotgun();
-			break;
-		case WEAPON_ROCKET_LAUNCHER:
-			weapon = GetRocket_Launcher();
-			break;
-		}
-
-		int clipSize = weapon->clipSize;
-
-		int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
-		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
-
-		if (*ammo < clipSize && *maxAmmo > 0)
-		{
-			int need = clipSize - *ammo;
-			int reload = Min(need, *maxAmmo);
-			*ammo += reload;
-			*maxAmmo -= reload;
-		}
-	}
-}
+//void PLAYER::HandleReload()
+//{
+//	// Rキーでリロード処理
+//	if (GetKeyboardTrigger(DIK_R))
+//	{
+//		Weapon* weapon = nullptr;
+//		switch (currentWeapon)
+//		{
+//		case WEAPON_REVOLVER:
+//			weapon = GetRevolver();
+//			break;
+//		case WEAPON_SHOTGUN:
+//			weapon = GetShotgun();
+//			break;
+//		case WEAPON_ROCKET_LAUNCHER:
+//			weapon = GetRocket_Launcher();
+//			break;
+//		}
+//
+//		int clipSize = weapon->clipSize;
+//
+//		int* ammo = (currentBullet == BULLET_NORMAL) ? &g_Player.ammoNormal : &g_Player.ammoFire;
+//		int* maxAmmo = (currentBullet == BULLET_NORMAL) ? &g_Player.maxAmmoNormal : &g_Player.maxAmmoFire;
+//
+//		if (*ammo < clipSize && *maxAmmo > 0)
+//		{
+//			int need = clipSize - *ammo;
+//			int reload = Min(need, *maxAmmo);
+//			*ammo += reload;
+//			*maxAmmo -= reload;
+//		}
+//	}
+//}
 
 
 XMFLOAT3 PLAYER::GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector, float halfSize)
