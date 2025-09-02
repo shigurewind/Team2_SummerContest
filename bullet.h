@@ -87,3 +87,6 @@ BULLET* GetBullet(void);
 Weapon* GetRevolver(void);
 Weapon* GetShotgun(void);
 Weapon* GetRocket_Launcher(void);
+
+// 弾着弾点(center)で爆風を発生させる（再利用用API）
+void ApplyExplosionAt(const DirectX::XMFLOAT3& center, float radius = 100.0f, float force = 30.0f);

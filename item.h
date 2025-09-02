@@ -130,3 +130,6 @@ void SwitchToPreviousItem();
 void SwitchToNextItem();
 
 ID3D11ShaderResourceView* GetItemTexture(int itemID);
+
+// アイテム配列の有効長（MAX_ITEM）を外から取得するために公開
+int GetItemCount();

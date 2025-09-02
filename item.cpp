@@ -77,6 +77,31 @@ void ITEM_OBJ::Update()
 	Object::Update(); // 重力
 	HandleGroundCheck(); // 地面判定
 
+	// すべり止め：接地している間は水平速度に摩擦をかける
+	{
+		XMFLOAT3 v = GetVelocity();
+
+		if (isGround) {
+			const float groundFriction = 0.85f; // 0?1（小さいほど早く止まる）
+			const float stopEps = 0.05f;  // これ未満は0に丸める
+
+			v.x *= groundFriction;
+			v.z *= groundFriction;
+
+			if (fabsf(v.x) < stopEps) v.x = 0.0f;
+			if (fabsf(v.z) < stopEps) v.z = 0.0f;
+
+			// 縦は既に HandleGroundCheck() で 0 にされるが、念のため保持
+			// v.y は変更しない（地形の段差で浮き直す可能性があるため）
+		}
+		else {
+			// （任意）空中はほんの少しだけ空気抵抗をかけてもOK
+			// v.x *= 0.99f; v.z *= 0.99f;
+		}
+
+		SetVelocity(v);
+	}
+
 	renderPos = pos;
 
 	if (isGround && !hasLanded) {
@@ -445,6 +470,9 @@ ITEM_OBJ* GetItemOBJ()
 {
 	return g_aItem;;
 }
+
+int GetItemCount() { return MAX_ITEM; }
+
 
 bool CheckItemGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 {

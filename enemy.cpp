@@ -244,6 +244,11 @@ void SpiderEnemy::Update() {
 
 		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
 		{
+			if (bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+				ApplyExplosionAt(bullet[i].pos);
+			}
+
+
 			bullet[i].use = false;
 			HP -= 1;
 
@@ -798,6 +803,11 @@ void GhostEnemy::Update()
 
 		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
 		{
+			if (bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+        ApplyExplosionAt(bullet[i].pos);
+    }
+
+
 			bullet[i].use = false;
 			HP -= 1;
 
