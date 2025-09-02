@@ -76,6 +76,11 @@ private:
 
 	bool hasLanded;// 着地したかのフラグ
 	XMFLOAT3 renderPos;
+
+	//当たり判定
+	void ApplyCollision();
+	void ApplyFriction();// 摩擦力
+
 };
 
 
@@ -117,8 +122,6 @@ void LoadItemData(const std::string& filename);
 
 
 ITEM_OBJ* GetItemOBJ();
-bool CheckItemGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);
-
 
 //InstantEffectアイテムの効果を適用関数
 void ApplyInstantItemEffect(int itemID);
