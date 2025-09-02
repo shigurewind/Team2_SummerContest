@@ -44,8 +44,8 @@ BULLET g_Bullet[MAX_BULLET];
 
 namespace {
     // 爆発チューニング用パラメータ（必要に応じて調整）
-    constexpr float kExplosionRadius = 100.0f;   // 爆風半径
-    constexpr float kExplosionForce = 30.0f;   // 吹き飛ばし強さ
+    constexpr float kExplosionRadius = 200.0f;   // 爆風半径
+    constexpr float kExplosionForce = 20.0f;   // 吹き飛ばし強さ
     constexpr float kUpwardBoost = 0.6f;   // 上向き成分の強さ（ちょっと浮かせる）
 
     inline float Length3(const XMFLOAT3& v) {
