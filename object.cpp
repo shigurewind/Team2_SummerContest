@@ -1,4 +1,6 @@
 #include "object.h"
+#include"Octree.h"
+#include"FBXmodel.h"
 
 Object::Object()
 	: pos({ 0, 0, 0 }),
@@ -38,3 +40,45 @@ void Object::AddForce(const XMFLOAT3& f) {
 	velocity.z += f.z;
 }
 
+bool Object::HandleGroundCheck(float offsetY) {
+    const float groundSnap = 1.0f;
+
+    XMFLOAT3 rayOrigin = pos;
+    rayOrigin.y += 30.0f;
+    XMFLOAT3 dir = { 0.0f, -1.0f, 0.0f };
+
+    float closest = FLT_MAX;
+    XMFLOAT3 hit{}, normal{};
+
+    if (!GetFloorTree()) {
+        isGround = false;
+        return false;
+    }
+
+    if (RayHitOctree(GetFloorTree(), GetFloorTriangles(),
+        rayOrigin, dir,
+        &closest, &hit, &normal,
+        0, 8, 8))
+    {
+        float footY = pos.y - offsetY;
+        float distToGround = footY - hit.y;
+
+        if (velocity.y <= 0.0f) {
+            if (fabsf(distToGround) <= groundSnap) {
+                pos.y = hit.y + offsetY;  
+                velocity.y = 0.0f;
+                isGround = true;
+                return true;
+            }
+            if (distToGround < 0.0f) {
+                pos.y = hit.y + offsetY;
+                velocity.y = 0.0f;
+                isGround = true;
+                return true;
+            }
+        }
+    }
+
+    isGround = false;
+    return false;
+}

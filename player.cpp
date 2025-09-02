@@ -243,7 +243,7 @@ void PLAYER::OnUpdate() {
 
 	ApplyCollision();      // 衝突判定と適用
 	Object::Update();
-	HandleGroundCheck();    // 地面接地判定
+	Object::HandleGroundCheck(PLAYER_OFFSET_Y);    // 地面接地判定
 
 	HandleShooting();       // 弾発射
 	HandleReload();         // Rでリロード
@@ -360,7 +360,7 @@ void PLAYER::HandleGroundCheck()
 {
 
 
-	const float groundThreshold = 0.2f;
+	/*const float groundThreshold = 0.2f;
 	float groundY;
 	if (CheckPlayerGroundSimple(pos, PLAYER_OFFSET_Y, groundY) && GetVelocity().y <= 0.0f)
 	{
@@ -380,7 +380,7 @@ void PLAYER::HandleGroundCheck()
 	else
 	{
 		isGround = FALSE;
-	}
+	}*/
 
 
 	

@@ -1,7 +1,9 @@
-#define NOMINMAX 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 
 #include "Octree.h"
-
+#include <cfloat>
 #include <algorithm>
 #include "FBXmodel.h"
 
@@ -290,3 +292,85 @@ void Subdivide(OctreeNode* node, const std::vector<TriangleData>& triangleList, 
 
 	node->triangleIndices.clear(); 
 }
+
+
+namespace { 
+	OctreeNode* s_root = nullptr;
+	std::vector<TriangleData> s_tris;
+	int                       s_maxDepth = 8;
+	int                       s_minTri = 16;
+
+	inline void MakeAabb(const XMFLOAT3& c, const XMFLOAT3& h, XMFLOAT3& outMin, XMFLOAT3& outMax) {
+		outMin = { c.x - h.x, c.y - h.y, c.z - h.z };
+		outMax = { c.x + h.x, c.y + h.y, c.z + h.z };
+	}
+	inline bool OverlapScene_AABB(const XMFLOAT3& center, const XMFLOAT3& half) {
+		if (!s_root) return false;
+		XMFLOAT3 bmin, bmax; MakeAabb(center, half, bmin, bmax);
+		return AABBHitOctree(s_root, s_tris, bmin, bmax, 0, s_maxDepth, s_minTri);
+	}
+	static float ResolveOneAxis(const XMFLOAT3& startC, const XMFLOAT3& half, int axis, int sign) {
+		const float maxPush = ((axis == 0) ? half.x : (axis == 1) ? half.y : half.z) * 4.0f + 0.5f;
+		float lo = 0.0f, hi = maxPush;
+		auto test = [&](float d) {
+			XMFLOAT3 c = startC;
+			if (axis == 0) c.x += sign * d;
+			if (axis == 1) c.y += sign * d;
+			if (axis == 2) c.z += sign * d;
+			return OverlapScene_AABB(c, half);
+			};
+		if (test(hi)) return 0.0f; 
+		for (int i = 0; i < 18; ++i) { float mid = (lo + hi) * 0.5f; if (test(mid)) lo = mid; else hi = mid; }
+		return hi;
+	}
+}
+
+namespace Oct {
+
+	void BuildScene(const std::vector<TriangleData>& tris,
+		const XMFLOAT3& minBound, const XMFLOAT3& maxBound,
+		int maxDepth, int minTri)
+	{
+		DeleteScene();
+		s_tris = tris; 
+		s_maxDepth = maxDepth;
+		s_minTri = minTri;
+		s_root = BuildOctree(s_tris, minBound, maxBound, 0, s_maxDepth, s_minTri);
+	}
+
+	void DeleteScene() {
+		if (s_root) { DeleteOctree(s_root); s_root = nullptr; }
+		s_tris.clear();
+	}
+
+	bool AABBOverlap(const XMFLOAT3& center, const XMFLOAT3& half) {
+		return OverlapScene_AABB(center, half);
+	}
+
+	bool IntersectWallAABB(const XMFLOAT3& center, const XMFLOAT3& half, XMFLOAT3& outPush)
+	{
+		outPush = { 0,0,0 };
+		if (!s_root) return false;
+		if (!OverlapScene_AABB(center, half)) return false;
+
+		struct Cand { XMFLOAT3 push; float score; };
+		Cand best{ {0,0,0}, FLT_MAX };
+
+		const int order[6][2] = { {1,-1},{0,-1},{2,-1},{0,1},{2,1},{1,1} };
+
+		for (auto& e : order) {
+			int axis = e[0], sign = e[1];
+			float d = ResolveOneAxis(center, half, axis, sign);
+			if (d <= 0.0f) continue;
+			XMFLOAT3 p{ 0,0,0 };
+			if (axis == 0) p.x = sign * d;
+			if (axis == 1) p.y = sign * d;
+			if (axis == 2) p.z = sign * d;
+			float score = fabsf(p.x) + fabsf(p.y) + fabsf(p.z); 
+			if (score < best.score) best = { p, score };
+		}
+		if (best.score == FLT_MAX) { outPush = { 0,1,0 }; return true; } 
+		outPush = best.push; return true;
+	}
+
+} // namespace Oct

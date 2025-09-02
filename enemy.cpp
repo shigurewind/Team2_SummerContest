@@ -4,7 +4,6 @@
 // 
 //
 //=============================================================================
-#pragma once
 #include "enemy.h"
 #include "player.h"
 #include "bullet.h"
@@ -20,6 +19,8 @@
 #include <cstdlib>
 #include <ctime>
 #include "navmesh.h"
+#include "Octree.h"
+#include "object.h"
 
 
 
@@ -31,7 +32,6 @@ std::vector<BaseEnemy*> g_enemies;
 ID3D11Buffer* g_VertexBufferEnemy = nullptr;
 
 #define ENEMY_MAX (1)
-static BOOL g_bAlphaTestEnemy;
 
 #define ENEMY_OFFSET_Y  (-50.0f)
 
@@ -46,16 +46,13 @@ BULLET* bullet = GetBullet();
 //*****************************************************************************
 // 
 //*****************************************************************************
-BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false) {
+BaseEnemy::BaseEnemy() : scl({ 1,1,1 }) {
 	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 }
 BaseEnemy::~BaseEnemy() {}
 
-SpiderEnemy::SpiderEnemy() :
-	texture(nullptr), width(100.0f), height(100.0f)
-{
-	material = new MATERIAL{};
-	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+SpiderEnemy::SpiderEnemy() {
+	material = new MATERIAL{}; 
 }
 SpiderEnemy::~SpiderEnemy() {
 	if (texture) {
@@ -72,43 +69,33 @@ void SpiderEnemy::Init() {
 		"data/2Dpicture/enemy/enemy001.png",
 		NULL, NULL, &texture, NULL);
 
-
 	*material = {};
 	material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-	pos = XMFLOAT3(0.0f, -50.0f, 20.0f);
+	SetPosition(XMFLOAT3(0.0f, -50.0f, 20.0f));
 	scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	use = true;
-	speed = 1.0f;
+
+	speed = 0.5f;
 	dropRate = 0.5f;
 
 	currentFrame = 0;
 	frameCounter = 0;
-	frameInterval = 15;//change speed
+	frameInterval = 15;
 	maxFrames = 3;
-
-	tblNo = 0;
-	//tblMax = _countof(g_MoveTbl0);
-	time = 0.0f;
 
 	isAttacking = false;
 	attackFrameTimer = 0.0f;
 	attackCooldownTimer = 0.0f;
-	attackCooldown = 1.5f;  // 1.5 秒ことに攻撃する
+	attackCooldown = 1.5f;
 
-	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // 現在の動き方向
-	moveChangeTimer = 2.0f;  // 向き変わるタイマー
-	speed = 0.5f;			//エネミーのスピード
-	currentFrame = 0;
-	frameCounter = 0;
-	frameInterval = 15;//change speed
-
+	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	moveChangeTimer = 2.0f;
 
 	minDistance = 100.0f;
-
 	HP = 1;
 
-	EnableGravity(true);
+	EnableGravity(false);
 	SetMaxFallSpeed(6.0f);
 }
 
@@ -125,30 +112,24 @@ void SpiderEnemy::Update() {
 	pathUpdateTimer -= 1.0f / 60.0f;
 	if (pathUpdateTimer <= 0.0f) {
 		pathUpdateTimer = pathUpdateInterval;
-
-		XMFLOAT3 start = pos;
+		XMFLOAT3 start = GetPosition();
 		XMFLOAT3 goal = GetPlayer()->GetPosition();
-
 		FindPathAStar(start, goal, g_NavMeshNodes, pathPoints);
 		currentPathIndex = 0;
 	}
 
-	if (isAttacking)    //攻撃のアニメーション処理
-	{
+	if (isAttacking) {
 		attackFrameTimer -= 1.0f / 60.0f;
 		if (attackFrameTimer <= 0.0f) {
 			isAttacking = false;
 			frameCounter = 0;
 			currentFrame = 0;
 		}
-		else
-		{
+		else {
 			currentFrame = 2;
 		}
 	}
-	else
-	{
-		// 移動のアニメーション処理
+	else {
 		frameCounter++;
 		if (frameCounter >= frameInterval) {
 			frameCounter = 0;
@@ -156,91 +137,59 @@ void SpiderEnemy::Update() {
 		}
 	}
 
+	ZeroXZVelocity();
 
-	if (!pathPoints.empty() && currentPathIndex < pathPoints.size()) {
+	if (!pathPoints.empty() && currentPathIndex < (int)pathPoints.size()) {
+		XMFLOAT3 self = GetPosition();
 		XMFLOAT3 target = pathPoints[currentPathIndex];
 
-		XMFLOAT3 dir = {
-			target.x - pos.x,
-			0.0f,
-			target.z - pos.z
-		};
-
+		XMFLOAT3 dir = { target.x - self.x, 0.0f, target.z - self.z };
 		float distSq = dir.x * dir.x + dir.z * dir.z;
 
 		if (distSq < 4.0f) {
 			currentPathIndex++;
 		}
 		else {
-			XMVECTOR vec = XMVector3Normalize(XMLoadFloat3(&dir));
-			XMStoreFloat3(&dir, vec);
-
-			pos.x += dir.x * speed;
-			pos.z += dir.z * speed;
+			XMVECTOR vdir = XMVector3Normalize(XMLoadFloat3(&dir));
+			XMStoreFloat3(&dir, vdir);
+			XMFLOAT3 v = GetVelocity();
+			v.x = dir.x * speed;
+			v.z = dir.z * speed;
+			SetVelocity(v);
 		}
 	}
 
-	// エネミーからプレイヤーまでのベクトル
-	XMFLOAT3 dir;
-	dir.x = GetPlayer()->GetPosition().x - pos.x;
-	dir.y = 0.0f;
-	dir.z = GetPlayer()->GetPosition().z - pos.z;
+	XMFLOAT3 self = GetPosition();
+	XMFLOAT3 ply = GetPlayer()->GetPosition();
+	XMFLOAT3 d = { ply.x - self.x, 0.0f, ply.z - self.z };
+	float distSq = d.x * d.x + d.z * d.z;
+	float range = 200.0f;
 
-
-
-	//// プレイヤーの座標までの計算
-	XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
-
-	float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
-	float range = 200.0f; // 発射範囲
-
-	attackCooldownTimer -= 1.0f / 60.0f;
-	if (attackCooldownTimer < 0.0f) attackCooldownTimer = 0.0f;
-
-
-	//プレイヤーを追いかける行う範囲
-	if (distSq < range * range)
-	{
+	if (distSq < range * range) {
 		ChasingPlayer(speed, range);
-
-		if (!isAttacking && attackCooldownTimer <= 0.0f)
-		{
+		if (!isAttacking && attackCooldownTimer <= 0.0f) {
 			Attack();
 		}
-
 	}
-	else
-	{
+	else {
 		NormalMovement();
 	}
 
-
-	//弾と当たり判定？
-	for (int i = 0; i < MAX_BULLET; i++)
-	{
+	for (int i = 0; i < MAX_BULLET; i++) {
 		if (!bullet[i].use) continue;
-
-		XMFLOAT3 enemyHalfSize = { width, height - 20.0f, 50.f }; //エネミーの当たり判定のサイズ
-
-		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size,
+			GetPosition(), GetColliderHalf()))
 		{
 			bullet[i].use = false;
-			HP -= 1;
-			if (HP <= 0)
-			{
-				use = false;
-				DropItems(pos, SPIDER);
-			}
+			if (--HP <= 0) { use = false; DropItems(GetPosition(), SPIDER); }
 		}
-
 	}
 
+	PhysicsStepAndResolve();
 
 #ifdef _DEBUG
-
-	float dist = sqrtf(distSq);
-	PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n", pos.x, pos.y, pos.z);
-
+	PrintDebugProc("Enemy Pos: X:%f Y:%f Z:%f\n",
+		GetPosition().x, GetPosition().y, GetPosition().z);
 #endif
 }
 
@@ -273,7 +222,8 @@ void SpiderEnemy::Draw() {
 	mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
 
 	XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
-	XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+	XMFLOAT3 p = GetPosition();
+	XMMATRIX mtxTranslate = XMMatrixTranslation(p.x, p.y, p.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
@@ -317,42 +267,28 @@ void SpiderEnemy::Draw() {
 }
 void SpiderEnemy::NormalMovement()
 {
-
-	// 動き方向変わりタイマー
-	moveChangeTimer -= 1.0f / 60.0f; // 60fpsことに動き方向変わり
+	moveChangeTimer -= 1.0f / 60.0f;
 	if (moveChangeTimer <= 0.0f) {
-		moveChangeTimer = 2.0f; // reset timer
-
-		// 動き方向変わることはランダム設定
+		moveChangeTimer = 2.0f;
 		int dir = rand() % 4;
 		switch (dir) {
-		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // 右
-		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // 左
-		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // 前（+ｚ）
-		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // 後ろ（-ｚ）
+		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;
+		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break;
+		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;
+		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break;
 		}
 	}
 
-	// 新しい位置を計算
-	XMFLOAT3 newPos = pos;
-	newPos.x += moveDir.x * speed;
-	newPos.y += moveDir.y * speed;
-	newPos.z += moveDir.z * speed;
+	XMFLOAT3 v = GetVelocity();
+	v.x = moveDir.x * speed;
+	v.z = moveDir.z * speed;
+	SetVelocity(v);
 
-	// 範囲制限（例えば：XとZは -50.0f ? +50.0f）
-	const float minX = -200.0f;
-	const float maxX = 200.0f;
-	const float minZ = -100.0f;
-	const float maxZ = 100.0f;
-
-	// 範囲内なら移動
-	if (newPos.x >= minX && newPos.x <= maxX &&
-		newPos.z >= minZ && newPos.z <= maxZ) {
-		pos = newPos;
-	}
-	else {
-		// 範囲外に出そうなら方向を変える
-		moveChangeTimer = 0.0f; // すぐ次の方向へ変更
+	const float minX = -200.0f, maxX = 200.0f;
+	const float minZ = -100.0f, maxZ = 100.0f;
+	XMFLOAT3 p = GetPosition();
+	if (p.x <= minX || p.x >= maxX || p.z <= minZ || p.z >= maxZ) {
+		moveChangeTimer = 0.0f;
 	}
 }
 void SpiderEnemy::Attack()
@@ -560,13 +496,9 @@ void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType)
 //*****************************************************************************
 
 
-void BaseEnemy::SetPosition(const XMFLOAT3& p) {
-	pos = p;
-}
+void BaseEnemy::SetPosition(const XMFLOAT3& p) { Object::SetPosition(p); }
 
-XMFLOAT3 BaseEnemy::GetPosition() const {
-	return pos;
-}
+XMFLOAT3 BaseEnemy::GetPosition() const { return Object::GetPosition(); }
 
 void BaseEnemy::SetScale(const XMFLOAT3& s) {
 	scl = s;
@@ -578,42 +510,66 @@ XMFLOAT3 BaseEnemy::GetScale() const {
 
 void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 {
+	XMFLOAT3 self = GetPosition();
+	XMFLOAT3 ply = GetPlayer()->GetPosition();
 
-
-	// エネミーからプレイヤーまでのベクトル
-	XMFLOAT3 dir;
-	dir.x = GetPlayer()->GetPosition().x - pos.x;
-	dir.y = 0.0f;
-	dir.z = GetPlayer()->GetPosition().z - pos.z;
-
-	float distSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
+	XMFLOAT3 dir = { ply.x - self.x, 0.0f, ply.z - self.z };
+	float distSq = dir.x * dir.x + dir.z * dir.z;
 
 	float maxSq = chaseRange * chaseRange;
 	float minSq = minDistance * minDistance;
 
-	if (distSq < maxSq && distSq > minSq) {
-		// 正規化ベクトル
-		XMVECTOR vec = XMVector3Normalize(XMLoadFloat3(&dir));
-		XMStoreFloat3(&dir, vec);
+	ZeroXZVelocity();
 
-		// 位置アップデート
-		pos.x += dir.x * speed;
-		pos.y += dir.y * speed;
-		pos.z += dir.z * speed;
+	if (distSq < maxSq && distSq > minSq) {
+		XMVECTOR vdir = XMVector3Normalize(XMLoadFloat3(&dir));
+		XMStoreFloat3(&dir, vdir);
+
+		XMFLOAT3 v = GetVelocity();
+		v.x = dir.x * speed;
+		v.z = dir.z * speed;
+		SetVelocity(v);
 	}
 }
+void BaseEnemy::ZeroXZVelocity()
+{
+	XMFLOAT3 v = GetVelocity();
+	v.x = 0.0f;
+	v.z = 0.0f;
+	SetVelocity(v);
+}
 
+void BaseEnemy::PhysicsStepAndResolve()
+{
+	Object::Update();
+	Object::HandleGroundCheck(FootOffset());
+	XMFLOAT3 push{};
+	XMFLOAT3 c = GetPosition();
+	XMFLOAT3 h = GetColliderHalf();
 
+	if (Oct::IntersectWallAABB(c, h, push)) {
+		c.x += push.x; c.y += push.y; c.z += push.z;
+		SetPosition(c);
+
+		if (push.y > 0.0f) {
+			XMFLOAT3 v = GetVelocity();
+			v.y = 0.0f;
+			SetVelocity(v);
+			isGround = true;
+		}
+	}
+	else {
+		isGround = false;
+	}
+}
 
 //*****************************************************************************
 // 
 //*****************************************************************************
 
-GhostEnemy::GhostEnemy() :
-	texture(nullptr), width(100.0f), height(100.0f)
-{
+GhostEnemy::GhostEnemy() {
 	material = new MATERIAL{};
-	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+	
 }
 GhostEnemy::~GhostEnemy() {
 	if (texture) {
@@ -631,27 +587,26 @@ void GhostEnemy::Init()
 		"data/2Dpicture/enemy/ghost.png",
 		NULL, NULL, &texture, NULL);
 
-
 	*material = {};
 	material->Diffuse = XMFLOAT4(1, 1, 1, 1);
 
-	pos = XMFLOAT3(0.0f, 0.0f, ENEMY_OFFSET_Y);
+	SetPosition(XMFLOAT3(0.0f, 0.0f, ENEMY_OFFSET_Y));
 	scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	use = true;
-	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);       // 現在の動き方向
-	moveChangeTimer = 2.0f;  // 向き変わるタイマー
-	speed = 0.5f;			//エネミーのスピード
+
+	moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	moveChangeTimer = 2.0f;
+	speed = 0.5f;
+
 	currentFrame = 0;
 	frameCounter = 0;
-	frameInterval = 15;//change speed
+	frameInterval = 15;
 	maxFrames = 2;
 
 	HP = 50;
 
-	//幽霊は重力いらない
-	EnableGravity(false);
+	EnableGravity(true);
 }
-
 void GhostEnemy::Update()
 {
 	frameCounter++;
@@ -659,68 +614,42 @@ void GhostEnemy::Update()
 		frameCounter = 0;
 		currentFrame = (currentFrame + 1) % maxFrames;
 	}
-
-
 	if (!use) return;
 
+	ZeroXZVelocity();
 
+	XMFLOAT3 self = GetPosition();
+	XMFLOAT3 ply = GetPlayer()->GetPosition();
+	XMFLOAT3 d = { ply.x - self.x, ply.y - self.y, ply.z - self.z };
 
-	// エネミーからプレイヤーまでのベクトル
-	XMFLOAT3 dir;
-	dir.x = GetPlayer()->GetPosition().x - pos.x;
-	dir.y = GetPlayer()->GetPosition().y - pos.y;
-	dir.z = GetPlayer()->GetPosition().z - pos.z;
+	float distSq = d.x * d.x + d.y * d.y + d.z * d.z;
+	float range = 100.0f;
 
-
-
-	//// プレイヤーの座標までの計算
-	XMFLOAT3 toPlayer = { dir.x, dir.y, dir.z };
-
-	float distSq = toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z;
-	float range = 100.0f; // 発射範囲
-
-
-
-	//攻撃行う範囲
-	if (distSq < range * range)
-	{
-		ChasingPlayer(speed, range);
+	XMFLOAT3 v = GetVelocity();
+	if (distSq < range * range) {
+		XMVECTOR dir = XMVector3Normalize(XMLoadFloat3(&d));
+		XMStoreFloat3(&d, dir);
+		v.x = d.x * speed;
+		v.y = d.y * speed; 
+		v.z = d.z * speed;
 	}
-	else
-	{
+	else {
 		NormalMovement();
-
+		v = GetVelocity();
 	}
+	SetVelocity(v);
 
-	//弾と当たり判定？
-	for (int i = 0; i < MAX_BULLET; i++)
-	{
+	for (int i = 0; i < MAX_BULLET; i++) {
 		if (!bullet[i].use) continue;
-
-		XMFLOAT3 enemyHalfSize = { width / 2, height, 50.f }; //エネミーの当たり判定のサイズ
-
-		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size,
+			GetPosition(), GetColliderHalf()))
 		{
 			bullet[i].use = false;
-			HP -= 1;
-			if (HP <= 0)
-			{
-				use = false;
-				DropItems(pos, GHOST);
-			}
+			if (--HP <= 0) { use = false; DropItems(GetPosition(), GHOST); }
 		}
-
 	}
 
-
-
-#ifdef _DEBUG
-
-	float dist = sqrtf(distSq);
-	PrintDebugProc("Enemy2 HP: %d\n", HP);
-
-#endif
-
+	Object::Update();
 }
 
 void GhostEnemy::Draw()
@@ -752,7 +681,8 @@ void GhostEnemy::Draw()
 	mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
 
 	XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
-	XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+	XMFLOAT3 p = GetPosition();
+	XMMATRIX mtxTranslate = XMMatrixTranslation(p.x, p.y, p.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
@@ -797,48 +727,24 @@ void GhostEnemy::Draw()
 
 void GhostEnemy::NormalMovement()
 {
-	// 動き方向変わりタイマー
-	moveChangeTimer -= 1.0f / 60.0f; // 60fpsことに動き方向変わり
+	moveChangeTimer -= 1.0f / 60.0f;
 	if (moveChangeTimer <= 0.0f) {
-		moveChangeTimer = 2.0f; // reset timer
-
-		// 動き方向変わることはランダム設定
+		moveChangeTimer = 2.0f;
 		int dir = rand() % 6;
-		switch (dir)
-		{
-		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;  // 右
-		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break; // 左
-		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;  // 前（+ｚ）
-		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break; // 後ろ（-ｚ）
-		case 4: moveDir = XMFLOAT3(0.0f, 1.0f, 0.0f); break; // 上（+ｙ）
-		case 5: moveDir = XMFLOAT3(0.0f, -1.0f, 0.0f); break; // 下（-ｙ）
+		switch (dir) {
+		case 0: moveDir = XMFLOAT3(1.0f, 0.0f, 0.0f); break;
+		case 1: moveDir = XMFLOAT3(-1.0f, 0.0f, 0.0f); break;
+		case 2: moveDir = XMFLOAT3(0.0f, 0.0f, 1.0f); break;
+		case 3: moveDir = XMFLOAT3(0.0f, 0.0f, -1.0f); break;
+		case 4: moveDir = XMFLOAT3(0.0f, 1.0f, 0.0f); break;
+		case 5: moveDir = XMFLOAT3(0.0f, -1.0f, 0.0f); break;
 		}
 	}
-
-	// 新しい位置を計算
-	XMFLOAT3 newPos = pos;
-	newPos.x += moveDir.x * speed;
-	newPos.y += moveDir.y * speed;
-	newPos.z += moveDir.z * speed;
-
-	// 範囲制限（例えば：XとZは -50.0f ? +50.0f）
-	const float minX = -200.0f;
-	const float maxX = 200.0f;
-	const float minZ = -100.0f;
-	const float maxZ = 100.0f;
-	const float minY = -50.0f;
-	const float maxY = 100.0f;
-
-	// 範囲内なら移動
-	if (newPos.x >= minX && newPos.x <= maxX &&
-		newPos.y >= minY && newPos.y <= maxY &&
-		newPos.z >= minZ && newPos.z <= maxZ) {
-		pos = newPos;
-	}
-	else {
-		// 範囲外に出そうなら方向を変える
-		moveChangeTimer = 0.0f; // すぐ次の方向へ変更
-	}
+	XMFLOAT3 v = GetVelocity();
+	v.x = moveDir.x * speed;
+	v.y = moveDir.y * speed;
+	v.z = moveDir.z * speed;
+	SetVelocity(v);
 }
 
 void GhostEnemy::Attack()

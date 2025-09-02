@@ -19,6 +19,8 @@ public:
 	void AddForce(const XMFLOAT3& f);
 	void EnableGravity(bool b) { useGravity = b; }
 	void SetMaxFallSpeed(float s) { maxFallSpeed = s; }
+	bool HandleGroundCheck(float offsetY);
+
 
 protected:
 	XMFLOAT3 pos;

@@ -46,3 +46,20 @@ bool AABBHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleLi
 	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
 	int depth, int maxDepth, int minTri);
 void Subdivide(OctreeNode* node, const std::vector<TriangleData>& triangleList, int depth, int maxDepth, int minTri);
+
+namespace Oct {
+
+	void BuildScene(const std::vector<TriangleData>& tris,
+		const DirectX::XMFLOAT3& minBound,
+		const DirectX::XMFLOAT3& maxBound,
+		int maxDepth = 8,
+		int minTri = 16);
+
+	void DeleteScene();
+
+	bool AABBOverlap(const DirectX::XMFLOAT3& center,
+		const DirectX::XMFLOAT3& half);
+	bool IntersectWallAABB(const DirectX::XMFLOAT3& center,
+		const DirectX::XMFLOAT3& half,
+		DirectX::XMFLOAT3& outPush);
+}
