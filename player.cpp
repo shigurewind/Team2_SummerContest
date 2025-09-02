@@ -250,9 +250,9 @@ void PLAYER::OnUpdate() {
 	HandleInput();          // W/A/S/D移動 & 方向制御
 	HandleJump();           // スペースキー処理
 
-	ApplyCollision();      // 衝突判定と適用
+	ApplyCollision();      // 衝突判定と適用　TODO:時間かかりすぎ
 	Object::Update();
-	HandleGroundCheck();    // 地面接地判定
+	HandleGroundCheck();    // 地面接地判定 TODO:時間かかりすぎ
 
 	HandleShooting();       // 弾発射
 	HandleReload();         // Rでリロード
