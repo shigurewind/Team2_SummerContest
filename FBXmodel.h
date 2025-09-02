@@ -4,6 +4,7 @@
 #include "model.h"
 #include "DirectXMath.h"
 #include "Octree.h"
+#include "object.h"
 
 
 
@@ -22,9 +23,9 @@ struct FBXTESTMODEL
 	float				spd;				// 移動スピード
 
 	BOOL				load;
-	AMODEL*				model;				// FBXモデル情報
+	AMODEL* model;				// FBXモデル情報
 
-	SHADER*				shader;				//使うShader
+	SHADER* shader;				//使うShader
 
 	int					shadowIdx;			// 影のインデックス番号
 
@@ -78,20 +79,16 @@ struct SimpleLOD {
 	int skipFactor; // 三角形をスキップする割合
 };
 
-// LODレベルを取得
-int GetLODLevel(float cameraDistance);
-
-void SetLODParameters(float nearDist = 50.0f, float farDist = 150.0f);
 
 // マップとの当たり判定(LOD版)
 bool CheckGroundCollisionLOD(const XMFLOAT3& rayOrigin, const XMFLOAT3& rayDir,
-	float* hitDistance, XMFLOAT3* hitPos, XMFLOAT3* hitNormal);
+	float* hitDistance, XMFLOAT3* hitPos, XMFLOAT3* hitNormal, Object* obj);
 
-bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax);
+bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax, Object* obj);
 
 
 // 法線を取得(LOD版)
-XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance);
+XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance, Object* obj);
 
 
 

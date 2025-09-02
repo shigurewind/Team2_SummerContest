@@ -160,7 +160,7 @@ void ITEM_OBJ::HandleGroundCheck()
 	float hitDistance = 20.0f;
 	XMFLOAT3 hitPos, hitNormal;
 
-	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal) && velocity.y <= 0.0f)
+	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal, this) && velocity.y <= 0.0f)
 	{
 		float groundY = hitPos.y;
 		float targetY = groundY;
@@ -198,13 +198,13 @@ void ITEM_OBJ::ApplyCollision()
 	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
 
 	//壁との当たり判定
-	if (CheckWallCollisionLOD(min, max))
+	if (CheckWallCollisionLOD(min, max, this))
 	{
 		//法線を取得
 		XMFLOAT3 rayStart = pos;
 		rayStart.y += 1.0f;
 		XMFLOAT3 rayDir = { velocity.x * 2.0f, 0.0f, velocity.z * 2.0f }; // 移動ベクトル
-		XMFLOAT3 wallNormal = GetWallCollisionNormalLOD(rayStart, rayDir, 100.0f);
+		XMFLOAT3 wallNormal = GetWallCollisionNormalLOD(rayStart, rayDir, 100.0f, this);
 
 		if (wallNormal.x != 0.0f || wallNormal.z != 0.0f)
 		{

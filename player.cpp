@@ -117,8 +117,8 @@ void PLAYER::Init()
 	SetMaxFallSpeed(6.0f);
 	jumpPower = 8.0f;
 
-	ammoNormal = 30;   
-	maxAmmoNormal = 36;  
+	ammoNormal = 30;
+	maxAmmoNormal = 36;
 	ammoFire = 20;
 	maxAmmoFire = 20;
 
@@ -280,10 +280,10 @@ void PLAYER::HandleJump() {
 //移動処理
 void PLAYER::HandleInput()
 {
-	
+
 	CAMERA* cam = GetCamera();
 
-	
+
 
 	// 移動処理
 	XMFLOAT3 move = {};
@@ -304,7 +304,7 @@ void PLAYER::HandleInput()
 
 	float stickX = g_pInputManager->GetLeftStickXValue();
 	float stickY = g_pInputManager->GetLeftStickYValue();
-	
+
 	if (fabs(stickX) > 0.1f || fabs(stickY) > 0.1f) {
 		inputVector.x = stickX;
 		inputVector.y = -stickY;
@@ -319,7 +319,7 @@ void PLAYER::HandleInput()
 	velocity.x = move.x * speed;
 	velocity.z = move.z * speed;
 
-	
+
 
 	//近接攻撃
 	if (g_pInputManager->IsActionTriggered(ACTION_MELEE) && meleeCooldown <= 0.0f)
@@ -410,7 +410,7 @@ void PLAYER::ApplyCollision()
 	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
 	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
 
-	if (CheckWallCollisionLOD(min, max))
+	if (CheckWallCollisionLOD(min, max, this))
 	{
 		// 壁に沿ってスライド
 		//velocity-(velocity・normal)*normal
@@ -455,12 +455,12 @@ void PLAYER::ApplyCollision()
 			XMFLOAT3 testMin = { testPos.x - halfSize, pos.y - 0.1f, testPos.z - halfSize };
 			XMFLOAT3 testMax = { testPos.x + halfSize, pos.y + 0.1f, testPos.z + halfSize };
 
-			if (!CheckWallCollisionLOD(testMin, testMax))
+			if (!CheckWallCollisionLOD(testMin, testMax, this))
 			{
 				// スライド応用
 				velocity.x = slideVelocity.x;
 				velocity.z = slideVelocity.z;
-				return; 
+				return;
 			}
 			else
 			{
@@ -476,7 +476,7 @@ void PLAYER::ApplyCollision()
 		//止まる
 		velocity.x = 0;
 		velocity.z = 0;
-		
+
 
 	}
 }
@@ -509,7 +509,7 @@ void PLAYER::HandleGroundCheck()
 	}
 
 
-	
+
 
 }
 
@@ -608,7 +608,7 @@ XMFLOAT3 PLAYER::GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector
 
 	XMFLOAT3 rayDir = { moveVector.x * 2.0f, 0.0f, moveVector.z * 2.0f };
 
-	return GetWallCollisionNormalLOD(rayStart, rayDir, 100.0f);
+	return GetWallCollisionNormalLOD(rayStart, rayDir, 100.0f, this);
 }
 
 
@@ -697,7 +697,7 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 	float hitDistance = 10.0f;
 	XMFLOAT3 hitPos, hitNormal;
 
-	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal))
+	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal, &g_Player))
 	{
 		groundY = hitPos.y;
 		return true;
@@ -708,8 +708,8 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 
 void SavePlayerToFile() {
 	PlayerSaveData data;
-	data.weapon = static_cast<int>(g_Player.currentWeapon); 
-	data.bullet = static_cast<int>(g_Player.currentBullet); 
+	data.weapon = static_cast<int>(g_Player.currentWeapon);
+	data.bullet = static_cast<int>(g_Player.currentBullet);
 	data.ammoNormal = g_Player.ammoNormal;
 	data.ammoFire = g_Player.ammoFire;
 
@@ -725,8 +725,8 @@ void LoadPlayerFromFile() {
 	if (in) {
 		in.read(reinterpret_cast<char*>(&data), sizeof(PlayerSaveData));
 
-		g_Player.currentWeapon = static_cast<WeaponType>(data.weapon);   
-		g_Player.currentBullet = static_cast<BulletType>(data.bullet);  
+		g_Player.currentWeapon = static_cast<WeaponType>(data.weapon);
+		g_Player.currentBullet = static_cast<BulletType>(data.bullet);
 		g_Player.ammoNormal = data.ammoNormal;
 		g_Player.ammoFire = data.ammoFire;
 	}

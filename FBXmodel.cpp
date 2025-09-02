@@ -8,6 +8,7 @@
 #include "camera.h"
 #include "player.h"
 
+
 //-------------------------------------------------------------------------
 static std::vector<TriangleData> g_TriangleList;
 static FBXTESTMODEL g_FBXTestModel;	// FBXモデルのデータ
@@ -74,7 +75,7 @@ HRESULT InitFBXTestModel(void)
 	else {
 		OutputDebugStringA("Triangle data loaded from cache\n");
 	}
-	
+
 
 
 
@@ -376,14 +377,13 @@ void SaveTriangleCache(const std::string& fbxPath)
 
 // レイと地形の当たり判定（LOD対応版）
 bool CheckGroundCollisionLOD(const XMFLOAT3& rayOrigin, const XMFLOAT3& rayDir,
-	float* hitDistance, XMFLOAT3* hitPos, XMFLOAT3* hitNormal)
+	float* hitDistance, XMFLOAT3* hitPos, XMFLOAT3* hitNormal, Object* obj)
 {
-	PLAYER* player = GetPlayer();
-	XMFLOAT3 velocity = player->GetVelocity();
+	XMFLOAT3 velocity = obj ? obj->GetVelocity() : XMFLOAT3(0, 0, 0);
 	float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
 
-	int lodLevel = 1; 
-	if (speed > 3.0f) lodLevel = 2; 
+	int lodLevel = 1;
+	if (speed > 3.0f) lodLevel = 2;
 	if (speed > 6.0f) lodLevel = 3; // 移動速度によってLODレベルを上げる
 
 	return RayHitOctreeLOD(g_FloorTree, g_FloorTris, rayOrigin, rayDir,
@@ -391,25 +391,30 @@ bool CheckGroundCollisionLOD(const XMFLOAT3& rayOrigin, const XMFLOAT3& rayDir,
 }
 
 // ボックスと壁の当たり判定（LOD対応版）
-bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax)
+bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax, Object* obj)
 {
-	PLAYER* player = GetPlayer();
-	XMFLOAT3 velocity = player->GetVelocity();
+	XMFLOAT3 velocity = obj ? obj->GetVelocity() : XMFLOAT3(0, 0, 0);
 	float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
 
-	int lodLevel = 1; 
+	int lodLevel = 1;
 	if (speed > 3.0f) lodLevel = 2; // 移動速度によってLODレベルを上げる
 
 	return AABBHitOctreeLOD(g_WallTree, g_WallTris, boxMin, boxMax, 0, 6, 1, lodLevel);
 }
 
 
-XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance)
+XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance, Object* obj)
 {
 	// LODレベルを決定
 	int lodLevel = 1;
 	if (maxDistance > 50.0f) lodLevel = 2;
 	if (maxDistance > 100.0f) lodLevel = 3;
+
+	if (obj) {
+		XMFLOAT3 velocity = obj->GetVelocity();
+		float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
+		if (speed > 5.0f) lodLevel = min(lodLevel + 1, 3);
+	}
 
 	float closestDist = maxDistance;
 	XMFLOAT3 hitPos, hitNormal = { 0.0f, 0.0f, 0.0f };
