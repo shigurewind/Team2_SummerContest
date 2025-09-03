@@ -37,6 +37,7 @@ private:
 
 class ITEM_OBJ : public Object
 {
+
 public:
 	ITEM_OBJ();
 	void Update();
@@ -64,6 +65,10 @@ public:
 	XMFLOAT3 GetRenderPosition() const { return renderPos; }
 
 	void HandleGroundCheck();
+	void ExplodeBug();
+
+	float bugTimer;
+
 
 private:
 	Item item;

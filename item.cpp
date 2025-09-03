@@ -91,6 +91,15 @@ void ITEM_OBJ::Update()
 		renderPos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
 	}
 
+	// Bug item timer
+	if (item.GetID() == ITEM_BUG) {
+		bugTimer += 1.0f / 60.0f;
+		if (bugTimer >= 5.0f) {
+			ExplodeBug();
+			use = false;
+			return;
+		}
+	}
 
 	// “–‚½‚è”»’è
 	if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
@@ -145,6 +154,21 @@ void ITEM_OBJ::HandleGroundCheck()
 	}
 }
 
+void ITEM_OBJ::ExplodeBug()
+{
+	PLAYER* player = GetPlayer();
+	float distance = sqrtf(
+		(player->GetPosition().x - pos.x) * (player->GetPosition().x - pos.x) +
+		(player->GetPosition().y - pos.y) * (player->GetPosition().y - pos.y) +
+		(player->GetPosition().z - pos.z) * (player->GetPosition().z - pos.z)
+	);
+	if (distance < 50.0f) {
+		player->HP -= 5.0f;
+		if (player->HP < 0.0f) player->HP = 0.0f;
+	}
+
+
+}
 
 
 void UninitItem()
@@ -189,6 +213,11 @@ int SpawnItem(XMFLOAT3 pos, int itemID)
 			g_aItem[i].SetUsed(true);
 			g_aItem[i].SetPosition(pos);
 			g_aItem[i].SetBasePosY(pos.y);
+
+			if (itemID == ITEM_BUG)
+				g_aItem[i].bugTimer = 0.0f;
+
+
 			return i;
 		}
 	}
