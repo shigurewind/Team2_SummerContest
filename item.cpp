@@ -162,7 +162,7 @@ void ITEM_OBJ::ExplodeBug()
 		(player->GetPosition().y - pos.y) * (player->GetPosition().y - pos.y) +
 		(player->GetPosition().z - pos.z) * (player->GetPosition().z - pos.z)
 	);
-	if (distance < 50.0f) {
+	if (distance < 200.0f) {
 		player->HP -= 5;
 		if (player->HP < 0) player->HP = 0;
 	}
