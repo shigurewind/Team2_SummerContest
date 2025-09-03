@@ -13,12 +13,13 @@
 #include "sprite.h"
 #include "GameUI.h"
 
+
 //*****************************************************************************
 // ƒ}ƒNƒ’è‹`
 //*****************************************************************************
 #define TEXTURE_WIDTH				(SCREEN_WIDTH)	// ”wŒiƒTƒCƒY
 #define TEXTURE_HEIGHT				(SCREEN_HEIGHT)	// 
-#define TEXTURE_MAX					(3)				// ƒeƒNƒXƒ`ƒƒ‚Ì”
+#define TEXTURE_MAX					(4)				// ƒeƒNƒXƒ`ƒƒ‚Ì”
 
 #define TEXTURE_WIDTH_LOGO			(480)			// ƒƒSƒTƒCƒY
 #define TEXTURE_HEIGHT_LOGO			(80)			// 
@@ -36,8 +37,9 @@ static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// ƒeƒNƒXƒ`ƒ
 
 static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/bg.png",
-	"data/TEXTURE/result_logo.png",
+	"data/TEXTURE/restart.png",
 	"data/TEXTURE/number16x32.png",
+	"data/TEXTURE/title02.png"
 };
 
 
@@ -47,6 +49,33 @@ static XMFLOAT3					g_Pos;						// ƒ|ƒŠƒSƒ“‚ÌÀ•W
 static int						g_TexNo;					// ƒeƒNƒXƒ`ƒƒ”Ô†
 
 static BOOL						g_Load = FALSE;
+
+// --- Result‰æ–Ê‚Ìƒ{ƒ^ƒ“ititle / restartj—p ---------------
+static XMFLOAT3 g_TitleBtnPos;    // ¶‰º‚É’u‚­
+static XMFLOAT3 g_RestartBtnPos;  // ‰E‰º‚É’u‚­
+
+// ƒ{ƒ^ƒ“‚ÌŠî€ƒTƒCƒYi•K—v‚É‰ž‚¶‚Ä”÷’²®j
+static float g_TitleBtnBaseW = 400.0f;
+static float g_TitleBtnBaseH = 160.0f;
+static float g_RestartBtnBaseW = 400.0f;
+static float g_RestartBtnBaseH = 160.0f;
+
+// Œ»Ý‚ÌŠg‘å—¦•ƒzƒo[’†ƒtƒ‰ƒO
+static float g_TitleBtnScale = 1.0f;
+static float g_RestartBtnScale = 1.0f;
+static bool  g_TitleBtnHover = false;
+static bool  g_RestartBtnHover = false;
+
+// “–‚½‚è”»’è‚ÌŽè“®•â³i•K—v‚É‰ž‚¶‚Ä”’l’²®j
+static float g_TitleHitOffsetX = 0.0f;
+static float g_TitleHitOffsetY = 80.0f;
+static float g_TitleHitInflateW = 0.0f;
+static float g_TitleHitInflateH = 0.0f;
+
+static float g_RestartHitOffsetX = 0.0f;
+static float g_RestartHitOffsetY = 0.0f;
+static float g_RestartHitInflateW = 0.0f;
+static float g_RestartHitInflateH = 80.0f;
 
 //=============================================================================
 // ‰Šú‰»ˆ—
@@ -68,6 +97,7 @@ HRESULT InitResult(void)
 	}
 
 
+
 	// ’¸“_ƒoƒbƒtƒ@¶¬
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
@@ -87,6 +117,19 @@ HRESULT InitResult(void)
 
 	// BGMÄ¶
 	PlaySound(SOUND_LABEL_BGM_sample002);
+
+
+	const float margin = 100.0f;
+
+	// ¶‰º‚ÉuTITLEvƒ{ƒ^ƒ“
+	g_TitleBtnPos.x = margin + g_TitleBtnBaseW * 0.5f;
+	g_TitleBtnPos.y = SCREEN_HEIGHT - margin - g_TitleBtnBaseH * 0.5f;
+	g_TitleBtnPos.z = 0.0f;
+
+	// ‰E‰º‚ÉuRESTARTvƒ{ƒ^ƒ“
+	g_RestartBtnPos.x = SCREEN_WIDTH - margin - g_RestartBtnBaseW * 0.5f;
+	g_RestartBtnPos.y = SCREEN_HEIGHT - margin - g_RestartBtnBaseH * 0.5f;
+	g_RestartBtnPos.z = 0.0f;
 
 	g_Load = TRUE;
 	return S_OK;
@@ -138,6 +181,63 @@ void UpdateResult(void)
 	}
 
 
+
+	POINT mp;
+	GetCursorPos(&mp); // ƒ}ƒEƒXÀ•WŽæ“¾
+
+	// ==== TITLEƒ{ƒ^ƒ“ ====
+	{
+		float drawW = g_TitleBtnBaseW * g_TitleBtnScale;
+		float drawH = g_TitleBtnBaseH * g_TitleBtnScale;
+
+		// ”»’è—pƒTƒCƒYiŽè“®•â³‚ð“K—pj
+		float testW = drawW + g_TitleHitInflateW;
+		float testH = drawH + g_TitleHitInflateH;
+		float cx = g_TitleBtnPos.x + g_TitleHitOffsetX;
+		float cy = g_TitleBtnPos.y + g_TitleHitOffsetY;
+
+		float halfW = testW * 0.5f;
+		float halfH = testH * 0.5f;
+
+		g_TitleBtnHover =
+			(mp.x >= cx - halfW) && (mp.x <= cx + halfW) &&
+			(mp.y >= cy - halfH) && (mp.y <= cy + halfH);
+
+		const float targetScale = g_TitleBtnHover ? 1.08f : 1.0f;
+		g_TitleBtnScale += (targetScale - g_TitleBtnScale) * 0.2f;
+
+		if (g_TitleBtnHover && IsMouseLeftTriggered()) {
+			SetFade(FADE_OUT, MODE_TITLE); // © ƒ^ƒCƒgƒ‹‚Ö
+		}
+	}
+
+	// ==== RESTARTƒ{ƒ^ƒ“ ====
+	{
+		float drawW = g_RestartBtnBaseW * g_RestartBtnScale;
+		float drawH = g_RestartBtnBaseH * g_RestartBtnScale;
+
+		float testW = drawW + g_RestartHitInflateW;
+		float testH = drawH + g_RestartHitInflateH;
+		float cx = g_RestartBtnPos.x + g_RestartHitOffsetX;
+		float cy = g_RestartBtnPos.y + g_RestartHitOffsetY;
+
+		float halfW = testW * 0.5f;
+		float halfH = testH * 0.5f;
+
+		g_RestartBtnHover =
+			(mp.x >= cx - halfW) && (mp.x <= cx + halfW) &&
+			(mp.y >= cy - halfH) && (mp.y <= cy + halfH);
+
+		const float targetScale = g_RestartBtnHover ? 1.08f : 1.0f;
+		g_RestartBtnScale += (targetScale - g_RestartBtnScale) * 0.2f;
+
+		if (g_RestartBtnHover && IsMouseLeftTriggered()) {
+			SetFade(FADE_OUT, MODE_GAME);   // © ƒQ[ƒ€‚Öi¦‚ ‚È‚½‚ÌŠÂ‹«‚ÅMODE_GAME1‚È‚ç’u‚«Š·‚¦j
+			// —á: SetFade(FADE_OUT, MODE_TUTORIAL); ‚É‚µ‚½‚¢ê‡‚Í‚±‚±‚ð•ÏX
+		}
+	}
+
+
 #ifdef _DEBUG	// ƒfƒoƒbƒOî•ñ‚ð•\Ž¦‚·‚é
 	
 #endif
@@ -178,17 +278,61 @@ void DrawResult(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 
-	// ƒŠƒUƒ‹ƒg‚ÌƒƒS‚ð•`‰æ
+
+
+	// --- ‚±‚±‚©‚ç’Ç‹L: TITLEƒ{ƒ^ƒ“iƒeƒNƒXƒ`ƒƒ[3]j‚ð¶‰º‚É•`‰æ ---
 	{
-		// ƒeƒNƒXƒ`ƒƒÝ’è
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[3]); // title02.png
 
-		// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ðÝ’è
-		SetSprite(g_VertexBuffer, g_Pos.x, g_Pos.y, TEXTURE_WIDTH_LOGO, TEXTURE_HEIGHT_LOGO, 0.0f, 0.0f, 1.0f, 1.0f);
+		float drawW = g_TitleBtnBaseW * g_TitleBtnScale;
+		float drawH = g_TitleBtnBaseH * g_TitleBtnScale;
 
-		// ƒ|ƒŠƒSƒ“•`‰æ
+		// ƒzƒo[Žž‚É­‚µ‚¾‚¯–Ú—§‚½‚¹‚½‚¢‚È‚çƒ¿ã‚°‚éi”CˆÓj
+		float a = g_TitleBtnHover ? 1.0f : 1.0f;
+
+		SetSpriteColor(
+			g_VertexBuffer,
+			g_TitleBtnPos.x, g_TitleBtnPos.y,
+			drawW, drawH,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1, 1, 1, a)
+		);
+
 		GetDeviceContext()->Draw(4, 0);
 	}
+
+	// --- ‚±‚±‚©‚ç’Ç‹L: RESTARTƒ{ƒ^ƒ“iƒeƒNƒXƒ`ƒƒ[1]j‚ð‰E‰º‚É•`‰æ ---
+	{
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]); // restart.png
+
+		float drawW = g_RestartBtnBaseW * g_RestartBtnScale;
+		float drawH = g_RestartBtnBaseH * g_RestartBtnScale;
+
+		float a = g_RestartBtnHover ? 1.0f : 1.0f;
+
+		SetSpriteColor(
+			g_VertexBuffer,
+			g_RestartBtnPos.x, g_RestartBtnPos.y,
+			drawW, drawH,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1, 1, 1, a)
+		);
+
+		GetDeviceContext()->Draw(4, 0);
+	}
+
+
+	//// ƒŠƒUƒ‹ƒg‚ÌƒƒS‚ð•`‰æ
+	//{
+	//	// ƒeƒNƒXƒ`ƒƒÝ’è
+	//	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
+
+	//	// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ðÝ’è
+	//	SetSprite(g_VertexBuffer, g_Pos.x, g_Pos.y, TEXTURE_WIDTH_LOGO, TEXTURE_HEIGHT_LOGO, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	//	// ƒ|ƒŠƒSƒ“•`‰æ
+	//	GetDeviceContext()->Draw(4, 0);
+	//}
 
 
 	
