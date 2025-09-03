@@ -29,7 +29,7 @@
 
 #include "FBXmodel.h"
 #include "item.h"
-
+#include "boss.h"
 
 #include "boundingBoxDebug.h"
 
@@ -92,6 +92,7 @@ HRESULT InitGame(void)
 
 	InitItem();
 
+	InitBoss();
 	
 
 	// デバッグ用のバウンディングボックスの初期化
@@ -135,6 +136,8 @@ void UninitGame(void)
 	UninitFBXTestModel();
 
 	UninitItem();
+
+	UninitBoss();
 
 	
 
@@ -210,6 +213,7 @@ void UpdateGame(void)
 
 	UpdateItem();
 
+	UpdateBoss();
 
 	//プレイヤーが死んだとき
 	if (GetFade() == FADE_NONE) {
@@ -280,7 +284,7 @@ void DrawGame0(void)
 
 	DrawItem();
 
-	
+	DrawBoss();
 
 
 	//デバッグ用のバウンディングボックスの描画処理（全ての物描画した後）

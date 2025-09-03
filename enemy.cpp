@@ -45,7 +45,7 @@ ID3D11ShaderResourceView* BaseEnemy::s_BloodTexture = nullptr;
 // 
 //*****************************************************************************
 BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false),
-isDying(false), dissolveTimer(0.0f), dissolveAmount(0.0f), hasDroppedItems(false), dissolveTexture(nullptr)
+isDying(false), dissolveTimer(0.0f), dissolveAmount(0.0f), hasDroppedItems(false), dissolveTexture(nullptr), immuneToKnockback(false)
 {
 	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 

@@ -58,6 +58,7 @@ protected:
 	bool hasDroppedItems;
 
 
+	bool immuneToKnockback;// ノックバック無効フラグ
 	
 };
 
