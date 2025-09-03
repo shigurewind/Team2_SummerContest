@@ -20,6 +20,7 @@
 #include "overlay2D.h"
 #include "enemy.h"
 #include "inputManager.h"
+#include "GameUI.h"
 
 //*****************************************************************************
 // マクロ定義	
@@ -269,7 +270,12 @@ void PLAYER::HandleInput()
 			if (distance > 100.0f) continue;
 
 			enemy->SetUsed(false);
+
+			if (auto bug = dynamic_cast<BugEnemy*>(enemy)) {
+				ShowBugEffect(bug);
+			}
 		}
+
 	}
 
 	//Item関連

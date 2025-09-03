@@ -170,6 +170,8 @@ void UpdateItem()
 	g_ItemGlobalTime += ITEM_FLOAT_FREQUENCE / 60.0f;
 	for (int i = 0; i < MAX_ITEM; i++)
 		g_aItem[i].Update();
+
+
 }
 
 
@@ -385,6 +387,9 @@ Item CreateItemFromID(int id) {
 		return Item(id, "San", 1, ItemCategory::InstantEffect);
 	case ITEM_BULLET:
 		return Item(id, "Bullet", 10, ItemCategory::InstantEffect);
+
+	case ITEM_BUG:
+		return Item(id, "Bug", 10, ItemCategory::Consumable);
 
 	default:
 		return Item(id, "Unknown", 1, ItemCategory::Consumable);

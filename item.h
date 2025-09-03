@@ -96,6 +96,8 @@ enum ItemID
 	ITEM_SAN,
 	ITEM_BULLET,
 
+	ITEM_BUG,
+
 	ITEM_ID_COUNT//ItemIDÇÃêî
 };
 

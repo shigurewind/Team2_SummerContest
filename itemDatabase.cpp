@@ -7,6 +7,7 @@ ItemDatabase::ItemDatabase() {
 	texturePaths[ITEM_APPLE] = "data/2Dpicture/item/apple.png";
 	texturePaths[ITEM_SAN] = "data/2Dpicture/item/san.png";
 	texturePaths[ITEM_BULLET] = "data/2Dpicture/item/bullet.png";
+	texturePaths[ITEM_BUG] = "data/2Dpicture/item/bug_item.png";
 	texturePaths[ITEM_SPEED_UP] = "data/2Dpicture/item/.png";
 
 }

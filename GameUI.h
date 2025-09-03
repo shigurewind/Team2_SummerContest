@@ -5,12 +5,11 @@
 //
 //=============================================================================
 #pragma once
-
+#include "enemy.h"
 
 //*****************************************************************************
 // É}ÉNÉçíËã`
 //*****************************************************************************
-
 
 
 
@@ -30,6 +29,9 @@ void DrawHP();
 void DrawAmmoUI(void);
 
 void ShowWebEffect(float time);
+void ShowBugEffect(BugEnemy* enemy);
+void HideBugEffect(BugEnemy* enemy);
+
 
 void DrawItemSlot(void);
 

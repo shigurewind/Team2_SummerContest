@@ -17,7 +17,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(8)		// テクスチャの数
+#define TEXTURE_MAX					(9)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -40,6 +40,8 @@ static char* g_TexturName[TEXTURE_MAX] = {
 	"data/2Dpicture/enemy/enemyWeb.png",
 	"data/2Dpicture/UI/item_slot.png",
 	"data/TEXTURE/rocket_launcher.png",
+	"data/2Dpicture/enemy/bug02.png",
+
 
 
 };
@@ -59,7 +61,7 @@ int Min2(int a, int b) {
 }
 
 static float g_WebEffectTimer = 0.0f;
-
+static BOOL g_BugEffectActive = FALSE;
 
 //=============================================================================
 // 初期化処理
@@ -202,6 +204,29 @@ void DrawGameUI(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 
+	if (g_BugEffectActive)
+	{
+		MATERIAL m = {};
+		m.Diffuse = XMFLOAT4(1, 1, 1, 1);
+		SetMaterial(m);
+
+		SetWorldViewProjection2D();
+		SetAlphaTestEnable(FALSE);
+		SetBlendState(BLEND_MODE_ALPHABLEND);
+
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[8]);
+
+		SetSpriteColor(
+			g_VertexBuffer,
+			640.0f, 360.0f,
+			1277.0f, 770.0f,
+			0, 0, 1, 1,
+			XMFLOAT4(1, 1, 1, 1)
+		);
+
+		GetDeviceContext()->Draw(4, 0);
+	}
+
 
 	//弾数表示の呼び出し
 	DrawAmmoUI();
@@ -324,6 +349,32 @@ void ShowWebEffect(float time)
 {
 	g_WebEffectTimer = time; // time 秒間、画面に蜘蛛のネットを表示
 }
+
+//=============================================================================
+// 肉虫の効果（画面に表示
+//=============================================================================
+void ShowBugEffect(BugEnemy* enemy)
+{
+	if (!enemy) return;
+
+	if (!enemy->IsBugEffectActive())
+	{
+		enemy->SetBugEffectVisible(true);
+	}
+	g_BugEffectActive = TRUE;
+}
+
+void HideBugEffect(BugEnemy* enemy)
+{
+	if (!enemy) return;
+
+	if (enemy->IsBugEffectActive())
+	{
+		enemy->SetBugEffectVisible(false);
+	}
+	g_BugEffectActive = FALSE;
+}
+
 
 
 // 選択中のアイテム描画
