@@ -101,6 +101,8 @@ void PLAYER::Init()
 	scl = { 1, 1, 1 };
 	velocity = { 0, 0, 0 };
 	speed = 2.0f;
+	currentSpeed = speed;
+	slowTimer = 0;
 	size = PLAYER_SIZE;
 
 	EnableGravity(true);
@@ -184,8 +186,22 @@ void UpdatePlayer(void)
 
 }
 
+void PLAYER::ApplySlow(float factor, int durationFrames)
+{
+	currentSpeed = speed * factor; // 速度減少
+	slowTimer = durationFrames;    // 速度減少時間
+}
 
 void PLAYER::OnUpdate() {
+
+	//速度の￥に影響されるエフェクト
+	if (slowTimer > 0) {
+		slowTimer--;
+		if (slowTimer == 0) {
+			currentSpeed = speed; // エフェクト終わり、元の速度に戻す
+		}
+	}
+
 	HandleInput();          // W/A/S/D移動 & 方向制御
 	HandleJump();           // スペースキー処理
 
@@ -246,8 +262,8 @@ void PLAYER::HandleInput()
 		move.z += cosf(cam->rot.y) * inputVector.y - sinf(cam->rot.y) * inputVector.x;
 	}
 
-	velocity.x = move.x * speed;
-	velocity.z = move.z * speed;
+	velocity.x = move.x * currentSpeed;
+	velocity.z = move.z * currentSpeed;
 
 	
 

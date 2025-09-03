@@ -444,6 +444,7 @@ void SpiderEnemy::Attack()
 		attackCooldownTimer = attackCooldown; // Reset cooldown
 
 		ShowWebEffect(0.5f);
+		GetPlayer()->ApplySlow(0.5f, 0.5f); //ë¨ìx50ÅìÇ…íxÇ≠Ç»Ç¡ÇΩ
 	}
 }
 //*****************************************************************************
@@ -457,9 +458,9 @@ void InitEnemy() {
 	g_enemies.clear();
 	for (int i = 0; i < ENEMY_MAX; ++i) {
 
-		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
-		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
-		EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
+		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
+		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
+		//EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
 		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
 	}

@@ -91,7 +91,7 @@ void ITEM_OBJ::Update()
 		renderPos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
 	}
 
-	// Bug item timer
+	// Bug item 爆発タイマー
 	if (item.GetID() == ITEM_BUG) {
 		bugTimer += 1.0f / 60.0f;
 		if (bugTimer >= 5.0f) {
@@ -154,6 +154,7 @@ void ITEM_OBJ::HandleGroundCheck()
 	}
 }
 
+//bug enemy　爆発関数
 void ITEM_OBJ::ExplodeBug()
 {
 	PLAYER* player = GetPlayer();

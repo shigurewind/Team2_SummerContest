@@ -38,6 +38,8 @@ public:
 
 	void EventCheck();
 
+	void ApplySlow(float factor, int durationFrames);
+
 	//壁のノーマル取得（Slide機能ために）
 	XMFLOAT3 GetWallCollisionNormal(XMFLOAT3 currentPos, XMFLOAT3 moveVector, float halfSize);
 
@@ -68,6 +70,10 @@ public:
 
 	//攻撃
 	float meleeCDTime; // 近接攻撃のクールダウン時間
+
+	//蜘蛛のエフェクトのせいでプレイヤーの速度遅くなる
+	int slowTimer;      // エフェクトのカウンターダウン
+	float currentSpeed; // 現在の速度
 
 
 	int shadowIdx;
