@@ -185,7 +185,7 @@ void UpdatePlayer(void)
 		//HPŒ¸‚étest
 		if (GetKeyboardTrigger(DIK_H))
 		{
-			g_Player.HP = g_Player.HP - 1;
+			g_Player.HP = g_Player.HP - 50;
 		}
 
 
@@ -193,7 +193,7 @@ void UpdatePlayer(void)
 		{
 			g_Player.alive = false;
 			SavePlayerToFile();
-			// GameOver Continue
+			 /*GameOver Continue*/
 		}
 
 	}
