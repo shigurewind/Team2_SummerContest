@@ -90,7 +90,7 @@ void BaseEnemy::UnloadBloodTexture()
 }
 
 SpiderEnemy::SpiderEnemy() :
-	texture(nullptr), width(100.0f), height(100.0f)
+	texture(nullptr), width(50.0f), height(50.0f)
 {
 	material = new MATERIAL{};
 	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
@@ -458,10 +458,10 @@ void InitEnemy() {
 	g_enemies.clear();
 	for (int i = 0; i < ENEMY_MAX; ++i) {
 
-		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
+		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
 		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
 		//EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
-		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
+		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
 	}
 }
@@ -708,7 +708,7 @@ void BaseEnemy::ChasingPlayer(float speed, float chaseRange)
 //*****************************************************************************
 
 GhostEnemy::GhostEnemy() :
-	texture(nullptr), width(100.0f), height(100.0f)
+	texture(nullptr), width(50.0f), height(50.0f)
 {
 	material = new MATERIAL{};
 	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
@@ -726,7 +726,7 @@ void GhostEnemy::Init()
 {
 	D3DX11CreateShaderResourceViewFromFile(
 		GetDevice(),
-		"data/2Dpicture/enemy/ghost.png",
+		"data/2Dpicture/enemy/ghost(2).png",
 		NULL, NULL, &texture, NULL);
 
 
@@ -742,7 +742,7 @@ void GhostEnemy::Init()
 	currentFrame = 0;
 	frameCounter = 0;
 	frameInterval = 15;//change speed
-	maxFrames = 2;
+	maxFrames = 3;
 
 	HP = 50;
 
@@ -752,15 +752,32 @@ void GhostEnemy::Init()
 
 void GhostEnemy::Update()
 {
-	frameCounter++;
-	if (frameCounter >= frameInterval) {
-		frameCounter = 0;
-		currentFrame = (currentFrame + 1) % maxFrames;
-	}
 
 
 	if (!use) return;
 
+	if (isAttacking)    //攻撃のアニメーション処理
+	{
+		attackFrameTimer -= 1.0f / 60.0f;
+		if (attackFrameTimer <= 0.0f) {
+			isAttacking = false;
+			frameCounter = 0;
+			currentFrame = 0;
+		}
+		else
+		{
+			currentFrame = 2;
+		}
+	}
+	else
+	{
+		// 移動のアニメーション処理
+		frameCounter++;
+		if (frameCounter >= frameInterval) {
+			frameCounter = 0;
+			currentFrame = (currentFrame + 1) % 2;
+		}
+	}
 
 
 	// エネミーからプレイヤーまでのベクトル
@@ -783,6 +800,7 @@ void GhostEnemy::Update()
 	if (distSq < range * range)
 	{
 		ChasingPlayer(speed, range);
+		Attack();
 	}
 	else
 	{
@@ -942,6 +960,13 @@ void GhostEnemy::NormalMovement()
 
 void GhostEnemy::Attack()
 {
+	if (!isAttacking)
+	{
+		isAttacking = true;
+		attackFrameTimer = 0.5f;
+		currentFrame = 2;
+		GetPlayer()->HP -= 1;
+	}
 }
 
 //*****************************************************************************
@@ -949,7 +974,7 @@ void GhostEnemy::Attack()
 //*****************************************************************************
 
 BugEnemy::BugEnemy() :
-	texture(nullptr), width(100.0f), height(100.0f)
+	texture(nullptr), width(60.0f), height(60.0f)
 {
 	material = new MATERIAL{};
 	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
@@ -993,15 +1018,13 @@ void BugEnemy::Init()
 
 void BugEnemy::Update()
 {
+	if (!use) return;
+
 	frameCounter++;
 	if (frameCounter >= frameInterval) {
 		frameCounter = 0;
 		currentFrame = (currentFrame + 1) % maxFrames;
 	}
-
-
-	if (!use) return;
-
 
 
 	// エネミーからプレイヤーまでのベクトル
