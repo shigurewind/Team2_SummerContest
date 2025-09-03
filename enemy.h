@@ -191,6 +191,7 @@ private:
 	float attackFrameTimer;
 
 	bool bugEffectVisible = false;
+	float bugEffectTimer = 0.0f;
 
 
 };

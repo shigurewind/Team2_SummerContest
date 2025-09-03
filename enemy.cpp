@@ -457,7 +457,7 @@ void InitEnemy() {
 	g_enemies.clear();
 	for (int i = 0; i < ENEMY_MAX; ++i) {
 
-		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
+		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
 		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
 		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
@@ -1021,13 +1021,17 @@ void BugEnemy::Update()
 	//UŒ‚s‚¤”ÍˆÍ
 	if (distSq < range * range)
 	{
-
 		ShowBugEffect(this);
-	}
-	else
-	{
-		//NormalMovement();
 
+		bugEffectTimer += 1.0f / 60.0f;
+
+		if (bugEffectTimer >= 2.0f)
+		{
+			GetPlayer()->HP -= 1;
+			if (GetPlayer()->HP < 0) GetPlayer()->HP = 0;
+
+			bugEffectTimer = 0.0f;
+		}
 	}
 
 	if (bugEffectVisible) return;
@@ -1060,7 +1064,7 @@ void BugEnemy::Draw()
 #ifdef _DEBUG
 
 	if (IsBugEffectActive()) {
-		PrintDebugProc("Bug effect is active! Enemy will not draw.");
+		PrintDebugProc("Bug effect is active! Enemy will not draw.\n");
 		return;
 	}
 #endif
