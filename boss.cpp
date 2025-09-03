@@ -56,6 +56,8 @@ Boss::Boss()
 
     material = new MATERIAL{};
     XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+
+	immuneToKnockback = true; // ノックバック無効
 }
 
 Boss::~Boss() 
