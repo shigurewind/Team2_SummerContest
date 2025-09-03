@@ -67,15 +67,15 @@ static bool  g_TitleBtnHover = false;
 static bool  g_RestartBtnHover = false;
 
 // 当たり判定の手動補正（必要に応じて数値調整）
-static float g_TitleHitOffsetX = 0.0f;
+static float g_TitleHitOffsetX = 50.0f;
 static float g_TitleHitOffsetY = 80.0f;
 static float g_TitleHitInflateW = 0.0f;
 static float g_TitleHitInflateH = 0.0f;
 
-static float g_RestartHitOffsetX = 0.0f;
-static float g_RestartHitOffsetY = 0.0f;
+static float g_RestartHitOffsetX = 50.0f;
+static float g_RestartHitOffsetY = 80.0f;
 static float g_RestartHitInflateW = 0.0f;
-static float g_RestartHitInflateH = 80.0f;
+static float g_RestartHitInflateH = 0.0f;
 
 //=============================================================================
 // 初期化処理
