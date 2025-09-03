@@ -144,6 +144,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="attackeffect.h" />
     <ClInclude Include="boundingBoxDebug.h" />
     <ClInclude Include="blood.h" />
     <ClInclude Include="bullet.h" />
@@ -478,6 +479,7 @@
     <ClInclude Include="tree.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="attackeffect.cpp" />
     <ClCompile Include="boundingBoxDebug.cpp" />
     <ClCompile Include="blood.cpp" />
     <ClCompile Include="bullet.cpp" />

@@ -40,7 +40,7 @@ public:
 	static bool LoadBloodTexture();    
 	static void UnloadBloodTexture();
 	
-
+virtual void ApplyKnockback(const XMFLOAT3& dirXZ, float strength, float duration); 
 protected:
 	XMFLOAT3 pos;
 	XMFLOAT3 scl;
@@ -56,8 +56,10 @@ protected:
 	float dissolveTimer;
 	float dissolveAmount;   // dissolve’ö“x
 	bool hasDroppedItems;
-
-
+	void UpdateKnockback(float dt);
+private:
+	XMFLOAT3 m_knockVelXZ = { 0,0,0 }; 
+	float    m_knockTime = 0.0f;
 	
 };
 
