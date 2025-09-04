@@ -17,6 +17,8 @@
 #include "meshfield.h"
 #include <math.h>
 #include <vector>
+#include "enemy.h"
+#include "item.h"
 
 
 //=============================================================================
@@ -34,6 +36,81 @@ Weapon g_RocketLauncher;
 
 // 弾のインスタンス配列
 BULLET g_Bullet[MAX_BULLET];
+
+//==========================================================================
+// 爆風
+//==========================================================================
+
+
+namespace {
+    // 爆発チューニング用パラメータ（必要に応じて調整）
+    constexpr float kExplosionRadius = 200.0f;   // 爆風半径
+    constexpr float kExplosionForce = 20.0f;   // 吹き飛ばし強さ
+    constexpr float kUpwardBoost = 0.6f;   // 上向き成分の強さ（ちょっと浮かせる）
+
+    inline float Length3(const XMFLOAT3& v) {
+        return std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    }
+    inline XMFLOAT3 Normalize(const XMFLOAT3& v) {
+        float len = Length3(v);
+        if (len < 1e-5f) return XMFLOAT3(0, 0, 0);
+        return XMFLOAT3(v.x / len, v.y / len, v.z / len);
+    }
+
+    // 任意の Object にラジアルなノックバックを与える
+    void ApplyImpulseToObject(Object* obj, const XMFLOAT3& center,
+        float radius, float force)
+    {
+        if (!obj) return;
+        XMFLOAT3 p = obj->GetPosition();
+        XMFLOAT3 dir = XMFLOAT3(p.x - center.x, p.y - center.y, p.z - center.z);
+        float d = Length3(dir);
+        if (d > radius) return;
+
+        // 線形減衰（中心ほど強く、端で0）
+        float falloff = 1.0f - (d / radius);
+        XMFLOAT3 n = Normalize(dir);
+
+        // 少し上向き成分を足す（“吹き飛ぶ”見た目に）
+        n.y += kUpwardBoost;
+        n = Normalize(n);
+
+        XMFLOAT3 impulse = XMFLOAT3(n.x * force * falloff,
+            n.y * force * falloff,
+            n.z * force * falloff);
+
+        // 既存速度に加算（AddForce）。速度を即時置換したいなら SetVelocity を使う
+        obj->AddForce(impulse);
+    }
+}
+
+// 爆風本体：敵・アイテムに適用（必要ならプレイヤー等にも拡張可）
+static void ApplyExplosionImpulse(const XMFLOAT3& center,
+    float radius = kExplosionRadius,
+    float force = kExplosionForce)
+{
+    // 1) 敵
+    auto& enemies = GetEnemies(); // vector<BaseEnemy*>
+    for (auto* e : enemies) {
+        if (!e) continue;
+        ApplyImpulseToObject(e, center, radius, force);
+    }
+
+    // 2) アイテム（配列管理で IsUsed() を見られる前提）
+    ITEM_OBJ* items = GetItemOBJ();
+    if (items) {
+        const int n = GetItemCount();  // ← 追加
+        for (int i = 0; i < n; ++i) {
+            if (!items[i].IsUsed()) continue;
+            ApplyImpulseToObject(&items[i], center, radius, force * 0.6f);
+        }
+    }
+}
+
+void ApplyExplosionAt(const XMFLOAT3& center, float radius, float force) {
+    ApplyExplosionImpulse(center, radius, force);
+}
+
 
 //=============================================================================
 // 初期化
@@ -57,7 +134,7 @@ HRESULT InitBullet(void)
 
     g_RocketLauncher.weaponType = WEAPON_ROCKET_LAUNCHER;
     g_RocketLauncher.bulletData = &bulletData_Normal;
-    g_RocketLauncher.clipSize = 1;
+    g_RocketLauncher.clipSize = 5;
 
     return S_OK;
 }
@@ -183,13 +260,20 @@ void UpdateBullet(void)
             // 壁当たり判定
             if (AABBHitOctree(GetWallTree(), GetWallTriangles(), boxMin, boxMax, 0, 5, 5))
             {
+                if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+                    // 直前に計算した nextPos を着弾点として爆発
+                    ApplyExplosionAt(nextPos);
+                }
                 g_Bullet[i].use = FALSE;
                 continue; // この弾の処理終了
             }
 
-            // 床当たり判定（必要なら）
+            // 床当たり判定
             if (AABBHitOctree(GetFloorTree(), GetFloorTriangles(), boxMin, boxMax, 0, 5, 5))
             {
+                if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+                    ApplyExplosionAt(nextPos);
+                }
                 g_Bullet[i].use = FALSE;
                 continue;
             }
@@ -202,6 +286,7 @@ void UpdateBullet(void)
 
             // 位置更新
             g_Bullet[i].pos = nextPos;
+
 
             // 寿命処理
             g_Bullet[i].lifetime -= 1.0f;

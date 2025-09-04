@@ -46,3 +46,16 @@ bool AABBHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleLi
 	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
 	int depth, int maxDepth, int minTri);
 void Subdivide(OctreeNode* node, const std::vector<TriangleData>& triangleList, int depth, int maxDepth, int minTri);
+
+
+
+//LOD
+bool RayHitOctreeLOD(OctreeNode* node, const std::vector<TriangleData>& triangleList,
+	const XMFLOAT3& origin, const XMFLOAT3& dir,
+	float* closestDist, XMFLOAT3* hitPos, XMFLOAT3* hitNormal,
+	int depth, int maxDepth, int minTri, int lodLevel);
+
+
+bool AABBHitOctreeLOD(OctreeNode* node, const std::vector<TriangleData>& triangleList,
+	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
+	int depth, int maxDepth, int minTri, int lodLevel);

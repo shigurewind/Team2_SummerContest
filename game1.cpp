@@ -14,6 +14,8 @@
 #include "fade.h"
 #include "overlay2D.h"
 
+#include "blood.h"
+
 #include "player.h"
 #include "enemy.h"
 #include "meshfield.h"
@@ -30,6 +32,9 @@
 #include "item.h"
 
 
+#include "boundingBoxDebug.h"
+
+
 
 //*****************************************************************************
 // マクロ定義
@@ -40,6 +45,7 @@
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
+void CheckHit(void);
 
 
 
@@ -70,7 +76,8 @@ HRESULT InitGame1(void)
 	//// エネミーの初期化
 	InitEnemy();
 
-	
+	InitBlood();
+
 
 	
 
@@ -88,7 +95,9 @@ HRESULT InitGame1(void)
 
 	InitItem();
 
-	
+	// デバッグ用のバウンディングボックスの初期化
+	BoundingBoxDebugRenderer::GetInstance().Initialize();
+
 
 	// BGM再生
 	PlaySound(SOUND_LABEL_BGM_sample001);
@@ -112,7 +121,8 @@ void UninitGame1(void)
 	// 弾の終了処理
 	UninitBullet();
 
-	
+	UninitBlood();
+
 
 	// 地面の終了処理
 	//UninitMeshField();
@@ -130,7 +140,7 @@ void UninitGame1(void)
 
 	UninitItem();
 
-	
+	BoundingBoxDebugRenderer::GetInstance().Shutdown();
 
 }
 
@@ -188,6 +198,10 @@ void UpdateGame1(void)
 
 	// 影の更新処理
 	UpdateShadow();
+	// 当たり判定処理
+	CheckHit();
+
+	UpdateBlood();
 
 	// 当たり判定処理
 	UpdateOverlay2D();
@@ -234,7 +248,10 @@ void DrawGame01(void)
 
 	DrawItem();
 
-	
+	//デバッグ用のバウンディングボックスの描画処理（全ての物描画した後）
+	BoundingBoxDebugRenderer::GetInstance().Draw();
+
+	DrawBlood();
 
 
 	// 2Dの物を描画する処理

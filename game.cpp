@@ -13,6 +13,7 @@
 #include "sound.h"
 #include "fade.h"
 #include "overlay2D.h"
+#include "blood.h"
 
 #include "player.h"
 #include "enemy.h"
@@ -28,7 +29,7 @@
 
 #include "FBXmodel.h"
 #include "item.h"
-
+#include "boss.h"
 
 #include "boundingBoxDebug.h"
 
@@ -74,6 +75,8 @@ HRESULT InitGame(void)
 	InitEnemy();
 
 	
+	InitBlood();
+	
 
 	// 弾の初期化
 	InitBullet();
@@ -89,6 +92,7 @@ HRESULT InitGame(void)
 
 	InitItem();
 
+	InitBoss();
 	
 
 	// デバッグ用のバウンディングボックスの初期化
@@ -115,7 +119,7 @@ void UninitGame(void)
 	// 弾の終了処理
 	UninitBullet();
 
-	
+	UninitBlood();
 
 	// 地面の終了処理
 	//UninitMeshField();
@@ -132,6 +136,8 @@ void UninitGame(void)
 	UninitFBXTestModel();
 
 	UninitItem();
+
+	UninitBoss();
 
 	
 
@@ -159,6 +165,10 @@ void UpdateGame(void)
 
 
 #endif
+
+	if (GetFade() == FADE_OUT) {
+		return;
+	}
 
 	if (g_bPause == TRUE)
 		return;
@@ -192,6 +202,8 @@ void UpdateGame(void)
 
 	// 当たり判定処理
 	CheckHit();
+
+	UpdateBlood();
 	UpdateOverlay2D();
 
 	// UIの更新処理
@@ -200,6 +212,16 @@ void UpdateGame(void)
 	UpdateFBXTestModel();
 
 	UpdateItem();
+
+	UpdateBoss();
+
+	//プレイヤーが死んだとき
+	if (GetFade() == FADE_NONE) {
+		// プレイヤー死亡判定：HP が 0 以下ならリザルトへ
+		if (GetPlayer()->HP <= 0) {
+			SetFade(FADE_OUT, MODE_RESULT);
+		}
+	}
 
 	
 
@@ -259,13 +281,16 @@ void DrawGame0(void)
 
 	DrawFBXTestModel();
 
+
 	DrawItem();
 
-	
+	DrawBoss();
 
 
 	//デバッグ用のバウンディングボックスの描画処理（全ての物描画した後）
 	BoundingBoxDebugRenderer::GetInstance().Draw();
+
+	DrawBlood();
 
 
 	// 2Dの物を描画する処理

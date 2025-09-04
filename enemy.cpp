@@ -11,6 +11,7 @@
 #include "debugproc.h"
 #include "camera.h"
 #include "main.h"
+#include "blood.h"
 #include "renderer.h"
 #include "sprite.h"
 #include "input.h"
@@ -44,7 +45,7 @@ ID3D11ShaderResourceView* BaseEnemy::s_BloodTexture = nullptr;
 // 
 //*****************************************************************************
 BaseEnemy::BaseEnemy() : pos({ 0,0,0 }), scl({ 1,1,1 }), use(false),
-isDying(false), dissolveTimer(0.0f), dissolveAmount(0.0f), hasDroppedItems(false), dissolveTexture(nullptr)
+isDying(false), dissolveTimer(0.0f), dissolveAmount(0.0f), hasDroppedItems(false), dissolveTexture(nullptr), immuneToKnockback(false)
 {
 	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 
@@ -243,6 +244,11 @@ void SpiderEnemy::Update() {
 
 		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
 		{
+			if (bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+				ApplyExplosionAt(bullet[i].pos);
+			}
+
+
 			bullet[i].use = false;
 			HP -= 1;
 
@@ -263,6 +269,18 @@ void SpiderEnemy::Update() {
 
 
 			//éÄñSèàóù
+
+
+			XMFLOAT3 closestPoint;
+			closestPoint.x = max(pos.x - enemyHalfSize.x, min(bullet[i].pos.x, pos.x + enemyHalfSize.x));
+			closestPoint.y = max(pos.y - enemyHalfSize.y, min(bullet[i].pos.y, pos.y + enemyHalfSize.y));
+			closestPoint.z = max(pos.z - enemyHalfSize.z, min(bullet[i].pos.z, pos.z + enemyHalfSize.z));
+
+			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&bullet[i].vel));
+			XMFLOAT3 hitNormal;
+			XMStoreFloat3(&hitNormal, v);
+			SpawnBlood(closestPoint, 8, hitNormal);
+
 			if (HP <= 0)
 			{
 				if (!isDying) {
@@ -818,8 +836,25 @@ void GhostEnemy::Update()
 
 		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
 		{
+			if (bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+        ApplyExplosionAt(bullet[i].pos);
+    }
+
+
 			bullet[i].use = false;
 			HP -= 1;
+
+			XMFLOAT3 closestPoint;
+			closestPoint.x = max(pos.x - enemyHalfSize.x, min(bullet[i].pos.x, pos.x + enemyHalfSize.x));
+			closestPoint.y = max(pos.y - enemyHalfSize.y, min(bullet[i].pos.y, pos.y + enemyHalfSize.y));
+			closestPoint.z = max(pos.z - enemyHalfSize.z, min(bullet[i].pos.z, pos.z + enemyHalfSize.z));
+
+
+			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&bullet[i].vel));
+			XMFLOAT3 hitNormal;
+			XMStoreFloat3(&hitNormal, v);
+			SpawnBlood(closestPoint, 8, hitNormal);
+
 			if (HP <= 0)
 			{
 				use = false;

@@ -81,6 +81,11 @@ private:
 
 	bool hasLanded;// 着地したかのフラグ
 	XMFLOAT3 renderPos;
+
+	//当たり判定
+	void ApplyCollision();
+	void ApplyFriction();// 摩擦力
+
 };
 
 
@@ -124,8 +129,6 @@ void LoadItemData(const std::string& filename);
 
 
 ITEM_OBJ* GetItemOBJ();
-bool CheckItemGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY);
-
 
 //InstantEffectアイテムの効果を適用関数
 void ApplyInstantItemEffect(int itemID);
@@ -137,3 +140,6 @@ void SwitchToPreviousItem();
 void SwitchToNextItem();
 
 ID3D11ShaderResourceView* GetItemTexture(int itemID);
+
+// アイテム配列の有効長（MAX_ITEM）を外から取得するために公開
+int GetItemCount();

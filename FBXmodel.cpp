@@ -3,6 +3,11 @@
 #include "shaderManager.h"
 #include "enemy.h"
 
+#include <fstream>
+#include <string>
+#include "camera.h"
+#include "player.h"
+
 
 //-------------------------------------------------------------------------
 static std::vector<TriangleData> g_TriangleList;
@@ -19,6 +24,10 @@ static std::vector<TriangleData> g_WallTris;
 
 const std::vector<TriangleData>& GetFloorTriangles() { return g_FloorTris; }
 const std::vector<TriangleData>& GetWallTriangles() { return g_WallTris; }
+
+
+
+
 
 HRESULT InitFBXTestModel(void)
 {
@@ -52,7 +61,21 @@ HRESULT InitFBXTestModel(void)
 
 	XMMATRIX world = mtxScl * mtxRot * mtxQuat * mtxTrans;
 
-	ExtractTriangleData(g_FBXTestModel.model, world);
+	std::string currentMapFile = "data/MODEL/stage111.fbx"; // マップファイル名
+	bool cacheLoaded = LoadTriangleCache(currentMapFile);
+
+	if (!cacheLoaded) {
+		// Cacheいない
+		OutputDebugStringA("Extracting triangle data from FBX model...\n");
+		ExtractTriangleData(g_FBXTestModel.model, world);
+
+		// データを保存
+		SaveTriangleCache(currentMapFile);
+	}
+	else {
+		OutputDebugStringA("Triangle data loaded from cache\n");
+	}
+
 
 
 
@@ -90,12 +113,12 @@ HRESULT InitFBXTestModel(void)
 		};
 
 	for (const auto& tri : g_FloorTris) updateBounds(tri);
-	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 6, 1);
+	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 6, 50);
 
 	minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
 	maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 	for (const auto& tri : g_WallTris) updateBounds(tri);
-	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 6, 1);
+	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 6, 50);
 
 
 
@@ -262,3 +285,182 @@ const std::vector<TriangleData>& GetTriangleList()
 
 OctreeNode* GetWallTree() { return g_WallTree; }
 OctreeNode* GetFloorTree() { return g_FloorTree; }
+
+
+//三角形データCache用
+bool LoadTriangleCache(const std::string& fbxPath)
+{
+	std::string cachePath = fbxPath + ".tricache";
+	std::ifstream file(cachePath, std::ios::binary);
+
+	if (!file.is_open()) {
+		OutputDebugStringA("Triangle cache file not found\n");
+		return false;
+	}
+
+	try {
+		// 三角形の数を読み込む
+		size_t triangleCount;
+		file.read(reinterpret_cast<char*>(&triangleCount), sizeof(triangleCount));
+
+		if (triangleCount == 0 || triangleCount > 10000000) { // 制限
+			OutputDebugStringA("Invalid triangle count in cache\n");
+			return false;
+		}
+
+		// 三角形リストのサイズを調整
+		g_TriangleList.clear();
+		g_TriangleList.resize(triangleCount);
+
+		// すべての三角形データを読み込む
+		file.read(reinterpret_cast<char*>(g_TriangleList.data()),
+			triangleCount * sizeof(TriangleData));
+
+		if (!file.good()) {
+			OutputDebugStringA("Failed to read triangle cache data\n");
+			g_TriangleList.clear();
+			return false;
+		}
+
+		char debugMsg[256];
+		sprintf_s(debugMsg, "Loaded %zu triangles from cache\n", triangleCount);
+		OutputDebugStringA(debugMsg);
+
+		return true;
+	}
+	catch (...) {
+		OutputDebugStringA("Exception while loading triangle cache\n");
+		g_TriangleList.clear();
+		return false;
+	}
+}
+
+
+void SaveTriangleCache(const std::string& fbxPath)
+{
+	std::string cachePath = fbxPath + ".tricache";
+	std::ofstream file(cachePath, std::ios::binary);
+
+	if (!file.is_open()) {
+		OutputDebugStringA("Failed to create triangle cache file\n");
+		return;
+	}
+
+	try {
+		// 三角形の数を書き込む
+		size_t triangleCount = g_TriangleList.size();
+		file.write(reinterpret_cast<const char*>(&triangleCount), sizeof(triangleCount));
+
+		// 三角形のデータを書き込む
+		if (triangleCount > 0) {
+			file.write(reinterpret_cast<const char*>(g_TriangleList.data()),
+				triangleCount * sizeof(TriangleData));
+		}
+
+		if (file.good()) {
+			char debugMsg[256];
+			sprintf_s(debugMsg, "Saved %zu triangles to cache\n", triangleCount);
+			OutputDebugStringA(debugMsg);
+		}
+		else {
+			OutputDebugStringA("Failed to write triangle cache\n");
+		}
+	}
+	catch (...) {
+		OutputDebugStringA("Exception while saving triangle cache\n");
+	}
+}
+
+
+
+//LOD------------------------------------------------------------------
+
+// レイと地形の当たり判定（LOD対応版）
+bool CheckGroundCollisionLOD(const XMFLOAT3& rayOrigin, const XMFLOAT3& rayDir,
+	float* hitDistance, XMFLOAT3* hitPos, XMFLOAT3* hitNormal, Object* obj)
+{
+	XMFLOAT3 velocity = obj ? obj->GetVelocity() : XMFLOAT3(0, 0, 0);
+	float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
+
+	int lodLevel = 1;
+	if (speed > 3.0f) lodLevel = 2;
+	if (speed > 6.0f) lodLevel = 3; // 移動速度によってLODレベルを上げる
+
+	return RayHitOctreeLOD(g_FloorTree, g_FloorTris, rayOrigin, rayDir,
+		hitDistance, hitPos, hitNormal, 0, 6, 1, lodLevel);
+}
+
+// ボックスと壁の当たり判定（LOD対応版）
+bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax, Object* obj)
+{
+	XMFLOAT3 velocity = obj ? obj->GetVelocity() : XMFLOAT3(0, 0, 0);
+	float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
+
+	int lodLevel = 1;
+	if (speed > 3.0f) lodLevel = 2; // 移動速度によってLODレベルを上げる
+
+	return AABBHitOctreeLOD(g_WallTree, g_WallTris, boxMin, boxMax, 0, 6, 1, lodLevel);
+}
+
+
+XMFLOAT3 GetWallCollisionNormalLOD(const XMFLOAT3& rayStart, const XMFLOAT3& rayDir, float maxDistance, Object* obj)
+{
+	// LODレベルを決定
+	int lodLevel = 1;
+	if (maxDistance > 50.0f) lodLevel = 2;
+	if (maxDistance > 100.0f) lodLevel = 3;
+
+	if (obj) {
+		XMFLOAT3 velocity = obj->GetVelocity();
+		float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
+		if (speed > 5.0f) lodLevel = min(lodLevel + 1, 3);
+	}
+
+	float closestDist = maxDistance;
+	XMFLOAT3 hitPos, hitNormal = { 0.0f, 0.0f, 0.0f };
+
+	if (RayHitOctreeLOD(GetWallTree(), GetWallTriangles(), rayStart, rayDir,
+		&closestDist, &hitPos, &hitNormal, 0, 6, 1, lodLevel)) {
+		return hitNormal;
+	}
+
+	return { 0.0f, 0.0f, 0.0f };
+}
+
+
+
+
+
+// 八分木構造を解析する関数
+void AnalyzeOctreeStructure(OctreeNode* node, int currentDepth, int& maxDepth, int& leafCount, int& nodeCount) {
+	if (!node) return;
+
+	nodeCount++;
+	maxDepth = max(maxDepth, currentDepth);
+
+	if (node->IsLeaf()) {
+		leafCount++;
+		return;
+	}
+
+
+	for (int i = 0; i < 8; i++) {
+		if (node->children[i]) {
+			AnalyzeOctreeStructure(node->children[i], currentDepth + 1, maxDepth, leafCount, nodeCount);
+		}
+	}
+}
+
+void CountNodesByDepth(OctreeNode* node, int currentDepth, std::vector<int>& depthCounts) {
+	if (!node || currentDepth >= depthCounts.size()) return;
+
+	depthCounts[currentDepth]++;
+
+
+	for (int i = 0; i < 8; i++) {
+		if (node->children[i]) {
+			CountNodesByDepth(node->children[i], currentDepth + 1, depthCounts);
+		}
+	}
+}
+

@@ -6,7 +6,6 @@
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="debugproc.cpp" />
     <ClCompile Include="debugUI.cpp" />
-    <ClCompile Include="dissolveTest.cpp" />
     <ClCompile Include="enemy.cpp" />
     <ClCompile Include="fade.cpp" />
     <ClCompile Include="FBXmodel.cpp" />
@@ -45,6 +44,8 @@
     <ClCompile Include="boundingBoxDebug.cpp" />
     <ClCompile Include="inputManager.cpp" />
     <ClCompile Include="game1.cpp" />
+    <ClCompile Include="blood.cpp" />
+    <ClCompile Include="boss.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bullet.h" />
@@ -339,7 +340,6 @@
     <ClInclude Include="Dependenceis\nlohmann\json_fwd.hpp" />
     <ClInclude Include="Dependenceis\nlohmann\ordered_map.hpp" />
     <ClInclude Include="DirectXTex.h" />
-    <ClInclude Include="dissolveTest.h" />
     <ClInclude Include="enemy.h" />
     <ClInclude Include="fade.h" />
     <ClInclude Include="FBXmodel.h" />
@@ -379,5 +379,7 @@
     <ClInclude Include="boundingBoxDebug.h" />
     <ClInclude Include="inputManager.h" />
     <ClInclude Include="game1.h" />
+    <ClInclude Include="blood.h" />
+    <ClInclude Include="boss.h" />
   </ItemGroup>
 </Project>
