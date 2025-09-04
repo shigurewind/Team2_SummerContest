@@ -81,6 +81,9 @@ namespace {
 
         // 既存速度に加算（AddForce）。速度を即時置換したいなら SetVelocity を使う
         obj->AddForce(impulse);
+        if (auto* item = dynamic_cast<ITEM_OBJ*>(obj)) {
+            item->SetSleeping(false);
+        }
     }
 }
 

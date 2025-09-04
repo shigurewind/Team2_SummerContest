@@ -10,8 +10,12 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-
-
+class Object;
+struct WallHitInfo {
+    bool hit = false;
+    XMFLOAT3 normal = { 0,0,0 };
+    float penetration = 0.0f; 
+};
 //*****************************************************************************
 // 構造体定義
 //*****************************************************************************
@@ -29,3 +33,5 @@ BOOL RayCast(XMFLOAT3 p0, XMFLOAT3 p1, XMFLOAT3 p2, XMFLOAT3 pos0, XMFLOAT3 pos1
 
 BOOL CheckSphereAABBCollision(XMFLOAT3 spherePos, float sphereRadius, XMFLOAT3 boxPos, XMFLOAT3 boxHalfSize);
 
+bool CheckWallCollisionLODEx(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
+    WallHitInfo* outInfo, Object* obj);

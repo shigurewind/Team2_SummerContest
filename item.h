@@ -26,6 +26,8 @@ public:
 	int GetCount() const { return count; }
 	void SetCount(int c) { count = c; }
 
+
+
 private:
 	int id;
 	std::string name;
@@ -70,6 +72,9 @@ public:
 	float bugTimer;
 
 
+	void SetSleeping(bool s) { sleeping = s; }
+	bool IsSleeping() const { return sleeping; }
+
 private:
 	Item item;
 	XMFLOAT3 scl;
@@ -82,6 +87,8 @@ private:
 	bool hasLanded;// ’…’n‚µ‚½‚©‚Ìƒtƒ‰ƒO
 	XMFLOAT3 renderPos;
 
+
+	bool sleeping = false;
 	//“–‚½‚è”»’è
 	void ApplyCollision();
 	void ApplyFriction();// –€ŽC—Í

@@ -6,7 +6,8 @@
 //=============================================================================
 #include "main.h"
 #include "collision.h"
-
+#include "FBXmodel.h"
+#include "Octree.h"
 
 //*****************************************************************************
 // É}ÉNÉçíËã`
@@ -215,4 +216,47 @@ BOOL CheckSphereAABBCollision(XMFLOAT3 spherePos, float sphereRadius,
 	float dz = z - spherePos.z;
 
 	return (dx * dx + dy * dy + dz * dz) <= (sphereRadius * sphereRadius);
+}
+
+bool CheckWallCollisionLODEx(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
+	WallHitInfo* outInfo, Object* obj)
+{
+	if (outInfo) {
+		outInfo->hit = false;
+		outInfo->normal = { 0,0,0 };
+		outInfo->penetration = 0.0f;
+	}
+
+	int lodLevel = 1;
+	if (obj) {
+		XMFLOAT3 vel = obj->GetVelocity();
+		float speed = sqrtf(vel.x * vel.x + vel.z * vel.z);
+		if (speed > 4.0f) lodLevel = 2;
+		if (speed > 7.5f) lodLevel = 3;
+	}
+
+	bool hit = AABBHitOctreeLOD(GetWallTree(), GetWallTriangles(),
+		boxMin, boxMax, 0, 6, 1, lodLevel);
+
+	if (!hit) return false;
+
+	if (outInfo) {
+		outInfo->hit = true;
+
+		float dxMin = fabs(boxMax.x - boxMin.x);
+		float dzMin = fabs(boxMax.z - boxMin.z);
+
+		if (dxMin < dzMin) {
+			if (boxMin.x < 0) outInfo->normal = { 1,0,0 };
+			else              outInfo->normal = { -1,0,0 };
+		}
+		else {
+			if (boxMin.z < 0) outInfo->normal = { 0,0,1 };
+			else              outInfo->normal = { 0,0,-1 };
+		}
+
+		outInfo->penetration = 0.0f;
+	}
+
+	return true;
 }
