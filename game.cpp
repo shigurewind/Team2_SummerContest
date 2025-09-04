@@ -72,11 +72,11 @@ HRESULT InitGame(void)
 	InitPlayer();
 
 	// エネミーの初期化
-	InitEnemy();
+	//InitEnemy();
 
-	
+
 	InitBlood();
-	
+
 
 	// 弾の初期化
 	InitBullet();
@@ -88,12 +88,12 @@ HRESULT InitGame(void)
 	// パーティクルの初期化
 	InitParticle();
 
-	InitFBXTestModel();
+	//InitFBXTestModel();
 
-	InitItem();
+	//InitItem();
 
 	InitBoss();
-	
+
 
 	// デバッグ用のバウンディングボックスの初期化
 	BoundingBoxDebugRenderer::GetInstance().Initialize();
@@ -139,7 +139,7 @@ void UninitGame(void)
 
 	UninitBoss();
 
-	
+
 
 	BoundingBoxDebugRenderer::GetInstance().Shutdown();
 
@@ -172,14 +172,14 @@ void UpdateGame(void)
 
 	if (g_bPause == TRUE)
 		return;
-	
+
 	if (IsTutorialShowing())
 	{
 		if (IsMouseLeftTriggered())
 		{
-			SetTutorialShowing(false); 
+			SetTutorialShowing(false);
 		}
-		return;  
+		return;
 	}
 	// 地面処理の更新
 	//UpdateMeshField();
@@ -223,7 +223,7 @@ void UpdateGame(void)
 		}
 	}
 
-	
+
 
 	bool allDead = true;
 	for (auto enemy : GetEnemies())
@@ -275,7 +275,7 @@ void DrawGame0(void)
 	// 弾の描画処理
 	DrawBullet();
 
-	
+
 	// パーティクルの描画処理
 	DrawParticle();
 
@@ -304,7 +304,7 @@ void DrawGame0(void)
 	DrawGameUI();
 
 	DrawOverlay2D();
-	
+
 
 
 	// ライティングを有効に

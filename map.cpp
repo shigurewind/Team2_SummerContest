@@ -82,11 +82,25 @@ HRESULT LoadMap(int mapID) {
 	// 今のマップをアンロード
 	UnloadCurrentMap();
 
-	// TODO: FBXモデル
-	// TODO: Itemsロード
-	// TODO: エネミーロード
-	// TODO: 初期位置設置
-	// TODO: 環境を設定
+	// FBXモデル
+	FBXTESTMODEL* fbxModel = GetFBXTestModel();
+	if (fbxModel && fbxModel->model) {
+		// もうFBXモデルがロードされている
+		UninitFBXTestModel();
+	}
+
+	InitFBXTestModel();//TODO: 変更する必要
+
+	// Itemsロード
+	LoadMapItems(config->itemConfigPath);
+
+	// エネミーロード
+	LoadMapEnemies(config->enemyConfigPath);
+
+	// 初期位置設置
+	SetPlayerSpawnPosition(config->playerSpawnPos);
+
+	// TODO: 環境とBGMを設定
 
 	// 今のマップ
 	g_CurrentMapID = mapID;
@@ -99,9 +113,15 @@ HRESULT LoadMap(int mapID) {
 void UnloadCurrentMap(void) {
 	if (g_CurrentMapID == -1) return;
 
-	// TODO: FBXモデル解放
-	// TODO: アイテム解放
-	// TODO: エネミー解放
+
+	// FBXモデル解放
+	UninitFBXTestModel();
+
+	// アイテム解放
+	ClearAllItems();
+
+	// エネミー解放
+	ClearAllEnemies();
 
 	g_CurrentMapID = -1;
 	g_CurrentMapConfig = nullptr;
@@ -111,17 +131,30 @@ void UnloadCurrentMap(void) {
 //ロード関数
 void LoadMapItems(const char* configPath)
 {
+	if (!configPath || strlen(configPath) == 0) {
+		return;
+	}
 
+	// アイテムをロード
+	LoadItemData(std::string(configPath));
 }
 
 void LoadMapEnemies(const char* configPath)
 {
+	if (!configPath || strlen(configPath) == 0) {
+		return;
+	}
 
+	// エネミーをロード
+	LoadEnemyData(std::string(configPath));
 }
 
 void SetPlayerSpawnPosition(const XMFLOAT3& pos)
 {
-
+	PLAYER* player = GetPlayer();
+	if (player) {
+		player->SetPosition(pos);
+	}
 }
 
 

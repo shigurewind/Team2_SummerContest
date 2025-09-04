@@ -555,6 +555,14 @@ Item CreateItemFromID(int id) {
 }
 
 
+void ClearAllItems()
+{
+	for (int i = 0; i < MAX_ITEM; ++i)
+	{
+		g_aItem[i].SetUsed(false);
+	}
+}
+
 
 
 void SaveItemData(const std::string& filename)
