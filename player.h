@@ -78,6 +78,15 @@ public:
 	WeaponType currentWeapon;
 	BulletType currentBullet;
 
+	/// 現在のインベントリ内容で、指定の武器が解放済みか？
+	bool IsWeaponUnlocked(int weapon) const;
+
+	/// 現在のインベントリ内容で、指定の弾種が解放済みか？
+	bool IsBulletUnlocked(int bullet) const;
+
+	/// 現在の「武器×弾の組合せ」が使えるか？（射撃の直前ガードで使用）
+	bool IsCurrentLoadoutUsable() const;
+
 
 	//インベントリ
 	Inventory inventory;

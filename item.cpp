@@ -514,6 +514,22 @@ Item CreateItemFromID(int id) {
 	case ITEM_BULLET:
 		return Item(id, "Bullet", 10, ItemCategory::InstantEffect);
 
+
+		// 弾アンロック用（Inventory の WeaponPart_Ammo に入る）
+	case PART_NORMAL_AMMO:
+		return Item(id, "Part: Normal Ammo", 1, ItemCategory::WeaponPart_Ammo);
+	case PART_FIRE:
+		return Item(id, "Part: Fire Ammo", 1, ItemCategory::WeaponPart_Ammo);
+
+		// 武器アンロック用（Inventory の WeaponPart_FireType に入る）
+	case PART_REVOLVER:
+		return Item(id, "Part: Revolver", 1, ItemCategory::WeaponPart_FireType);
+	case PART_SHUTGUN:
+		return Item(id, "Part: Shotgun", 1, ItemCategory::WeaponPart_FireType);
+	case PART_ROCKET:
+		return Item(id, "Part: Rocket", 1, ItemCategory::WeaponPart_FireType);
+
+
 	default:
 		return Item(id, "Unknown", 1, ItemCategory::Consumable);
 	}

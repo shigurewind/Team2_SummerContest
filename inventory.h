@@ -28,6 +28,12 @@ public:
 	const std::vector<Item>& GetAmmoParts() const;
 	const std::vector<Item>& GetFireTypeParts() const;
 	const std::vector<Item>& GetConsumables() const;
+
+	/// 指定カテゴリに itemId のパーツを「持っているか？」
+	bool Has(ItemCategory category, int itemId) const;      // そのIDを持っている？
+	/// 指定カテゴリ・itemId の所持数（0 なら未所持）
+	/// 所持数（スタック合計）※パーツは基本 1
+	int  Count(ItemCategory category, int itemId) const;    // スタック数（0なら未所持）
 };
 
 

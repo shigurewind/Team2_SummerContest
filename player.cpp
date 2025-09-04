@@ -20,6 +20,7 @@
 #include "overlay2D.h"
 #include "enemy.h"
 #include "inputManager.h"
+#include "item.h"
 
 //*****************************************************************************
 // マクロ定義	
@@ -66,6 +67,27 @@ static bool tutorialTriggered = false;
 //weponとbullet弾の状態
 //static WeaponType currentWeapon = WEAPON_REVOLVER;
 //static BulletType currentBullet = BULLET_NORMAL;
+
+// どの武器/弾を使うために、どの "PART_***" が必要かの表。
+// ここを編集すれば「最初から使える/使えない」を柔軟に変更可。
+static int RequiredPartForWeapon(int weapon) {
+	switch (weapon) {
+	case WEAPON_REVOLVER:        return PART_REVOLVER;      // リボルバーは PART_REVOLVER を拾ったら解禁
+	case WEAPON_SHOTGUN:         return PART_SHUTGUN;       // ショットガンは PART_SHUTGUN
+	case WEAPON_ROCKET_LAUNCHER: return PART_ROCKET;        // ロケランは PART_ROCKET
+	default: return -1; // 未知 → 解禁不可（false）
+	}
+}
+static int RequiredPartForBullet(int bullet) {
+	switch (bullet) {
+	case BULLET_NORMAL: return PART_NORMAL_AMMO;            // ノーマル弾は PART_NORMAL_AMMO
+	case BULLET_FIRE:   return PART_FIRE;                   // ファイア弾は PART_FIRE
+	default: return -1;
+	}
+}
+
+static bool IsFireTypeUnlocked(class Inventory* inv, WeaponType w);
+static bool IsAmmoUnlocked(class Inventory* inv, BulletType b);
 
 
 // Init時にロードするかどうかの内部フラグ（既定 false）
@@ -365,35 +387,41 @@ void PLAYER::HandleInput()
 	}
 
 
-	//キーボードの1　武器の切り替え
+	// キーボードの1　"武器の切り替え"（解放済みだけに限定）
 	if (GetKeyboardTrigger(DIK_1))
 	{
-		switch (currentWeapon)
-		{
-		case WEAPON_REVOLVER:
-			currentWeapon = WEAPON_SHOTGUN;
-			break;
-		case WEAPON_SHOTGUN:
-			currentWeapon = WEAPON_ROCKET_LAUNCHER;
-			break;
-		case WEAPON_ROCKET_LAUNCHER:
-			currentWeapon = WEAPON_REVOLVER;
-			break;
-		}
-	}
-	//キーボードの2　弾の切り替え
-	if (GetKeyboardTrigger(DIK_2))
-	{
-		if (currentBullet == BULLET_NORMAL)
-		{
-			currentBullet = BULLET_FIRE;
-		}
-		else
-		{
-			currentBullet = BULLET_NORMAL;
+		Inventory* inv = GetPlayerInventory();
+
+		// 回す順序を配列で管理
+		WeaponType order[3] = { WEAPON_REVOLVER, WEAPON_SHOTGUN, WEAPON_ROCKET_LAUNCHER };
+
+		// 現在位置を探す
+		int idx = 0;
+		for (int i = 0; i < 3; ++i) if (order[i] == currentWeapon) { idx = i; break; }
+
+		// 次に進めつつ、解放されているものを探す（最大3回）
+		for (int step = 1; step <= 3; ++step) {
+			int ni = (idx + step) % 3;
+			if (IsFireTypeUnlocked(inv, order[ni])) {
+				currentWeapon = order[ni];
+				break;
+			}
 		}
 	}
 
+	// （差し替え）キーボードの2　弾の切り替え（解放済みだけに限定）
+	if (GetKeyboardTrigger(DIK_2))
+	{
+		Inventory* inv = GetPlayerInventory();
+
+		// 優先順: Normal -> Fire -> Normal ...
+		BulletType candidate = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
+
+		// 候補が解放済みなら切替、ダメなら現状維持
+		if (IsAmmoUnlocked(inv, candidate)) {
+			currentBullet = candidate;
+		}
+	}
 
 }
 
@@ -529,10 +557,47 @@ void PLAYER::EventCheck()
 
 void PLAYER::HandleShooting()
 {
-	// 現在の弾種の“総弾数”ポインタを取得
+	// ================== アンロック判定（この関数内で完結） ==================
+	Inventory* inv = GetPlayerInventory();
+
+	// inv から該当IDを持っているか調べる小ヘルパ（Count>0 も許可）
+	auto hasItem = [](const std::vector<Item>& v, int id) -> bool {
+		for (const auto& it : v) if (it.GetID() == id && it.GetCount() > 0) return true;
+		return false;
+		};
+
+	// 武器（FireType）側のアンロック確認
+	const auto& fireParts = inv->GetFireTypeParts(); // PART_REVOLVER / PART_SHUTGUN / PART_ROCKET を保持
+	bool weaponUnlocked = false;
+	switch (currentWeapon) {
+	case WEAPON_REVOLVER:        weaponUnlocked = hasItem(fireParts, PART_REVOLVER); break;
+	case WEAPON_SHOTGUN:         weaponUnlocked = hasItem(fireParts, PART_SHUTGUN);  break;
+	case WEAPON_ROCKET_LAUNCHER: weaponUnlocked = hasItem(fireParts, PART_ROCKET);   break;
+	default: weaponUnlocked = false; break;
+	}
+	if (!weaponUnlocked) {
+		// （任意）PrintDebugProc("Locked weapon. Pick up the weapon part.\n");
+		return; // 未解禁の武器は撃てない
+	}
+
+	// 弾（Ammo）側のアンロック確認
+	const auto& ammoParts = inv->GetAmmoParts();     // PART_NORMAL_AMMO / PART_FIRE を保持
+	bool ammoUnlocked = false;
+	switch (currentBullet) {
+	case BULLET_NORMAL: ammoUnlocked = hasItem(ammoParts, PART_NORMAL_AMMO); break;
+	case BULLET_FIRE:   ammoUnlocked = hasItem(ammoParts, PART_FIRE);        break;
+	default: ammoUnlocked = false; break;
+	}
+	if (!ammoUnlocked) {
+		// （任意）PrintDebugProc("Locked ammo. Pick up the ammo part.\n");
+		return; // 未解禁の弾は撃てない
+	}
+	// =====================================================================
+
+	// 現在の弾種の“総弾数”ポインタを取得（既存仕様をそのまま使用）
 	int* currentAmmo = (currentBullet == BULLET_NORMAL) ? &ammoNormal : &ammoFire;
 
-	// 武器ごとの消費数
+	// 武器ごとの消費数（既存仕様）
 	int requiredCost = 1;
 	switch (currentWeapon) {
 	case WEAPON_REVOLVER:         requiredCost = 1; break;
@@ -540,7 +605,7 @@ void PLAYER::HandleShooting()
 	case WEAPON_ROCKET_LAUNCHER:  requiredCost = 5; break;
 	}
 
-	// クリックトリガ & 弾が足りる場合のみ発射
+	// クリックトリガ & 弾が足りる場合のみ発射（既存仕様）
 	if (IsMouseLeftTriggered() && *currentAmmo >= requiredCost)
 	{
 		XMFLOAT3 pos = GetGunMuzzlePosition();
@@ -559,12 +624,11 @@ void PLAYER::HandleShooting()
 			SetRocketLauncherBullet(currentBullet, pos, rot);
 		}
 
-		// 武器ごとのコストを消費
+		// 武器ごとのコストを消費（既存仕様）
 		*currentAmmo -= requiredCost;
 		if (*currentAmmo < 0) *currentAmmo = 0; // 念のため
 	}
 }
-
 
 //void PLAYER::HandleReload()
 //{
@@ -734,11 +798,39 @@ void LoadPlayerFromFile() {
 
 
 //プレイヤーのインベントリーを取得
-Inventory* GetPlayerInventory(void) {
+Inventory* GetPlayerInventory(void) 
+{
 	PLAYER* player = GetPlayer();
 	return &(player->inventory);
 }
 
+// ★追加: インベントリに該当パーツがあるかを調べるヘルパ
+static bool HasItemById(const std::vector<Item>& list, int id) {
+	for (const auto& it : list) if (it.GetID() == id) return true;
+	return false;
+}
+
+// ★追加: 武器（FireType）のアンロック判定
+static bool IsFireTypeUnlocked(Inventory* inv, WeaponType w) {
+	// Inventory 内の FireType パーツ一覧
+	const auto& parts = inv->GetFireTypeParts(); // vector<Item>
+	switch (w) {
+	case WEAPON_REVOLVER:        return HasItemById(parts, PART_REVOLVER);
+	case WEAPON_SHOTGUN:         return HasItemById(parts, PART_SHUTGUN);
+	case WEAPON_ROCKET_LAUNCHER: return HasItemById(parts, PART_ROCKET);
+	default: return false;
+	}
+}
+
+// ★追加: 弾（Ammo）のアンロック判定
+static bool IsAmmoUnlocked(Inventory* inv, BulletType b) {
+	const auto& parts = inv->GetAmmoParts(); // vector<Item>
+	switch (b) {
+	case BULLET_NORMAL: return HasItemById(parts, PART_NORMAL_AMMO);
+	case BULLET_FIRE:   return HasItemById(parts, PART_FIRE);
+	default: return false;
+	}
+}
 
 
 
