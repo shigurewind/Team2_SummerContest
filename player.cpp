@@ -441,7 +441,6 @@ void PLAYER::HandleInput()
 				EffectManager::CreateBloodSplatter(ePos, hitNormal, hitNormal, 1.5f);
 				EffectManager::ApplyEffects();
 
-				SpawnBlood(ePos, 12, hitNormal);  
 			}
 		}
 
