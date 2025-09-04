@@ -336,9 +336,9 @@ void PLAYER::HandleInput()
 			XMFLOAT3 ePos = enemy->GetPosition();
 			float dx = p.x - ePos.x;
 			float dz = p.z - ePos.z;
-			float distance = sqrtf(dx * dx + dz * dz);
+			float dist2 = dx * dx + dz * dz;
+			if (dist2 > (100.0f * 100.0f)) continue;
 
-			if (distance > 100.0f) continue;
 
 			enemy->SetUsed(false);
 		}
@@ -398,87 +398,116 @@ void PLAYER::HandleInput()
 }
 
 
+//void PLAYER::ApplyCollision()
+//{
+//	//次の位置を予測
+//	XMFLOAT3 nextPos = pos;
+//	nextPos.x += velocity.x;
+//	nextPos.z += velocity.z;
+//
+//	//BOXの計算
+//	float halfSize = size;
+//	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
+//	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
+//
+//	if (CheckWallCollisionLOD(min, max, this))
+//	{
+//		// 壁に沿ってスライド
+//		//velocity-(velocity・normal)*normal
+//
+//		XMFLOAT3 remainingVelocity = { velocity.x, 0.0f, velocity.z };
+//		const int maxIterations = 3; //回数制限
+//		const float minVelocityThreshold = 0.1f; //移動最小値
+//
+//		for (int iteration = 0; iteration < maxIterations; iteration++)
+//		{
+//			//移動できるかどうか確認
+//			float velocityMagnitude = sqrtf(remainingVelocity.x * remainingVelocity.x +
+//				remainingVelocity.z * remainingVelocity.z);
+//			if (velocityMagnitude < minVelocityThreshold)
+//			{
+//				break; //小さい移動量なら終了
+//			}
+//
+//			//壁法線を取得
+//			XMFLOAT3 wallNormal = GetWallCollisionNormal(pos, remainingVelocity, halfSize);
+//
+//			if (wallNormal.x == 0.0f && wallNormal.z == 0.0f)
+//			{
+//				break; // 壁法線が取得できなかった場合終了
+//			}
+//
+//			//スライドベクトルを計算
+//			XMVECTOR vel = XMLoadFloat3(&remainingVelocity);
+//			XMVECTOR normal = XMLoadFloat3(&wallNormal);
+//
+//			float dotProduct = XMVectorGetX(XMVector3Dot(vel, normal));
+//			XMVECTOR slide = XMVectorSubtract(vel, XMVectorScale(normal, dotProduct));
+//
+//			XMFLOAT3 slideVelocity;
+//			XMStoreFloat3(&slideVelocity, slide);
+//
+//			//スライド位置
+//			XMFLOAT3 testPos = pos;
+//			testPos.x += slideVelocity.x;
+//			testPos.z += slideVelocity.z;
+//
+//			XMFLOAT3 testMin = { testPos.x - halfSize, pos.y - 0.1f, testPos.z - halfSize };
+//			XMFLOAT3 testMax = { testPos.x + halfSize, pos.y + 0.1f, testPos.z + halfSize };
+//
+//			if (!CheckWallCollisionLOD(testMin, testMax, this))
+//			{
+//				// スライド応用
+//				velocity.x = slideVelocity.x;
+//				velocity.z = slideVelocity.z;
+//				return;
+//			}
+//			else
+//			{
+//				//まだ壁に当たる場合、残りの速度を更新
+//				remainingVelocity = slideVelocity;
+//
+//				// 速度を降ろす
+//				remainingVelocity.x *= 0.8f;
+//				remainingVelocity.z *= 0.8f;
+//			}
+//		}
+//
+//		//止まる
+//		velocity.x = 0;
+//		velocity.z = 0;
+//
+//
+//	}
+//}
+
 void PLAYER::ApplyCollision()
 {
-	//次の位置を予測
-	XMFLOAT3 nextPos = pos;
-	nextPos.x += velocity.x;
-	nextPos.z += velocity.z;
+	const float half = size;
+	XMFLOAT3 nextPos = { pos.x + velocity.x, pos.y, pos.z + velocity.z };
+	XMFLOAT3 bmin = { nextPos.x - half, pos.y - 0.1f, nextPos.z - half };
+	XMFLOAT3 bmax = { nextPos.x + half, pos.y + 0.1f, nextPos.z + half };
 
-	//BOXの計算
-	float halfSize = size;
-	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
-	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
-
-	if (CheckWallCollisionLOD(min, max, this))
-	{
-		// 壁に沿ってスライド
-		//velocity-(velocity・normal)*normal
-
-		XMFLOAT3 remainingVelocity = { velocity.x, 0.0f, velocity.z };
-		const int maxIterations = 3; //回数制限
-		const float minVelocityThreshold = 0.1f; //移動最小値
-
-		for (int iteration = 0; iteration < maxIterations; iteration++)
-		{
-			//移動できるかどうか確認
-			float velocityMagnitude = sqrtf(remainingVelocity.x * remainingVelocity.x +
-				remainingVelocity.z * remainingVelocity.z);
-			if (velocityMagnitude < minVelocityThreshold)
-			{
-				break; //小さい移動量なら終了
-			}
-
-			//壁法線を取得
-			XMFLOAT3 wallNormal = GetWallCollisionNormal(pos, remainingVelocity, halfSize);
-
-			if (wallNormal.x == 0.0f && wallNormal.z == 0.0f)
-			{
-				break; // 壁法線が取得できなかった場合終了
-			}
-
-			//スライドベクトルを計算
-			XMVECTOR vel = XMLoadFloat3(&remainingVelocity);
-			XMVECTOR normal = XMLoadFloat3(&wallNormal);
-
-			float dotProduct = XMVectorGetX(XMVector3Dot(vel, normal));
-			XMVECTOR slide = XMVectorSubtract(vel, XMVectorScale(normal, dotProduct));
-
-			XMFLOAT3 slideVelocity;
-			XMStoreFloat3(&slideVelocity, slide);
-
-			//スライド位置
-			XMFLOAT3 testPos = pos;
-			testPos.x += slideVelocity.x;
-			testPos.z += slideVelocity.z;
-
-			XMFLOAT3 testMin = { testPos.x - halfSize, pos.y - 0.1f, testPos.z - halfSize };
-			XMFLOAT3 testMax = { testPos.x + halfSize, pos.y + 0.1f, testPos.z + halfSize };
-
-			if (!CheckWallCollisionLOD(testMin, testMax, this))
-			{
-				// スライド応用
-				velocity.x = slideVelocity.x;
-				velocity.z = slideVelocity.z;
-				return;
-			}
-			else
-			{
-				//まだ壁に当たる場合、残りの速度を更新
-				remainingVelocity = slideVelocity;
-
-				// 速度を降ろす
-				remainingVelocity.x *= 0.8f;
-				remainingVelocity.z *= 0.8f;
-			}
-		}
-
-		//止まる
-		velocity.x = 0;
-		velocity.z = 0;
-
-
+	WallHitInfo info{};
+	if (!CheckWallCollisionLODEx(bmin, bmax, &info, this)) {
+		return; 
 	}
+
+	XMFLOAT3 n = info.normal;
+	if (n.x == 0 && n.y == 0 && n.z == 0) {
+		
+		velocity.x = 0; velocity.z = 0;
+		return;
+	}
+
+	XMVECTOR v = XMLoadFloat3(&XMFLOAT3{ velocity.x, 0.0f, velocity.z });
+	XMVECTOR nv = XMLoadFloat3(&n);
+	float dot = XMVectorGetX(XMVector3Dot(v, nv));
+	XMVECTOR slide = XMVectorSubtract(v, XMVectorScale(nv, dot));
+	XMFLOAT3 sv; XMStoreFloat3(&sv, slide);
+
+	velocity.x = sv.x;
+	velocity.z = sv.z;
 }
 
 //接地判定
@@ -689,15 +718,14 @@ BulletType GetCurrentBulletType(void)
 bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 {
 	// LOD版の地面判定
-	XMFLOAT3 rayStart = pos;
-	rayStart.y += 10.0f;
+	XMFLOAT3 rayStart = { pos.x, pos.y + 10.0f, pos.z };
 
-	XMFLOAT3 rayDir = { 0.0f, -10.0f, 0.0f }; // したへ10.0fの射線
+	XMFLOAT3 rayDir = { 0.0f, -1.0f, 0.0f }; // したへ10.0fの射線
 
-	float hitDistance = 10.0f;
+	float maxDist = 20.0f;
 	XMFLOAT3 hitPos, hitNormal;
 
-	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal, &g_Player))
+	if (CheckGroundCollisionLOD(rayStart, rayDir, &maxDist, &hitPos, &hitNormal, &g_Player))
 	{
 		groundY = hitPos.y;
 		return true;

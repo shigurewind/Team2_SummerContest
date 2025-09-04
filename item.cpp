@@ -77,6 +77,36 @@ void ITEM_OBJ::Update()
 {
 	if (!use) return;
 
+	if (sleeping) {
+		const float wakeDist = 120.0f;
+		XMFLOAT3 pp = GetPlayer()->GetPosition();
+		float dx = pp.x - pos.x, dy = pp.y - pos.y, dz = pp.z - pos.z;
+		if ((dx * dx + dy * dy + dz * dz) < wakeDist * wakeDist) sleeping = false;
+
+		if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
+			Inventory* inv = GetPlayerInventory();
+			switch (item.GetCategory()) {
+			case ItemCategory::WeaponPart_Ammo:
+			case ItemCategory::WeaponPart_FireType:
+			case ItemCategory::Consumable:
+				if (inv->AddItem(item)) use = false;
+				break;
+			case ItemCategory::InstantEffect:
+				ApplyInstantItemEffect(item.GetID());
+				use = false;
+				break;
+			default: break;
+			}
+		}
+
+		renderPos = pos;
+		if (hasLanded) {
+			float t = g_ItemGlobalTime + timeOffset;
+			renderPos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
+		}
+		return;
+	}
+
 	Object::Update(); // 重力
 	ApplyCollision(); // 壁との当たり判定
 	HandleGroundCheck(); // 地面判定
@@ -147,10 +177,29 @@ void ITEM_OBJ::Update()
 			break;
 		}
 	}
+
+	if (isGround) {
+		float sp2 = velocity.x * velocity.x + velocity.z * velocity.z;
+		if (sp2 < 0.01f * 0.01f && fabsf(velocity.y) < 0.01f) {
+			sleeping = true;
+			velocity = { 0,0,0 };
+			basePosY = pos.y;
+			hasLanded = true;
+		}
+	}
+
+
 }
 
 void ITEM_OBJ::HandleGroundCheck()
 {
+
+	static int tick = 0; ++tick;
+
+	if (hasLanded && fabsf(velocity.y) < 0.01f) {
+		if ((tick & 7) != 0) return;
+	}
+
 	const float groundThreshold = 0.2f;
 
 	// 八分木で地面判定
@@ -187,58 +236,39 @@ void ITEM_OBJ::HandleGroundCheck()
 // 壁にぶつかったとき
 void ITEM_OBJ::ApplyCollision()
 {
-	//次の位置を計算
-	XMFLOAT3 nextPos = pos;
-	nextPos.x += velocity.x;
-	nextPos.z += velocity.z;
+	////次の位置を計算
+	//XMFLOAT3 nextPos = pos;
+	//nextPos.x += velocity.x;
+	//nextPos.z += velocity.z;
 
-	//ボックスの範囲を計算
-	float halfSize = ITEM_SIZE * 0.5f;
-	XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
-	XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
-
+	////ボックスの範囲を計算
+	//float halfSize = ITEM_SIZE * 0.5f;
+	//XMFLOAT3 min = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
+	//XMFLOAT3 max = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
+	const float halfSize = ITEM_SIZE * 0.5f;
+	XMFLOAT3 nextPos = { pos.x + velocity.x, pos.y, pos.z + velocity.z };
+	XMFLOAT3 bmin = { nextPos.x - halfSize, pos.y - 0.1f, nextPos.z - halfSize };
+	XMFLOAT3 bmax = { nextPos.x + halfSize, pos.y + 0.1f, nextPos.z + halfSize };
 	//壁との当たり判定
-	if (CheckWallCollisionLOD(min, max, this))
+	WallHitInfo info{};
+	if (CheckWallCollisionLODEx(bmin, bmax, &info, this))
 	{
-		//法線を取得
-		XMFLOAT3 rayStart = pos;
-		rayStart.y += 1.0f;
-		XMFLOAT3 rayDir = { velocity.x * 2.0f, 0.0f, velocity.z * 2.0f }; // 移動ベクトル
-		XMFLOAT3 wallNormal = GetWallCollisionNormalLOD(rayStart, rayDir, 100.0f, this);
-
-		if (wallNormal.x != 0.0f || wallNormal.z != 0.0f)
-		{
-			// 反発係数
-			const float bounceCoefficient = 0.6f;
-
-			// 速度ベクトル投影
-			XMVECTOR vel = XMLoadFloat3(&velocity);
-			XMVECTOR normal = XMLoadFloat3(&wallNormal);
-
-			float dotProduct = XMVectorGetX(XMVector3Dot(vel, normal));
-
-			// 壁に向かっている
-			if (dotProduct < 0.0f)
-			{
-				// スピード計算：velocity - 2 * (velocity ・ normal) * normal * bounceCoefficient
-				XMVECTOR bounceVel = XMVectorSubtract(vel,
-					XMVectorScale(normal, 2.0f * dotProduct * bounceCoefficient));
-
-				XMFLOAT3 newVelocity;
-				XMStoreFloat3(&newVelocity, bounceVel);
-
-				velocity.x = newVelocity.x;
-				velocity.z = newVelocity.z;
-				// yは変えない
+		XMFLOAT3 n = info.normal;
+		if (n.x != 0.0f || n.z != 0.0f) {
+			const float e = 0.6f; 
+			XMVECTOR v = XMLoadFloat3(&velocity);
+			XMVECTOR nv = XMLoadFloat3(&n);
+			float d = XMVectorGetX(XMVector3Dot(v, nv));
+			if (d < 0.0f) {
+				XMVECTOR vb = XMVectorSubtract(v, XMVectorScale(nv, 2.0f * d * e));
+				XMFLOAT3 out; XMStoreFloat3(&out, vb);
+				velocity.x = out.x; velocity.z = out.z; 
 			}
 		}
-		else
-		{
-			velocity.x = 0;
-			velocity.z = 0;
+		else {
+			velocity.x = velocity.z = 0.0f;
 		}
 	}
-
 	ApplyFriction();
 }
 
@@ -293,11 +323,31 @@ void UninitItem()
 	}
 }
 
+
+inline bool TooFarFromPlayer(const XMFLOAT3& p, float maxDist)
+{
+	XMFLOAT3 pp = GetPlayer()->GetPosition();
+	float dx = p.x - pp.x, dy = p.y - pp.y, dz = p.z - pp.z;
+	return (dx * dx + dy * dy + dz * dz) > (maxDist * maxDist);
+}
+
+
+
 void UpdateItem()
 {
 	g_ItemGlobalTime += ITEM_FLOAT_FREQUENCE / 60.0f;
+	static int frame = 0; ++frame;
+
 	for (int i = 0; i < MAX_ITEM; i++)
+	{
+		if (!g_aItem[i].IsUsed()) continue;
+
+		if (TooFarFromPlayer(g_aItem[i].GetPosition(), 300.0f)) {
+			if ((frame & 3) != 0) continue;
+		}
+
 		g_aItem[i].Update();
+	}
 }
 
 
@@ -315,6 +365,8 @@ int SpawnItem(XMFLOAT3 pos, int itemID)
 			g_aItem[i].SetUsed(true);
 			g_aItem[i].SetPosition(pos);
 			g_aItem[i].SetBasePosY(pos.y);
+			g_aItem[i].SetSleeping(true);
+			g_aItem[i].SetVelocity({ 0,0,0 });
 			return i;
 		}
 	}
@@ -367,74 +419,70 @@ HRESULT InitItem()
 void DrawItem()
 {
 	if (g_bAlpaTest == TRUE)
-	{
-		// αテストを有効に
 		SetAlphaTestEnable(TRUE);
-	}
 
 	SetLightEnable(FALSE);
 
-	XMMATRIX mtxScl, mtxTranslate, mtxWorld, mtxView;
 	CAMERA* cam = GetCamera();
+	XMMATRIX mtxView = XMLoadFloat4x4(&cam->mtxView);
 
-	// 頂点バッファ設定
+	XMMATRIX mtxBillboard = XMMatrixIdentity();
+	mtxBillboard.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
+	mtxBillboard.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
+	mtxBillboard.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
+
+	mtxBillboard.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
+	mtxBillboard.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
+	mtxBillboard.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
+
+	mtxBillboard.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
+	mtxBillboard.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
+	mtxBillboard.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
+
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
 	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
-
-	// プリミティブトポロジ設定
 	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	for (int i = 0; i < MAX_ITEM; i++)
+	const float kDrawDist = 380.0f;
+	const float kDrawDist2 = kDrawDist * kDrawDist;
+
+	XMFLOAT3 camPos = cam->pos;
+
+	ID3D11ShaderResourceView* lastSRV = nullptr;
+
+	for (int i = 0; i < MAX_ITEM; ++i)
 	{
-		if (g_aItem[i].IsUsed())
-		{
-			// ワールドマトリックスの初期化
-			mtxWorld = XMMatrixIdentity();
+		if (!g_aItem[i].IsUsed())
+			continue;
 
-			// ビューマトリックスを取得
-			mtxView = XMLoadFloat4x4(&cam->mtxView);
+		const XMFLOAT3 rp = g_aItem[i].GetRenderPosition();
+		float dx = rp.x - camPos.x, dy = rp.y - camPos.y, dz = rp.z - camPos.z;
+		if (dx * dx + dy * dy + dz * dz > kDrawDist2)
+			continue;
 
-			// 正方行列（直交行列）を転置行列させて逆行列を作ってる版(速い)
-			mtxWorld.r[0].m128_f32[0] = mtxView.r[0].m128_f32[0];
-			mtxWorld.r[0].m128_f32[1] = mtxView.r[1].m128_f32[0];
-			mtxWorld.r[0].m128_f32[2] = mtxView.r[2].m128_f32[0];
+		XMMATRIX mtxWorld = mtxBillboard;
 
-			mtxWorld.r[1].m128_f32[0] = mtxView.r[0].m128_f32[1];
-			mtxWorld.r[1].m128_f32[1] = mtxView.r[1].m128_f32[1];
-			mtxWorld.r[1].m128_f32[2] = mtxView.r[2].m128_f32[1];
+		const XMFLOAT3 scl = g_aItem[i].GetScale();
+		XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
+		mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
-			mtxWorld.r[2].m128_f32[0] = mtxView.r[0].m128_f32[2];
-			mtxWorld.r[2].m128_f32[1] = mtxView.r[1].m128_f32[2];
-			mtxWorld.r[2].m128_f32[2] = mtxView.r[2].m128_f32[2];
+		XMMATRIX mtxTrans = XMMatrixTranslation(rp.x, rp.y, rp.z);
+		mtxWorld = XMMatrixMultiply(mtxWorld, mtxTrans);
 
+		SetWorldMatrix(&mtxWorld);
+		SetMaterial(g_aItem[i].GetMaterial());
 
-			// スケールを反映
-			XMFLOAT3 scl = g_aItem[i].GetScale();
-			mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
-			mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
-
-			// 移動を反映
-			XMFLOAT3 pos = g_aItem[i].GetRenderPosition();
-			mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
-			mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
-
-			// ワールドマトリックスの設定
-			SetWorldMatrix(&mtxWorld);
-
-			SetMaterial(g_aItem[i].GetMaterial());
-
-
-			// ItemDatabaseから得たテクスチャで描画
-			int texID = g_aItem[i].GetItem().GetID();
-			if (g_ItemTextures[texID]) {
-				GetDeviceContext()->PSSetShaderResources(0, 1, &g_ItemTextures[texID]);
-				GetDeviceContext()->Draw(4, 0);
-			}
+		int texID = g_aItem[i].GetItem().GetID();
+		ID3D11ShaderResourceView* srv = (texID >= 0 && texID < ITEM_ID_MAX) ? g_ItemTextures[texID] : nullptr;
+		if (srv && srv != lastSRV) {
+			GetDeviceContext()->PSSetShaderResources(0, 1, &srv);
+			lastSRV = srv;
 		}
+
+		GetDeviceContext()->Draw(4, 0);
 	}
 }
-
 
 
 //
