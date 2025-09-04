@@ -145,6 +145,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="boundingBoxDebug.h" />
+    <ClInclude Include="bug.h" />
     <ClInclude Include="bullet.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="collision.h" />
@@ -442,6 +443,7 @@
     <ClInclude Include="FBXmodel.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="game1.h" />
+    <ClInclude Include="ghost.h" />
     <ClInclude Include="imconfig.h" />
     <ClInclude Include="imgui.h" />
     <ClInclude Include="imgui_impl_dx11.h" />
@@ -471,6 +473,7 @@
     <ClInclude Include="shaderManager.h" />
     <ClInclude Include="shadow.h" />
     <ClInclude Include="sound.h" />
+    <ClInclude Include="spider.h" />
     <ClInclude Include="sprite.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="title.h" />
@@ -478,6 +481,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="boundingBoxDebug.cpp" />
+    <ClCompile Include="bug.cpp" />
     <ClCompile Include="bullet.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="collision.cpp" />
@@ -489,6 +493,7 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="game1.cpp" />
     <ClCompile Include="GameUI.cpp" />
+    <ClCompile Include="ghost.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
@@ -516,6 +521,7 @@
     <ClCompile Include="shaderManager.cpp" />
     <ClCompile Include="shadow.cpp" />
     <ClCompile Include="sound.cpp" />
+    <ClCompile Include="spider.cpp" />
     <ClCompile Include="sprite.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="title.cpp" />
