@@ -61,7 +61,10 @@ int Min2(int a, int b) {
 }
 
 static float g_WebEffectTimer = 0.0f;
-static BOOL g_BugEffectActive = FALSE;
+
+BOOL g_BugEffectActive = FALSE;
+float bugEffectTimer = 0.0f;
+
 
 //=============================================================================
 // 初期化処理
@@ -142,6 +145,18 @@ void UpdateGameUI(void)
 		if (g_WebEffectTimer < 0.0f) g_WebEffectTimer = 0.0f;
 	}
 
+	if (g_BugEffectActive == TRUE)
+	{
+		bugEffectTimer += 1.0f / 60.0f;
+
+		if (bugEffectTimer >= 2.0f)
+		{
+			GetPlayer()->HP -= 1;
+			if (GetPlayer()->HP < 0) GetPlayer()->HP = 0;
+
+			bugEffectTimer = 0.0f;
+		}
+	}
 
 #ifdef _DEBUG	// デバッグ情報を表示する
 	//char *str = GetDebugStr();
@@ -353,25 +368,13 @@ void ShowWebEffect(float time)
 //=============================================================================
 // 肉虫の効果（画面に表示
 //=============================================================================
-void ShowBugEffect(BugEnemy* enemy)
+void ShowBugEffect()
 {
-	if (!enemy) return;
-
-	if (!enemy->IsBugEffectActive())
-	{
-		enemy->SetBugEffectVisible(true);
-	}
 	g_BugEffectActive = TRUE;
 }
 
-void HideBugEffect(BugEnemy* enemy)
+void HideBugEffect()
 {
-	if (!enemy) return;
-
-	if (enemy->IsBugEffectActive())
-	{
-		enemy->SetBugEffectVisible(false);
-	}
 	g_BugEffectActive = FALSE;
 }
 

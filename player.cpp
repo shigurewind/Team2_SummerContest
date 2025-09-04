@@ -359,10 +359,9 @@ void PLAYER::HandleInput()
 
 			enemy->SetUsed(false);
 
-			if (auto bug = dynamic_cast<BugEnemy*>(enemy)) {
-				HideBugEffect(bug);
-			}
+			
 		}
+		HideBugEffect();
 
 	}
 

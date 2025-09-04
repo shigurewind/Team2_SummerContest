@@ -11,7 +11,8 @@
 // マクロ定義
 //*****************************************************************************
 
-
+extern BOOL g_BugEffectActive;
+extern float bugEffectTimer;
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -29,8 +30,8 @@ void DrawHP();
 void DrawAmmoUI(void);
 
 void ShowWebEffect(float time);
-void ShowBugEffect(BugEnemy* enemy);
-void HideBugEffect(BugEnemy* enemy);
+void ShowBugEffect();
+void HideBugEffect();
 
 
 void DrawItemSlot(void);

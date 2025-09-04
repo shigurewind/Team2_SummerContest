@@ -477,9 +477,9 @@ void InitEnemy() {
 	for (int i = 0; i < ENEMY_MAX; ++i) {
 
 		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
-		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
-		//EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
-		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
+		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
+		EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
+		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
 	}
 }
@@ -1081,20 +1081,11 @@ void BugEnemy::Update()
 	//UŒ‚s‚¤”ÍˆÍ
 	if (distSq < range * range)
 	{
-		ShowBugEffect(this);
+		ShowBugEffect();
+		use = FALSE;
 
-		bugEffectTimer += 1.0f / 60.0f;
-
-		if (bugEffectTimer >= 2.0f)
-		{
-			GetPlayer()->HP -= 1;
-			if (GetPlayer()->HP < 0) GetPlayer()->HP = 0;
-
-			bugEffectTimer = 0.0f;
-		}
 	}
 
-	if (bugEffectVisible) return;
 	BULLET* bullet = GetBullet();
 	//’e‚Æ“–‚½‚è”»’èH
 	for (int i = 0; i < MAX_BULLET; i++)
@@ -1121,15 +1112,7 @@ void BugEnemy::Update()
 void BugEnemy::Draw()
 {
 	if (!use || !texture || !g_VertexBufferEnemy) return;
-#ifdef _DEBUG
 
-	if (IsBugEffectActive()) {
-		PrintDebugProc("Bug effect is active! Enemy will not draw.\n");
-		return;
-	}
-#endif
-
-	if (IsBugEffectActive()) return;
 
 	SetLightEnable(FALSE);
 

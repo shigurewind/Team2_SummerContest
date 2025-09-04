@@ -163,8 +163,6 @@ public:
 	void NormalMovement() override;
 	void Attack() override;
 
-	bool IsBugEffectActive() const { return bugEffectVisible; }
-	void SetBugEffectVisible(bool visible) { bugEffectVisible = visible; }
 
 private:
 	ID3D11ShaderResourceView* texture;
@@ -191,8 +189,6 @@ private:
 	bool isAttacking;
 	float attackFrameTimer;
 
-	bool bugEffectVisible = false;
-	float bugEffectTimer = 0.0f;
 
 
 };
