@@ -373,7 +373,7 @@ void UpdateItem()
 
 		g_aItem[i].Update();
 
-
+	}
 }
 
 
