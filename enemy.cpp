@@ -21,7 +21,8 @@
 #include <cstdlib>
 #include <ctime>
 
-
+#include <algorithm> 
+#include <cmath> 
 
 
 //*****************************************************************************
@@ -89,6 +90,37 @@ void BaseEnemy::UnloadBloodTexture()
 		s_BloodTexture = nullptr;
 	}
 }
+
+
+void BaseEnemy::ApplyKnockback(const XMFLOAT3& dirXZ, float strength, float duration)
+{
+	m_knockVelXZ.x += dirXZ.x * strength;
+	m_knockVelXZ.z += dirXZ.z * strength;
+	m_knockTime = max(m_knockTime, duration);
+}
+void BaseEnemy::UpdateKnockback(float dt)
+{
+	if (m_knockTime <= 0.0f) return;
+
+	const float damping = 2.0f;
+	float damp = min(damping * dt, 0.95f);
+	m_knockVelXZ.x *= (1.0f - damp);
+	m_knockVelXZ.z *= (1.0f - damp);
+
+	XMFLOAT3 p = GetPosition();
+	p.x += m_knockVelXZ.x * dt;
+	p.z += m_knockVelXZ.z * dt;
+
+	SetPosition(p);
+
+	m_knockTime -= dt;
+
+	if ((m_knockVelXZ.x * m_knockVelXZ.x + m_knockVelXZ.z * m_knockVelXZ.z) < 0.05f) {
+		m_knockVelXZ = { 0,0,0 };
+		m_knockTime = 0.0f;
+	}
+}
+
 
 SpiderEnemy::SpiderEnemy() :
 	texture(nullptr), width(50.0f), height(50.0f)
@@ -294,7 +326,7 @@ void SpiderEnemy::Update() {
 
 
 	}
-
+	UpdateKnockback(1.0f / 60.0f);
 
 
 #ifdef _DEBUG
@@ -864,7 +896,7 @@ void GhostEnemy::Update()
 
 	}
 
-
+	UpdateKnockback(1.0f / 60.0f);
 
 #ifdef _DEBUG
 

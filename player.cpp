@@ -21,6 +21,8 @@
 #include "enemy.h"
 #include "inputManager.h"
 #include "GameUI.h"
+#include "attackeffect.h"
+#include "blood.h"
 
 //*****************************************************************************
 // É}ÉNÉçíËã`	
@@ -86,6 +88,65 @@ void SetLoadOnInit(bool enable) {
 int Min(int a, int b) {
 	return (a < b) ? a : b;
 }
+
+static bool RayAABB(
+	const DirectX::XMFLOAT3& ro,       
+	const DirectX::XMFLOAT3& rdN,      
+	const DirectX::XMFLOAT3& bmin,
+	const DirectX::XMFLOAT3& bmax,
+	float& tHit,
+	DirectX::XMFLOAT3& outNormal)      
+{
+	using namespace DirectX;
+
+	auto inv = [](float v) { return (fabsf(v) < 1e-8f) ? 1e30f : (1.0f / v); };
+
+	float tmin = -1e30f, tmax = 1e30f;
+	XMFLOAT3 nmin = { 0,0,0 }, nmax = { 0,0,0 };
+
+	{
+		float invX = inv(rdN.x);
+		float t1 = (bmin.x - ro.x) * invX;
+		float t2 = (bmax.x - ro.x) * invX;
+		float nx1 = -1.0f, nx2 = 1.0f; 
+
+		XMFLOAT3 n1 = { nx1,0,0 }, n2 = { nx2,0,0 };
+		if (t1 > t2) { std::swap(t1, t2); std::swap(n1, n2); }
+
+		if (t1 > tmin) { tmin = t1; nmin = n1; }
+		if (t2 < tmax) { tmax = t2; nmax = n2; }
+		if (tmin > tmax || tmax < 0.0f) return false;
+	}
+	// Y
+	{
+		float invY = inv(rdN.y);
+		float t1 = (bmin.y - ro.y) * invY;
+		float t2 = (bmax.y - ro.y) * invY;
+		XMFLOAT3 n1 = { 0,-1,0 }, n2 = { 0,1,0 };
+		if (t1 > t2) { std::swap(t1, t2); std::swap(n1, n2); }
+
+		if (t1 > tmin) { tmin = t1; nmin = n1; }
+		if (t2 < tmax) { tmax = t2; nmax = n2; }
+		if (tmin > tmax || tmax < 0.0f) return false;
+	}
+	// Z
+	{
+		float invZ = inv(rdN.z);
+		float t1 = (bmin.z - ro.z) * invZ;
+		float t2 = (bmax.z - ro.z) * invZ;
+		XMFLOAT3 n1 = { 0,0,-1 }, n2 = { 0,0,1 };
+		if (t1 > t2) { std::swap(t1, t2); std::swap(n1, n2); }
+
+		if (t1 > tmin) { tmin = t1; nmin = n1; }
+		if (t2 < tmax) { tmax = t2; nmax = n2; }
+		if (tmin > tmax || tmax < 0.0f) return false;
+	}
+
+	tHit = (tmin >= 0.0f) ? tmin : tmax;  
+	outNormal = (tmin >= 0.0f) ? nmin : nmax;
+	return (tHit >= 0.0f);
+}
+
 
 //=============================================================================
 // èâä˙âªèàóù
@@ -345,7 +406,7 @@ void PLAYER::HandleInput()
 		PlayMeleeAnimation();
 		//enemy 
 
-		auto& enemies = GetEnemies();
+		/*auto& enemies = GetEnemies();
 		XMFLOAT3 p = GetPosition();
 		for (auto enemy : enemies) {
 			if (!enemy->IsUsed()) continue;
@@ -358,8 +419,55 @@ void PLAYER::HandleInput()
 
 
 			enemy->SetUsed(false);
+		}*/
+		CAMERA* cam = GetCamera();
+		XMFLOAT3 forward = { sinf(cam->rot.y), 0.0f, cosf(cam->rot.y) };
 
-			
+		AttackContext ctx{};
+		ctx.origin = GetPosition();
+		ctx.forward = forward;
+		ctx.radius = 120.0f;
+		ctx.coneDeg = 120.0f;
+		ctx.strength = 150.0f;
+		ctx.duration = 0.5f;
+
+		ApplyMeleeKnockback(ctx);
+
+		{
+			auto& enemies = GetEnemies();
+			XMFLOAT3 p = GetPosition();
+
+			CAMERA* cam = GetCamera();
+			XMFLOAT3 forward = { sinf(cam->rot.y), 0.0f, cosf(cam->rot.y) };
+
+			const float bleedRadius = 120.0f;
+			const float halfConeRad = (120.0f * 0.5f) * (3.14159265f / 180.0f);
+			const float cosLimit = cosf(halfConeRad);
+
+			float fLen = sqrtf(forward.x * forward.x + forward.z * forward.z);
+			if (fLen > 1e-5f) { forward.x /= fLen; forward.z /= fLen; }
+
+			for (auto enemy : enemies) {
+				if (!enemy || !enemy->IsUsed()) continue;
+
+				XMFLOAT3 ePos = enemy->GetPosition();
+				float dx = ePos.x - p.x;
+				float dz = ePos.z - p.z;
+				float dist = sqrtf(dx * dx + dz * dz);
+				if (dist > bleedRadius) continue;
+
+				float dirx = dx, dirz = dz;
+				float dLen = sqrtf(dirx * dirx + dirz * dirz);
+				if (dLen > 1e-5f) { dirx /= dLen; dirz /= dLen; }
+				float dot = dirx * forward.x + dirz * forward.z;
+				if (dot < cosLimit) continue;
+
+				XMFLOAT3 hitNormal = { dirx, 0.15f, dirz };
+
+				EffectManager::CreateBloodSplatter(ePos, hitNormal, hitNormal, 1.5f);
+				EffectManager::ApplyEffects();
+
+			}
 		}
 		HideBugEffect();
 
