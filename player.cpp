@@ -86,8 +86,8 @@ static int RequiredPartForBullet(int bullet) {
 	}
 }
 
-static bool IsFireTypeUnlocked(class Inventory* inv, WeaponType w);
-static bool IsAmmoUnlocked(class Inventory* inv, BulletType b);
+static bool IsFireTypeUnlocked(const class Inventory* inv, WeaponType w);
+static bool IsAmmoUnlocked(const class Inventory* inv, BulletType b);
 
 
 // Init時にロードするかどうかの内部フラグ（既定 false）
@@ -149,6 +149,29 @@ void PLAYER::Init()
 
 	meleeCDTime = 0.8f;
 
+
+	//試しにリボルバーとノーマル弾だけ持っている状態
+
+	Inventory* inv = GetPlayerInventory();
+	if (inv)
+	{
+		// まだ未所持なら、該当パーツをインベントリへ追加する（重複追加を避ける）
+		// ・武器種（FireType）＝リボルバー
+		if (!inv->Has(ItemCategory::WeaponPart_FireType, PART_REVOLVER))  // 所持確認
+		{
+			inv->AddItem(CreateItemFromID(PART_REVOLVER));                 // 追加
+		}
+
+		// ・弾種（Ammo）＝ノーマル弾
+		if (!inv->Has(ItemCategory::WeaponPart_Ammo, PART_NORMAL_AMMO))    // 所持確認
+		{
+			inv->AddItem(CreateItemFromID(PART_NORMAL_AMMO));              // 追加
+		}
+	}
+
+
+
+	//初期選択武器、弾
 	currentWeapon = WEAPON_REVOLVER;
 	currentBullet = BULLET_NORMAL;
 
@@ -387,41 +410,23 @@ void PLAYER::HandleInput()
 	}
 
 
-	// キーボードの1　"武器の切り替え"（解放済みだけに限定）
+	// --- 武器の切り替え（UIの選択だけ。ロック判定はしない） ---
 	if (GetKeyboardTrigger(DIK_1))
 	{
-		Inventory* inv = GetPlayerInventory();
-
-		// 回す順序を配列で管理
-		WeaponType order[3] = { WEAPON_REVOLVER, WEAPON_SHOTGUN, WEAPON_ROCKET_LAUNCHER };
-
-		// 現在位置を探す
-		int idx = 0;
-		for (int i = 0; i < 3; ++i) if (order[i] == currentWeapon) { idx = i; break; }
-
-		// 次に進めつつ、解放されているものを探す（最大3回）
-		for (int step = 1; step <= 3; ++step) {
-			int ni = (idx + step) % 3;
-			if (IsFireTypeUnlocked(inv, order[ni])) {
-				currentWeapon = order[ni];
-				break;
-			}
+		switch (currentWeapon)
+		{
+		case WEAPON_REVOLVER:         currentWeapon = WEAPON_SHOTGUN;         break;
+		case WEAPON_SHOTGUN:          currentWeapon = WEAPON_ROCKET_LAUNCHER; break;
+		case WEAPON_ROCKET_LAUNCHER:  currentWeapon = WEAPON_REVOLVER;        break;
 		}
 	}
-
-	// （差し替え）キーボードの2　弾の切り替え（解放済みだけに限定）
+	// --- 弾の切り替え（UIの選択だけ。ロック判定はしない） ---
 	if (GetKeyboardTrigger(DIK_2))
 	{
-		Inventory* inv = GetPlayerInventory();
-
-		// 優先順: Normal -> Fire -> Normal ...
-		BulletType candidate = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
-
-		// 候補が解放済みなら切替、ダメなら現状維持
-		if (IsAmmoUnlocked(inv, candidate)) {
-			currentBullet = candidate;
-		}
+		currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
 	}
+
+
 
 }
 
@@ -811,7 +816,7 @@ static bool HasItemById(const std::vector<Item>& list, int id) {
 }
 
 // ★追加: 武器（FireType）のアンロック判定
-static bool IsFireTypeUnlocked(Inventory* inv, WeaponType w) {
+static bool IsFireTypeUnlocked(const Inventory* inv, WeaponType w) {
 	// Inventory 内の FireType パーツ一覧
 	const auto& parts = inv->GetFireTypeParts(); // vector<Item>
 	switch (w) {
@@ -823,7 +828,7 @@ static bool IsFireTypeUnlocked(Inventory* inv, WeaponType w) {
 }
 
 // ★追加: 弾（Ammo）のアンロック判定
-static bool IsAmmoUnlocked(Inventory* inv, BulletType b) {
+static bool IsAmmoUnlocked(const Inventory* inv, BulletType b) {
 	const auto& parts = inv->GetAmmoParts(); // vector<Item>
 	switch (b) {
 	case BULLET_NORMAL: return HasItemById(parts, PART_NORMAL_AMMO);
@@ -833,4 +838,17 @@ static bool IsAmmoUnlocked(Inventory* inv, BulletType b) {
 }
 
 
+bool PLAYER::IsWeaponUnlocked(int weapon) const
+{
+	return IsFireTypeUnlocked(&inventory, static_cast<WeaponType>(weapon));
+}
 
+bool PLAYER::IsBulletUnlocked(int bullet) const
+{
+	return IsAmmoUnlocked(&inventory, static_cast<BulletType>(bullet));
+}
+bool PLAYER::IsCurrentLoadoutUsable() const
+{
+	return IsWeaponUnlocked(static_cast<int>(currentWeapon))
+		&& IsBulletUnlocked(static_cast<int>(currentBullet));
+}
