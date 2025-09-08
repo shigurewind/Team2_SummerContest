@@ -17,7 +17,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(9)		// テクスチャの数
+#define TEXTURE_MAX					(10)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -41,6 +41,7 @@ static char* g_TexturName[TEXTURE_MAX] = {
 	"data/2Dpicture/UI/item_slot.png",
 	"data/TEXTURE/rocket_launcher.png",
 	"data/2Dpicture/enemy/bug02.png",
+	"data/TEXTURE/cross.png",
 
 
 
@@ -310,7 +311,23 @@ void DrawAmmoUI(void)
 	SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 90, 60, 0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
-	// === 弾数表示：総弾数のみ ===
+	// === 追加：未所持なら「武器アイコン」に × を重ねる ===
+	{
+		const bool weaponUnlocked = player->IsWeaponUnlocked((int)GetCurrentWeaponType());
+		if (!weaponUnlocked)
+		{
+			MATERIAL m = {};
+			m.Diffuse = XMFLOAT4(1, 1, 1, 0.9f); // 半透明
+			SetMaterial(m);
+
+			// cross.png（9枚目＝index 8）を武器アイコンと同じ位置に重ね描き
+			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[9]);
+			SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 90, 60, 0, 0, 1, 1);
+			GetDeviceContext()->Draw(4, 0);
+		}
+	}
+
+	// === 弾数表示：総弾数のみ（現状維持） ===
 	int currentAmmo = (GetCurrentBulletType() == BULLET_NORMAL)
 		? player->ammoNormal
 		: player->ammoFire;
@@ -353,8 +370,8 @@ void DrawAmmoUI(void)
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[0]); // number16x32.png
 		GetDeviceContext()->Draw(4, 0);
 	}
-}
 
+}
 
 
 //=============================================================================

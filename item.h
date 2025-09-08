@@ -100,10 +100,13 @@ private:
 enum ItemID
 {
 	//弾の種類を決めるパーツ
+	PART_NORMAL_AMMO,
 	PART_FIRE,
 
 	//打ち方を決めるパーツ
+	PART_REVOLVER,
 	PART_SHUTGUN,
+	PART_ROCKET,
 
 	//消耗品
 	ITEM_APPLE,

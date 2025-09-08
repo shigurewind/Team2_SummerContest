@@ -97,6 +97,41 @@ bool Inventory::RemoveItem(int itemId, ItemCategory category) {
 }
 
 
+bool Inventory::Has(ItemCategory category, int itemId) const {
+	// 対象の格納先ベクタを選ぶ（プロジェクトのメンバ名に合わせて）
+	const std::vector<Item>* target = nullptr;
+	switch (category) {
+	case ItemCategory::WeaponPart_Ammo:     target = &ammoParts;      break;
+	case ItemCategory::WeaponPart_FireType:   target = &fireTypeParts;  break; // ← "Wepon" つづり注意
+	case ItemCategory::Consumable:          target = &consumables;    break;
+	default: return false;
+	}
+	if (!target) return false;
+
+	// 同じ ID が見つかったら所持しているとみなす（Count>0 なら）
+	for (const auto& it : *target) {
+		if (it.GetID() == itemId && it.GetCount() > 0) return true;
+	}
+	return false;
+}
+
+int Inventory::Count(ItemCategory category, int itemId) const {
+	const std::vector<Item>* target = nullptr;
+	switch (category) {
+	case ItemCategory::WeaponPart_Ammo:     target = &ammoParts;      break;
+	case ItemCategory::WeaponPart_FireType:   target = &fireTypeParts;  break;
+	case ItemCategory::Consumable:          target = &consumables;    break;
+	default: return 0;
+	}
+	if (!target) return 0;
+
+	int total = 0;
+	for (const auto& it : *target) {
+		if (it.GetID() == itemId) total += it.GetCount();
+	}
+	return total;
+}
+
 
 const std::vector<Item>& Inventory::GetAmmoParts() const {
 	return ammoParts;
