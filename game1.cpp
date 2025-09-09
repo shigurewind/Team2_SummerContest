@@ -79,7 +79,7 @@ HRESULT InitGame1(void)
 	InitBlood();
 
 
-	
+
 
 	// 弾の初期化
 	InitBullet();
@@ -91,7 +91,7 @@ HRESULT InitGame1(void)
 	// パーティクルの初期化
 	InitParticle();
 
-	InitFBXTestModel();
+	//InitFBXTestModel();
 
 	InitItem();
 
@@ -171,14 +171,14 @@ void UpdateGame1(void)
 
 	if (g_bPause1 == TRUE)
 		return;
-	
+
 	if (IsTutorialShowing())
 	{
 		if (IsMouseLeftTriggered())
 		{
-			SetTutorialShowing(false); 
+			SetTutorialShowing(false);
 		}
-		return;  
+		return;
 	}
 	// 地面処理の更新
 	//UpdateMeshField();
@@ -212,7 +212,7 @@ void UpdateGame1(void)
 
 	UpdateItem();
 
-	
+
 }
 
 //=============================================================================
@@ -240,7 +240,7 @@ void DrawGame01(void)
 	// 弾の描画処理
 	DrawBullet();
 
-	
+
 	// パーティクルの描画処理
 	DrawParticle();
 
@@ -264,7 +264,7 @@ void DrawGame01(void)
 	// UIの描画処理
 	DrawGameUI();
 	DrawOverlay2D();
-	
+
 
 
 	// ライティングを有効に
