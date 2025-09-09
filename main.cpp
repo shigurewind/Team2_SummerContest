@@ -10,6 +10,7 @@
 #include "input.h"
 #include "camera.h"
 #include "sound.h"
+#include "sound3D.h"
 #include "model.h"
 #include "player.h"
 #include "enemy.h"
@@ -287,6 +288,8 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	// サウンドの初期化
 	InitSound(hWnd);
 
+	// サウンドの初期化
+	InitSound3D(hWnd);
 
 
 	SetLightEnable(TRUE);
@@ -333,6 +336,9 @@ void Uninit(void)
 
 	// サウンド終了処理
 	UninitSound();
+
+	// サウンド終了処理
+	UninitSound3D();
 
 	// カメラの終了処理
 	UninitCamera();
@@ -403,6 +409,8 @@ void Update(void)
 
 	// カメラ更新
 	UpdateCamera();
+
+	UpdateSound3D();
 
 	// モードによって処理を分ける
 	switch (g_Mode)

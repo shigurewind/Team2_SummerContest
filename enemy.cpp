@@ -18,6 +18,8 @@
 #include "collision.h"
 #include "GameUI.h"
 #include "item.h"
+#include "sound.h"
+#include "sound3D.h"
 #include <cstdlib>
 #include <ctime>
 
@@ -478,7 +480,7 @@ void InitEnemy() {
 
 		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
 		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
-		EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
+		//EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
 		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
 	}
@@ -1054,6 +1056,14 @@ void BugEnemy::Init()
 void BugEnemy::Update()
 {
 	if (!use) return;
+
+
+	XMFLOAT3 playerPos = GetPlayer()->GetPosition();
+
+	XMFLOAT3 testPos = playerPos;
+	testPos.x += 10.0f;
+
+	PlaySound3D(0, testPos);
 
 	frameCounter++;
 	if (frameCounter >= frameInterval) {

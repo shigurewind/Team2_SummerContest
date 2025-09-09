@@ -40,6 +40,14 @@ void DrawDebugProc(void)
 //=============================================================================
 void PrintDebugProc(char *fmt,...)
 {
+	//FILE* fp = nullptr;
+	//fopen_s(&fp, "debug.log", "a");
+	//if (fp)
+	//{
+	//	fprintf(fp, "%s\n", fmt);
+	//	fclose(fp);
+	//}
+
 #if 0
 	long *pParam;
 	static char aBuf[256];
@@ -49,6 +57,8 @@ void PrintDebugProc(char *fmt,...)
 									pParam[5], pParam[6], pParam[7], pParam[8],
 									pParam[9], pParam[10], pParam[11], pParam[12]);
 #else
+
+
 	va_list list;			// ‰Â•Ïˆø”‚ğˆ—‚·‚éˆ×‚Ég—p‚·‚é•Ï”
 	char *pCur;
 	char aBuf[256]={"\0"};
