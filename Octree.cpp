@@ -7,6 +7,12 @@
 
 using namespace DirectX;
 
+static thread_local float    g_AABBTriLastDepth = 0.0f;
+static thread_local XMFLOAT3 g_AABBTriLastNormal = { 0,0,0 };
+
+
+float GetAABBvsTriangleLastDepth() { return g_AABBTriLastDepth; }
+XMFLOAT3 GetAABBvsTriangleLastNormal() { return g_AABBTriLastNormal; }
 
 static void CalcTriangleBounds(const TriangleData& tri, XMFLOAT3& minOut, XMFLOAT3& maxOut)
 {
@@ -191,25 +197,95 @@ void DeleteOctree(OctreeNode* node)
 	delete node;
 }
 
+static inline bool TriBoxOverlap(const XMFLOAT3& boxCenter, const XMFLOAT3& boxHalf,
+	const XMFLOAT3& v0, const XMFLOAT3& v1, const XMFLOAT3& v2)
+{
+	XMFLOAT3 tv0 = { v0.x - boxCenter.x, v0.y - boxCenter.y, v0.z - boxCenter.z };
+	XMFLOAT3 tv1 = { v1.x - boxCenter.x, v1.y - boxCenter.y, v1.z - boxCenter.z };
+	XMFLOAT3 tv2 = { v2.x - boxCenter.x, v2.y - boxCenter.y, v2.z - boxCenter.z };
+
+	XMFLOAT3 e0 = { tv1.x - tv0.x, tv1.y - tv0.y, tv1.z - tv0.z };
+	XMFLOAT3 e1 = { tv2.x - tv1.x, tv2.y - tv1.y, tv2.z - tv1.z };
+	XMFLOAT3 e2 = { tv0.x - tv2.x, tv0.y - tv2.y, tv0.z - tv2.z };
+
+	auto AXISTEST = [&](float a, float b, float fa, float fb, float v0a, float v0b, float v1a, float v1b, float v2a, float v2b, float ha, float hb)->bool {
+		float p0 = a * v0a - b * v0b;
+		float p1 = a * v1a - b * v1b;
+		float p2 = a * v2a - b * v2b;
+		float min = std::min(p0, std::min(p1, p2));
+		float max = std::max(p0, std::max(p1, p2));
+		float rad = fa * ha + fb * hb;
+		return !(min > rad || max < -rad);
+		};
+
+	float fe0x = fabsf(e0.x), fe0y = fabsf(e0.y), fe0z = fabsf(e0.z);
+	float fe1x = fabsf(e1.x), fe1y = fabsf(e1.y), fe1z = fabsf(e1.z);
+	float fe2x = fabsf(e2.x), fe2y = fabsf(e2.y), fe2z = fabsf(e2.z);
+
+	if (!AXISTEST(e0.z, e0.y, fe0z, fe0y, tv0.y, tv0.z, tv1.y, tv1.z, tv2.y, tv2.z, boxHalf.y, boxHalf.z)) return false; // X
+	if (!AXISTEST(e0.z, e0.x, fe0z, fe0x, tv0.x, tv0.z, tv1.x, tv1.z, tv2.x, tv2.z, boxHalf.x, boxHalf.z)) return false; // Y
+	if (!AXISTEST(e0.y, e0.x, fe0y, fe0x, tv0.x, tv0.y, tv1.x, tv1.y, tv2.x, tv2.y, boxHalf.x, boxHalf.y)) return false; // Z
+
+	if (!AXISTEST(e1.z, e1.y, fe1z, fe1y, tv0.y, tv0.z, tv1.y, tv1.z, tv2.y, tv2.z, boxHalf.y, boxHalf.z)) return false;
+	if (!AXISTEST(e1.z, e1.x, fe1z, fe1x, tv0.x, tv0.z, tv1.x, tv1.z, tv2.x, tv2.z, boxHalf.x, boxHalf.z)) return false;
+	if (!AXISTEST(e1.y, e1.x, fe1y, fe1x, tv0.x, tv0.y, tv1.x, tv1.y, tv2.x, tv2.y, boxHalf.x, boxHalf.y)) return false;
+
+	if (!AXISTEST(e2.z, e2.y, fe2z, fe2y, tv0.y, tv0.z, tv1.y, tv1.z, tv2.y, tv2.z, boxHalf.y, boxHalf.z)) return false;
+	if (!AXISTEST(e2.z, e2.x, fe2z, fe2x, tv0.x, tv0.z, tv1.x, tv1.z, tv2.x, tv2.z, boxHalf.x, boxHalf.z)) return false;
+	if (!AXISTEST(e2.y, e2.x, fe2y, fe2x, tv0.x, tv0.y, tv1.x, tv1.y, tv2.x, tv2.y, boxHalf.x, boxHalf.y)) return false;
+
+	auto FINDMINMAX = [](float a, float b, float c, float& minv, float& maxv) {
+		minv = std::min(a, std::min(b, c));
+		maxv = std::max(a, std::max(b, c));
+		};
+	float minv, maxv;
+	FINDMINMAX(tv0.x, tv1.x, tv2.x, minv, maxv); if (minv > boxHalf.x || maxv < -boxHalf.x) return false;
+	FINDMINMAX(tv0.y, tv1.y, tv2.y, minv, maxv); if (minv > boxHalf.y || maxv < -boxHalf.y) return false;
+	FINDMINMAX(tv0.z, tv1.z, tv2.z, minv, maxv); if (minv > boxHalf.z || maxv < -boxHalf.z) return false;
+
+	XMFLOAT3 n = {
+		e0.y * e1.z - e0.z * e1.y,
+		e0.z * e1.x - e0.x * e1.z,
+		e0.x * e1.y - e0.y * e1.x
+	};
+	float r = boxHalf.x * fabsf(n.x) + boxHalf.y * fabsf(n.y) + boxHalf.z * fabsf(n.z);
+	float s = tv0.x * n.x + tv0.y * n.y + tv0.z * n.z; 
+	return !(s > r || s < -r);
+}
+
 bool AABBvsTriangle(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
 	const XMFLOAT3& v0, const XMFLOAT3& v1, const XMFLOAT3& v2)
 {
-	XMFLOAT3 triMin, triMax;
-	triMin.x = std::min({ v0.x, v1.x, v2.x });
-	triMin.y = std::min({ v0.y, v1.y, v2.y });
-	triMin.z = std::min({ v0.z, v1.z, v2.z });
+	XMFLOAT3 center = { (boxMin.x + boxMax.x) * 0.5f,
+						(boxMin.y + boxMax.y) * 0.5f,
+						(boxMin.z + boxMax.z) * 0.5f };
+	XMFLOAT3 half = { (boxMax.x - boxMin.x) * 0.5f,
+						(boxMax.y - boxMin.y) * 0.5f,
+						(boxMax.z - boxMin.z) * 0.5f };
 
-	triMax.x = std::max({ v0.x, v1.x, v2.x });
-	triMax.y = std::max({ v0.y, v1.y, v2.y });
-	triMax.z = std::max({ v0.z, v1.z, v2.z });
+	bool overlap = TriBoxOverlap(center, half, v0, v1, v2);
 
-	bool overlap =
-		!(triMax.x < boxMin.x || triMin.x > boxMax.x ||
-			triMax.y < boxMin.y || triMin.y > boxMax.y ||
-			triMax.z < boxMin.z || triMin.z > boxMax.z);
+	using namespace DirectX;
+	XMVECTOR V0 = XMLoadFloat3(&v0);
+	XMVECTOR V1 = XMLoadFloat3(&v1);
+	XMVECTOR V2 = XMLoadFloat3(&v2);
+
+	XMVECTOR N = XMVector3Normalize(
+		XMVector3Cross(XMVectorSubtract(V1, V0),
+			XMVectorSubtract(V2, V1)));
+	XMStoreFloat3(&g_AABBTriLastNormal, N);
+
+	XMFLOAT3 n; XMStoreFloat3(&n, N);
+	XMFLOAT3 vc = { v0.x - center.x, v0.y - center.y, v0.z - center.z };
+	float r = half.x * fabsf(n.x) + half.y * fabsf(n.y) + half.z * fabsf(n.z);
+	float s = vc.x * n.x + vc.y * n.y + vc.z * n.z;
+	float pen = r - fabsf(s);
+
+	g_AABBTriLastDepth = (overlap && pen > 0.0f) ? pen : 0.0f;
 
 	return overlap;
 }
+
 
 bool AABBHitOctree(OctreeNode* node, const std::vector<TriangleData>& triangleList,
 	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
