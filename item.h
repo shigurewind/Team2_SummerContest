@@ -75,6 +75,11 @@ public:
 	void SetSleeping(bool s) { sleeping = s; }
 	bool IsSleeping() const { return sleeping; }
 
+	void SetHasLanded(bool b) { hasLanded = b; }
+	bool HasLanded() const { return hasLanded; }
+
+	void SnapToGroundIfPossible();
+
 private:
 	Item item;
 	XMFLOAT3 scl;
@@ -89,6 +94,8 @@ private:
 
 
 	bool sleeping = false;
+	int       sleepFrames = 0;
+
 	//“–‚½‚è”»’è
 	void ApplyCollision();
 	void ApplyFriction();// –€ŽC—Í

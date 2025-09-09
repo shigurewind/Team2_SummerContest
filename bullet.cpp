@@ -242,68 +242,112 @@ void SetRocketLauncherBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot)
 //=============================================================================
 void UpdateBullet(void)
 {
+
+    const float rocketGravity = -0.1f;
+    const float backEps = 0.1f;
+    const int   maxDepth = 6;
+    const int   minTris = 1;
+    const int   lod = 1;
+
     for (int i = 0; i < MAX_BULLET; i++)
     {
-        const float rocketGravity = -0.1f;
 
-        if (g_Bullet[i].use)
+
+        if (!g_Bullet[i].use) continue;
+        // ロケットランチャーの弾だけ重力をかける
+        if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
         {
-            // 次の位置を計算
-            XMFLOAT3 nextPos = {
-                g_Bullet[i].pos.x + g_Bullet[i].vel.x,
-                g_Bullet[i].pos.y + g_Bullet[i].vel.y,
-                g_Bullet[i].pos.z + g_Bullet[i].vel.z
-            };
+            g_Bullet[i].vel.y += rocketGravity;
+        }
 
-            // 弾のAABB（半径はsizeの半分）
-            float r = g_Bullet[i].size * 0.5f;
-            XMFLOAT3 boxMin = { nextPos.x - r, nextPos.y - r, nextPos.z - r };
-            XMFLOAT3 boxMax = { nextPos.x + r, nextPos.y + r, nextPos.z + r };
-
-            // 壁当たり判定
-            if (AABBHitOctree(GetWallTree(), GetWallTriangles(), boxMin, boxMax, 0, 5, 5))
-            {
-                if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
-                    // 直前に計算した nextPos を着弾点として爆発
-                    ApplyExplosionAt(nextPos);
-                }
-                g_Bullet[i].use = FALSE;
-                continue; // この弾の処理終了
-            }
-
-            // 床当たり判定
-            if (AABBHitOctree(GetFloorTree(), GetFloorTriangles(), boxMin, boxMax, 0, 5, 5))
-            {
-                if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
-                    ApplyExplosionAt(nextPos);
-                }
-                g_Bullet[i].use = FALSE;
-                continue;
-            }
-
-            // ロケットランチャーの弾だけ重力をかける
-            if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
-            {
-                g_Bullet[i].vel.y += rocketGravity;
-            }
-
-            // 位置更新
-            g_Bullet[i].pos = nextPos;
+        const XMFLOAT3 start = g_Bullet[i].pos;
+        const XMFLOAT3 step = g_Bullet[i].vel;
+        float tmax = Length3(step);
 
 
-            // 寿命処理
+        //speed=0=dead
+
+        if (tmax < 1e-6f) {
             g_Bullet[i].lifetime -= 1.0f;
-            if (g_Bullet[i].lifetime <= 0)
+            if (g_Bullet[i].lifetime <= 0) 
             {
                 g_Bullet[i].use = FALSE;
+                if (g_Bullet[i].isLoaded) { UnloadModel(&g_Bullet[i].model); g_Bullet[i].isLoaded = FALSE; }
+            }
+            continue;
+        }
 
-                if (g_Bullet[i].isLoaded)
-                {
-                    UnloadModel(&g_Bullet[i].model);
-                    g_Bullet[i].isLoaded = FALSE;
-                }
+        const XMFLOAT3 dirN = Normalize(step);
+
+        float hitDistWall = tmax;
+        float hitDistFloor = tmax;
+        XMFLOAT3 hitPosW, hitNorW;
+        XMFLOAT3 hitPosF, hitNorF;
+
+
+        bool hitWall = RayHitOctreeLOD(GetWallTree(), GetWallTriangles(),
+            start, step, &hitDistWall, &hitPosW, &hitNorW,
+            0, maxDepth, minTris, lod);
+
+        bool hitFloor = RayHitOctreeLOD(GetFloorTree(), GetFloorTriangles(),
+            start, step, &hitDistFloor, &hitPosF, &hitNorF,
+            0, maxDepth, minTris, lod);
+
+        bool hit = false;
+        float    hitDist = tmax;
+        XMFLOAT3 hitPos, hitNor;
+
+        if (hitWall && hitFloor) 
+        {
+
+            if (hitDistWall <= hitDistFloor) { hit = true; hitDist = hitDistWall;  hitPos = hitPosW; hitNor = hitNorW; }
+            else { hit = true; hitDist = hitDistFloor; hitPos = hitPosF; hitNor = hitNorF; }
+        }
+        else if (hitWall) 
+        {
+            hit = true; hitDist = hitDistWall;  hitPos = hitPosW; hitNor = hitNorW;
+        }
+        else if (hitFloor) 
+        {
+            hit = true; hitDist = hitDistFloor; hitPos = hitPosF; hitNor = hitNorF;
+        }
+
+
+        if (!hit) 
+        {
+            g_Bullet[i].pos.x += step.x;
+            g_Bullet[i].pos.y += step.y;
+            g_Bullet[i].pos.z += step.z;
+        }
+        else 
+        {
+            g_Bullet[i].pos = XMFLOAT3(
+                hitPos.x - dirN.x * backEps,
+                hitPos.y - dirN.y * backEps,
+                hitPos.z - dirN.z * backEps
+            );
+
+
+            if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+                ApplyExplosionAt(hitPos);
+            }
+            g_Bullet[i].use = FALSE;
+
+            if (g_Bullet[i].isLoaded) { UnloadModel(&g_Bullet[i].model); g_Bullet[i].isLoaded = FALSE; }
+            continue;
+        }
+
+        g_Bullet[i].lifetime -= 1.0f;
+
+        if (g_Bullet[i].lifetime <= 0)
+        {
+            g_Bullet[i].use = FALSE;
+            if (g_Bullet[i].isLoaded) {
+                UnloadModel(&g_Bullet[i].model);
+                g_Bullet[i].isLoaded = FALSE;
             }
         }
+        
     }
 }
 //=============================================================================

@@ -78,24 +78,52 @@ void ITEM_OBJ::Update()
 	if (!use) return;
 
 	if (sleeping) {
-		const float wakeDist = 120.0f;
+		static int sTick = 0; ++sTick;
+
+		const float wakeDist = 120.0f;     
+		const float pickupDist = 60.0f;    
+		const float wakeDist2 = wakeDist * wakeDist;
+		const float pickupDist2 = pickupDist * pickupDist;
+
 		XMFLOAT3 pp = GetPlayer()->GetPosition();
 		float dx = pp.x - pos.x, dy = pp.y - pos.y, dz = pp.z - pos.z;
-		if ((dx * dx + dy * dy + dz * dz) < wakeDist * wakeDist) sleeping = false;
+		float d2 = dx * dx + dy * dy + dz * dz;
 
-		if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
-			Inventory* inv = GetPlayerInventory();
-			switch (item.GetCategory()) {
-			case ItemCategory::WeaponPart_Ammo:
-			case ItemCategory::WeaponPart_FireType:
-			case ItemCategory::Consumable:
-				if (inv->AddItem(item)) use = false;
-				break;
-			case ItemCategory::InstantEffect:
-				ApplyInstantItemEffect(item.GetID());
-				use = false;
-				break;
-			default: break;
+		if (d2 > wakeDist2) {
+			renderPos = pos;
+			if (hasLanded) {
+				float t = g_ItemGlobalTime + timeOffset;
+				renderPos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
+			}
+			return;
+		}
+
+		uintptr_t ph = reinterpret_cast<uintptr_t>(this);
+		if (((sTick + (int)(ph & 3)) & 3) != 0) {
+			renderPos = pos;
+			if (hasLanded) {
+				float t = g_ItemGlobalTime + timeOffset;
+				renderPos.y = basePosY + sinf(t) * ITEM_FLOAT_OFFSET;
+			}
+			return;
+		}
+
+		if (d2 < pickupDist2) {
+			if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
+				Inventory* inv = GetPlayerInventory();
+				switch (item.GetCategory()) {
+				case ItemCategory::WeaponPart_Ammo:
+				case ItemCategory::WeaponPart_FireType:
+				case ItemCategory::Consumable:
+					if (inv->AddItem(item)) use = false;
+					break;
+				case ItemCategory::InstantEffect:
+					ApplyInstantItemEffect(item.GetID());
+					use = false;
+					break;
+				default: break;
+				}
+				if (!use) return; 
 			}
 		}
 
@@ -241,6 +269,24 @@ void ITEM_OBJ::HandleGroundCheck()
 	}
 }
 
+
+void ITEM_OBJ::SnapToGroundIfPossible()
+{
+	XMFLOAT3 rayStart = pos;   rayStart.y += 100.0f;
+	XMFLOAT3 rayDir = { 0.0f, -500.0f, 0.0f };
+	float hitDistance = 500.0f;
+	XMFLOAT3 hitPos, hitNormal;
+
+	if (CheckGroundCollisionLOD(rayStart, rayDir, &hitDistance, &hitPos, &hitNormal, this))
+	{
+		pos.y = hitPos.y; 
+		basePosY = hitPos.y; 
+		isGround = true; 
+		hasLanded = true; 
+		renderPos = pos; 
+	}
+}
+
 //bug enemy@”š”­ŠÖ”
 void ITEM_OBJ::ExplodeBug()
 {
@@ -363,6 +409,8 @@ void UpdateItem()
 	g_ItemGlobalTime += ITEM_FLOAT_FREQUENCE / 60.0f;
 	static int frame = 0; ++frame;
 
+	const XMFLOAT3 pp = GetPlayer()->GetPosition();
+
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
 		if (!g_aItem[i].IsUsed()) continue;
@@ -370,9 +418,11 @@ void UpdateItem()
 		if (TooFarFromPlayer(g_aItem[i].GetPosition(), 300.0f)) {
 			if ((frame & 3) != 0) continue;
 		}
+		else {
+			if (((frame + i) & 1) != 0) continue;
+		}
 
 		g_aItem[i].Update();
-
 	}
 }
 
@@ -393,6 +443,8 @@ int SpawnItem(XMFLOAT3 pos, int itemID)
 			g_aItem[i].SetBasePosY(pos.y);
 			g_aItem[i].SetSleeping(true);
 			g_aItem[i].SetVelocity({ 0,0,0 });
+
+			g_aItem[i].SnapToGroundIfPossible();
 
 			if (itemID == ITEM_BUG)
 				g_aItem[i].bugTimer = 0.0f;
