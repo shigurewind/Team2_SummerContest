@@ -25,8 +25,8 @@
 // 弾の基本データ構造（属性など） //追加箇所
 //=============================================================================
 //                                  種類　　　　速さ  DMG  scl  lifetime    　　モデル　　　　　　　　RGB
-BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
-BulletData bulletData_Fire = { BULLET_FIRE,     8.0f, 20, 0.6f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
+BulletData bulletData_Normal = { BULLET_NORMAL,  40.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
+BulletData bulletData_Fire = { BULLET_FIRE,     15.0f, 20, 0.6f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
 
 
 // 武器インスタンス 
@@ -42,13 +42,15 @@ BULLET g_Bullet[MAX_BULLET];
 //==========================================================================
 
 
-namespace {
+namespace 
+{
     // 爆発チューニング用パラメータ（必要に応じて調整）
     constexpr float kExplosionRadius = 200.0f;   // 爆風半径
     constexpr float kExplosionForce = 20.0f;   // 吹き飛ばし強さ
     constexpr float kUpwardBoost = 0.6f;   // 上向き成分の強さ（ちょっと浮かせる）
 
-    inline float Length3(const XMFLOAT3& v) {
+    inline float Length3(const XMFLOAT3& v) 
+    {
         return std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
     }
     inline XMFLOAT3 Normalize(const XMFLOAT3& v) {
@@ -105,6 +107,12 @@ namespace {
         }
     }
 }
+
+// ===== ロケット弾の軌道チューニング =====
+constexpr float kRocketRefSpeed = 70.0f;   // “元のロケラン速度”の基準（あなたの初期値）
+constexpr float kRocketBaseDrop = -3.00f;  // 基準速度のときに毎フレーム落下させる量
+constexpr float kRocketDragXY = 0.03f;   // 水平ドラッグ（前進をわずかに減速）
+constexpr bool  kRocketFaceVelocity = true;  // 見た目：速度方向に向けるか
 
 // 爆風本体：敵・アイテムに適用（必要ならプレイヤー等にも拡張可）
 static void ApplyExplosionImpulse(const XMFLOAT3& center,
@@ -303,9 +311,26 @@ void UpdateBullet(void)
             // ロケットランチャーの弾だけ重力をかける
             if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
             {
-                g_Bullet[i].vel.y += rocketGravity;
-            }
+                // 速度スケール（速いほど強く落ちる）
+                const float speedScale = (kRocketRefSpeed > 0.0f) ? (g_Bullet[i].spd / kRocketRefSpeed) : 1.0f;
 
+                // 下向き加速度（毎フレーム）
+                g_Bullet[i].vel.y += (kRocketBaseDrop * speedScale);
+
+                // わずかな水平ドラッグ（前進を少し抑えると“落ち”が見えやすい）
+                g_Bullet[i].vel.x *= (1.0f - kRocketDragXY);
+                g_Bullet[i].vel.z *= (1.0f - kRocketDragXY);
+
+                // 見た目：モデルを速度方向へ向けたい場合
+                if (kRocketFaceVelocity) {
+                    const XMFLOAT3 v = g_Bullet[i].vel;
+                    const float vxy = sqrtf(v.x * v.x + v.z * v.z);
+                    // pitch: 上下, yaw: 左右
+                    g_Bullet[i].rot.x = atan2f(v.y, (vxy > 1e-6f ? vxy : 1e-6f));
+                    g_Bullet[i].rot.y = atan2f(v.x, (fabsf(v.z) > 1e-6f ? v.z : (v.z >= 0.0f ? 1e-6f : -1e-6f)));
+                    // roll はそのまま
+                }
+            }
             // 位置更新
             g_Bullet[i].pos = nextPos;
 
