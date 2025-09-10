@@ -20,315 +20,511 @@
 static Boss* g_Boss = nullptr;
 static ID3D11Buffer* g_VertexBufferBoss = nullptr;
 
+struct Rock {
+    bool use = false;
+    XMFLOAT3 pos{ 0,0,0 };
+    XMFLOAT3 vel{ 0,0,0 };
+    float size = 40.0f;
+    float life = 6.0f;
+};
+
+static const int MAX_ROCK = 64;
+static Rock g_Rocks[MAX_ROCK];
+static ID3D11ShaderResourceView* g_TexRock = nullptr;
+static const float ROCK_GRAVITY = -900.0f;
+static float g_GroundY = 0.0f;
+
+static void LoadRockTextureOnce()
+{
+    if (!g_TexRock) {
+        D3DX11CreateShaderResourceViewFromFile(
+            GetDevice(), "data/2Dpicture/effect/rock.png",
+            NULL, NULL, &g_TexRock, NULL);
+        if (!g_TexRock) {
+            D3DX11CreateShaderResourceViewFromFile(
+                GetDevice(), "data/2Dpicture/enemy/enemy001.png",
+                NULL, NULL, &g_TexRock, NULL);
+        }
+    }
+}
+
+static void SpawnRockAt(const XMFLOAT3& pos, const XMFLOAT3& vel, float size = 40.0f, float life = 6.0f)
+{
+    for (int i = 0; i < MAX_ROCK; ++i) if (!g_Rocks[i].use) {
+        g_Rocks[i].use = true;
+        g_Rocks[i].pos = pos;
+        g_Rocks[i].vel = vel;
+        g_Rocks[i].size = size;
+        g_Rocks[i].life = life;
+        return;
+    }
+}
+
+static void UpdateRocks(float dt)
+{
+    auto* player = GetPlayer();
+
+    for (int i = 0; i < MAX_ROCK; ++i) {
+        if (!g_Rocks[i].use) continue;
+
+        g_Rocks[i].life -= dt;
+        if (g_Rocks[i].life <= 0) { g_Rocks[i].use = false; continue; }
+
+        g_Rocks[i].vel.y += ROCK_GRAVITY * dt;
+        g_Rocks[i].pos.x += g_Rocks[i].vel.x * dt;
+        g_Rocks[i].pos.y += g_Rocks[i].vel.y * dt;
+        g_Rocks[i].pos.z += g_Rocks[i].vel.z * dt;
+
+        if (g_Rocks[i].pos.y <= g_GroundY) {
+            g_Rocks[i].use = false;
+            continue;
+        }
+
+        if (player) {
+            XMFLOAT3 p = player->GetPosition();
+            float dx = p.x - g_Rocks[i].pos.x;
+            float dy = p.y - g_Rocks[i].pos.y;
+            float dz = p.z - g_Rocks[i].pos.z;
+            float r = g_Rocks[i].size + 25.0f;
+            if (dx * dx + dy * dy + dz * dz <= r * r) {
+                PrintDebugProc("[Rock] Hit Player (TODO hook damage)\n");
+                g_Rocks[i].use = false;
+            }
+        }
+    }
+}
+
+static void DrawRocks()
+{
+    if (!g_TexRock || !g_VertexBufferBoss) return;
+
+    SetLightEnable(FALSE);
+    SetAlphaTestEnable(FALSE);
+    SetBlendState(BLEND_MODE_ALPHABLEND);
+
+    UINT stride = sizeof(VERTEX_3D);
+    UINT offset = 0;
+    GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferBoss, &stride, &offset);
+    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+    for (int i = 0; i < MAX_ROCK; ++i) {
+        if (!g_Rocks[i].use) continue;
+
+        float w = g_Rocks[i].size * 2.0f;
+        float h = g_Rocks[i].size * 2.0f;
+
+        XMMATRIX mtxS = XMMatrixScaling(w, h, 1.0f);
+        XMMATRIX mtxT = XMMatrixTranslation(g_Rocks[i].pos.x, g_Rocks[i].pos.y, g_Rocks[i].pos.z);
+        XMMATRIX mtxW = XMMatrixMultiply(mtxS, mtxT);
+
+        D3D11_MAPPED_SUBRESOURCE msr;
+        GetDeviceContext()->Map(g_VertexBufferBoss, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+        VERTEX_3D* v = (VERTEX_3D*)msr.pData;
+
+        v[0].Position = XMFLOAT3(-0.5f, 0.5f, 0);
+        v[1].Position = XMFLOAT3(0.5f, 0.5f, 0);
+        v[2].Position = XMFLOAT3(-0.5f, -0.5f, 0);
+        v[3].Position = XMFLOAT3(0.5f, -0.5f, 0);
+        for (int k = 0; k < 4; ++k) { v[k].Normal = XMFLOAT3(0, 0, -1); v[k].Diffuse = XMFLOAT4(1, 1, 1, 1); }
+        v[0].TexCoord = XMFLOAT2(0, 0); v[1].TexCoord = XMFLOAT2(1, 0);
+        v[2].TexCoord = XMFLOAT2(0, 1); v[3].TexCoord = XMFLOAT2(1, 1);
+
+        GetDeviceContext()->Unmap(g_VertexBufferBoss, 0);
+
+        SetWorldMatrix(&mtxW);
+        SetMaterial(MATERIAL{ XMFLOAT4(), XMFLOAT4(1,1,1,1), XMFLOAT4(), XMFLOAT4(), 0, 0 });
+        GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexRock);
+        GetDeviceContext()->Draw(4, 0);
+    }
+}
+
+
+class SkillNormalAttack final : public BossSkill {
+public:
+    SkillNormalAttack() {
+        cooldownTime = 2.0f;
+        cooldownTimer = 0.0f;
+    }
+
+    void Update(float dt) override {
+        BossSkill::Update(dt);
+    }
+
+    bool CanUse() const override {
+        return BossSkill::CanUse();
+    }
+
+    void Execute(Boss* boss) override {
+        StartCooldown();
+
+
+        //boss->PlaySkillAnimation(/*frame=*/1, /*duration=*/0.6f);
+
+        auto* player = GetPlayer();
+        if (!player) return;
+
+        XMFLOAT3 bp = boss->GetPosition();
+        XMFLOAT3 pp = player->GetPosition();
+
+        float dx = pp.x - bp.x;
+        float dy = pp.y - bp.y;
+        float dz = pp.z - bp.z;
+        const float range = 180.0f;
+        const float yRange = 120.0f;
+
+        if (fabsf(dy) <= yRange && (dx * dx + dz * dz) <= range * range) {
+
+            // player hp-10;
+            PrintDebugProc("[Boss] NormalAttack HIT (TODO damage)\n");
+        }
+        else {
+            PrintDebugProc("[Boss] NormalAttack MISSED\n");
+        }
+    }
+};
+
+//====================rockaoe ====================
+class SkillFallingRocks final : public BossSkill {
+public:
+    SkillFallingRocks() {
+        cooldownTime = 4.0f;
+        cooldownTimer = 0.0f;
+    }
+
+    void Update(float dt) override {
+        BossSkill::Update(dt);
+    }
+
+    bool CanUse() const override {
+        return BossSkill::CanUse();
+    }
+
+    void Execute(Boss* boss) override {
+        StartCooldown();
+
+
+        // boss->PlaySkillAnimation(/*frame=*/2, /*duration=*/0.8f);
+
+        auto* player = GetPlayer();
+        if (!player) return;
+
+        XMFLOAT3 center = player->GetPosition();
+
+        const int   burstCount = 8;
+        const float spawnHeight = 600.0f;
+        const float spread = 300.0f;
+
+        for (int i = 0; i < burstCount; ++i) {
+            float rx = ((rand() / (float)RAND_MAX) * 2.0f - 1.0f) * spread;
+            float rz = ((rand() / (float)RAND_MAX) * 2.0f - 1.0f) * spread;
+
+            XMFLOAT3 spawnPos{ center.x + rx, center.y + spawnHeight, center.z + rz };
+            XMFLOAT3 vel{ rx * 0.5f, -50.0f, rz * 0.5f };
+            float size = 28.0f + (rand() % 20);
+            SpawnRockAt(spawnPos, vel, size, /*life=*/6.0f);
+        }
+
+        PrintDebugProc("[Boss] FallingRocks spawned\n");
+    }
+};
+
 //*****************************************************************************
 // Bossクラス
 //*****************************************************************************
 Boss::Boss()
-	: currentPhase(BossPhase::INACTIVE)
-	, isActivated(false)
-	, useFixedPosition(true)
-	, fixedPosition({ 0.0f, 0.0f, 100.0f })
-	, fixedRotation({ 0.0f, 0.0f, 0.0f })
-	, triggerZoneCenter({ 0.0f, 0.0f, 80.0f })
-	, triggerZoneRadius(50.0f)
-	, skillTimer(0.0f)
-	, skillInterval(3.0f)
-	, width(200.0f)
-	, height(200.0f)
-	, currentFrame(0)
-	, frameCounter(0)
-	, frameInterval(10)
-	, maxFrames(2)
-	, isPlayingSkillAnimation(false)
-	, skillAnimationTimer(0.0f)
-	, skillAnimationDuration(1.0f)
-	, skillAnimationFrame(0)
-	, isHit(false)
-	, hitEffectTimer(0.0f)
-	, hitEffectDuration(0.3f) // 0.3秒
-	, originalPosition({ 0.0f, 0.0f, 0.0f })
-	, shakeIntensity(5.0f)
+    : currentPhase(BossPhase::INACTIVE)
+    , isActivated(false)
+    , useFixedPosition(true)
+    , fixedPosition({ 0.0f, 0.0f, 100.0f })
+    , fixedRotation({ 0.0f, 0.0f, 0.0f })
+    , triggerZoneCenter({ 0.0f, 0.0f, 80.0f })
+    , triggerZoneRadius(50.0f)
+    , skillTimer(0.0f)
+    , skillInterval(3.0f)
+    , width(200.0f)
+    , height(200.0f)
+    , currentFrame(0)
+    , frameCounter(0)
+    , frameInterval(10)
+    , maxFrames(2)
+    , isPlayingSkillAnimation(false)
+    , skillAnimationTimer(0.0f)
+    , skillAnimationDuration(1.0f)
+    , skillAnimationFrame(0)
 {
-	// 切り替え閾値初期化
-	phaseChangeThresholds[0] = 0.7f;  // 70％段階2に入る
-	phaseChangeThresholds[1] = 0.33f;  // 10％段階3に入る
-	phaseChangeThresholds[2] = 0.0f;   // 0死亡
+    // 切り替え閾値初期化
+    phaseChangeThresholds[0] = 0.7f;  // 70％段階2に入る
+    phaseChangeThresholds[1] = 0.33f;  // 10％段階3に入る
+    phaseChangeThresholds[2] = 0.0f;   // 0死亡
 
-	// テクスチャ初期化
-	for (int i = 0; i < 3; ++i) {
-		phaseTextures[i] = nullptr;
-	}
+    // テクスチャ初期化
+    for (int i = 0; i < 3; ++i) {
+        phaseTextures[i] = nullptr;
+    }
 
-	material = new MATERIAL{};
-	XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
+    material = new MATERIAL{};
+    XMStoreFloat4x4(&mtxWorld, XMMatrixIdentity());
 
-	immuneToKnockback = true; // ノックバック無効
+    immuneToKnockback = true; // ノックバック無効
 }
 
 Boss::~Boss()
 {
-	// テクスチャ解放
-	for (int i = 0; i < 3; ++i) {
-		if (phaseTextures[i]) {
-			phaseTextures[i]->Release();
-			phaseTextures[i] = nullptr;
-		}
-	}
+    // テクスチャ解放
+    for (int i = 0; i < 3; ++i) {
+        if (phaseTextures[i]) {
+            phaseTextures[i]->Release();
+            phaseTextures[i] = nullptr;
+        }
+    }
 
-	if (material) {
-		delete material;
-		material = nullptr;
-	}
+    if (material) {
+        delete material;
+        material = nullptr;
+    }
 }
 
 void Boss::Init()
 {
-	// テクスチャ読み込み
-	D3DX11CreateShaderResourceViewFromFile(
-		GetDevice(),
-		"data/2Dpicture/boss/boss_phase1.png",
-		NULL, NULL, &phaseTextures[0], NULL);
+    // テクスチャ読み込み
+    D3DX11CreateShaderResourceViewFromFile(
+        GetDevice(),
+        "data/2Dpicture/boss/boss_phase1.png",
+        NULL, NULL, &phaseTextures[0], NULL);
 
-	D3DX11CreateShaderResourceViewFromFile(
-		GetDevice(),
-		"data/2Dpicture/boss/boss_phase2.png",
-		NULL, NULL, &phaseTextures[1], NULL);
+    D3DX11CreateShaderResourceViewFromFile(
+        GetDevice(),
+        "data/2Dpicture/boss/boss_phase2.png",
+        NULL, NULL, &phaseTextures[1], NULL);
 
-	D3DX11CreateShaderResourceViewFromFile(
-		GetDevice(),
-		"data/2Dpicture/boss/boss_phase3.png",
-		NULL, NULL, &phaseTextures[2], NULL);
+    D3DX11CreateShaderResourceViewFromFile(
+        GetDevice(),
+        "data/2Dpicture/boss/boss_phase3.png",
+        NULL, NULL, &phaseTextures[2], NULL);
 
-	if (!phaseTextures[0])
-	{
-		D3DX11CreateShaderResourceViewFromFile(
-			GetDevice(),
-			"data/2Dpicture/enemy/enemy001.png",
-			NULL, NULL, &phaseTextures[0], NULL);
-	}
+    if (!phaseTextures[0])
+    {
+        D3DX11CreateShaderResourceViewFromFile(
+            GetDevice(),
+            "data/2Dpicture/enemy/enemy001.png",
+            NULL, NULL, &phaseTextures[0], NULL);
+    }
 
 
-	// マテリアル初期化
-	*material = {};
-	material->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    // マテリアル初期化
+    *material = {};
+    material->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	// 属性初期化
-	pos = fixedPosition;
-	scl = XMFLOAT3(2.0f, 2.0f, 2.0f);  // 大きい
-	use = true;
+    // 属性初期化
+    pos = fixedPosition;
+    scl = XMFLOAT3(2.0f, 2.0f, 2.0f);  // 大きい
+    use = true;
 
-	// HP
-	maxHP = 300;
-	HP = maxHP;
+    // HP
+    maxHP = 300;
+    HP = maxHP;
 
-	// 位置固定	
-	EnableGravity(false);
+    // 位置固定	
+    EnableGravity(false);
 
-	currentPhase = BossPhase::INACTIVE;
+    currentPhase = BossPhase::INACTIVE;
 
-	// スキル初期化
-	SetupPhaseSkills(BossPhase::PHASE_1);
+    // スキル初期化
+    SetupPhaseSkills(BossPhase::PHASE_1);
 }
 
 void Boss::Update()
 {
-	if (!use) return;
+    if (!use) return;
 
-	const float deltaTime = 1.0f / 60.0f;
+    const float deltaTime = 1.0f / 60.0f;
 
-	// BOSS戦闘開始判定
-	if (!isActivated && IsPlayerInTriggerZone()) {
-		ActivateBoss();
-	}
+    // BOSS戦闘開始判定
+    if (!isActivated && IsPlayerInTriggerZone()) {
+        ActivateBoss();
+    }
 
-	if (!isActivated) return;
-
-
-	// アニメーション更新
-	if (isPlayingSkillAnimation) {
-		// スキル
-		skillAnimationTimer -= deltaTime;
-		if (skillAnimationTimer <= 0.0f) {
-			// 終わり
-			isPlayingSkillAnimation = false;
-			frameCounter = 0;
-			currentFrame = 0;
-		}
-		else {
-			// 維持する
-			currentFrame = skillAnimationFrame;
-		}
-	}
-	else {
-		// 段階通常アニメーション
-		frameCounter++;
-		if (frameCounter >= frameInterval) {
-			frameCounter = 0;
-			currentFrame = (currentFrame + 1) % maxFrames;
-		}
-	}
-
-	// 段階チェック
-	CheckPhaseTransition();
-
-	// 
-	//UpdateSkills(deltaTime);
-
-	// 当たり判定
-	BULLET* bullet = GetBullet();
-	for (int i = 0; i < MAX_BULLET; i++) {
-		if (!bullet[i].use) continue;
-
-		XMFLOAT3 bossHalfSize = { width / 2, height / 2, 50.0f };
-
-		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, bossHalfSize)) {
-			bullet[i].use = false;
-			HP -= 10;  // ダメージ量
-
-			// 受撃エフェクト
-			TriggerHitEffect();
+    if (!isActivated) return;
 
 
-			// 血液エフェクト
-			XMFLOAT3 closestPoint;
-			closestPoint.x = max(pos.x - bossHalfSize.x, min(bullet[i].pos.x, pos.x + bossHalfSize.x));
-			closestPoint.y = max(pos.y - bossHalfSize.y, min(bullet[i].pos.y, pos.y + bossHalfSize.y));
-			closestPoint.z = max(pos.z - bossHalfSize.z, min(bullet[i].pos.z, pos.z + bossHalfSize.z));
+    // アニメーション更新
+    if (isPlayingSkillAnimation) {
+        // スキル
+        skillAnimationTimer -= deltaTime;
+        if (skillAnimationTimer <= 0.0f) {
+            // 終わり
+            isPlayingSkillAnimation = false;
+            frameCounter = 0;
+            currentFrame = 0;
+        }
+        else {
+            // 維持する
+            currentFrame = skillAnimationFrame;
+        }
+    }
+    else {
+        // 段階通常アニメーション
+        frameCounter++;
+        if (frameCounter >= frameInterval) {
+            frameCounter = 0;
+            currentFrame = (currentFrame + 1) % maxFrames;
+        }
+    }
 
-			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&bullet[i].vel));
-			XMFLOAT3 hitNormal;
-			XMStoreFloat3(&hitNormal, v);
-			SpawnBlood(closestPoint, 12, hitNormal);
+    // 段階チェック
+    CheckPhaseTransition();
 
-			//死亡処理
-			if (HP <= 0) {
-				currentPhase = BossPhase::DYING;
-				//TODO: 死亡エフェクト
+    skillTimer -= deltaTime;
+    UpdateSkills(deltaTime);
 
-			}
-		}
-	}
+    // 当たり判定
+    BULLET* bullet = GetBullet();
+    for (int i = 0; i < MAX_BULLET; i++) {
+        if (!bullet[i].use) continue;
 
-	//　エフェクト更新
-	UpdateHitEffect(deltaTime);
+        XMFLOAT3 bossHalfSize = { width / 2, height / 2, 50.0f };
+
+        if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, bossHalfSize)) {
+            bullet[i].use = false;
+            HP -= 10;  // ダメージ量
+
+            // エフェクト
+            XMFLOAT3 closestPoint;
+            closestPoint.x = max(pos.x - bossHalfSize.x, min(bullet[i].pos.x, pos.x + bossHalfSize.x));
+            closestPoint.y = max(pos.y - bossHalfSize.y, min(bullet[i].pos.y, pos.y + bossHalfSize.y));
+            closestPoint.z = max(pos.z - bossHalfSize.z, min(bullet[i].pos.z, pos.z + bossHalfSize.z));
+
+            XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&bullet[i].vel));
+            XMFLOAT3 hitNormal;
+            XMStoreFloat3(&hitNormal, v);
+            SpawnBlood(closestPoint, 12, hitNormal);
+
+            //死亡処理
+            if (HP <= 0) {
+                currentPhase = BossPhase::DYING;
+                //TODO: 死亡エフェクト
+
+            }
+        }
+    }
 
 #ifdef _DEBUG
-	float healthPercent = (maxHP > 0) ? (float)HP / (float)maxHP : 0.0f;
-	PrintDebugProc("Boss HP: %d/%d (%.1f%%)\n", HP, maxHP, healthPercent * 100.0f);
-	PrintDebugProc("Boss Phase: %d\n", (int)currentPhase);
-	PrintDebugProc("Boss Activated: %s\n", isActivated ? "YES" : "NO");
+    float healthPercent = (maxHP > 0) ? (float)HP / (float)maxHP : 0.0f;
+    PrintDebugProc("Boss HP: %d/%d (%.1f%%)\n", HP, maxHP, healthPercent * 100.0f);
+    PrintDebugProc("Boss Phase: %d\n", (int)currentPhase);
+    PrintDebugProc("Boss Activated: %s\n", isActivated ? "YES" : "NO");
 #endif
 }
 
 void Boss::Draw()
 {
-	if (!use || currentPhase == BossPhase::INACTIVE) return;
+    if (!use || currentPhase == BossPhase::INACTIVE) return;
 
-	SetLightEnable(FALSE);
+    SetLightEnable(FALSE);
 
-	UINT stride = sizeof(VERTEX_3D);
-	UINT offset = 0;
-	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferBoss, &stride, &offset);
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    UINT stride = sizeof(VERTEX_3D);
+    UINT offset = 0;
+    GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferBoss, &stride, &offset);
+    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	//固定ワールド行列作成
-	XMMATRIX mtxWorld = CreateFixedWorldMatrix();
+    //固定ワールド行列作成
+    XMMATRIX mtxWorld = CreateFixedWorldMatrix();
 
-	// 頂点バッファ更新
-	D3D11_MAPPED_SUBRESOURCE msr;
-	GetDeviceContext()->Map(g_VertexBufferBoss, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-	VERTEX_3D* v = (VERTEX_3D*)msr.pData;
+    // 頂点バッファ更新
+    D3D11_MAPPED_SUBRESOURCE msr;
+    GetDeviceContext()->Map(g_VertexBufferBoss, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    VERTEX_3D* v = (VERTEX_3D*)msr.pData;
 
-	float w = width, h = height;
-	v[0].Position = XMFLOAT3(-w / 2, h, 0);
-	v[1].Position = XMFLOAT3(w / 2, h, 0);
-	v[2].Position = XMFLOAT3(-w / 2, 0, 0);
-	v[3].Position = XMFLOAT3(w / 2, 0, 0);
+    float w = width, h = height;
+    v[0].Position = XMFLOAT3(-w / 2, h, 0);
+    v[1].Position = XMFLOAT3(w / 2, h, 0);
+    v[2].Position = XMFLOAT3(-w / 2, 0, 0);
+    v[3].Position = XMFLOAT3(w / 2, 0, 0);
 
-	for (int i = 0; i < 4; ++i) {
-		v[i].Normal = XMFLOAT3(0, 0, -1);
-		v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
-	}
+    for (int i = 0; i < 4; ++i) {
+        v[i].Normal = XMFLOAT3(0, 0, -1);
+        v[i].Diffuse = XMFLOAT4(1, 1, 1, 1);
+    }
 
-	// UV	
-	float tw = 1.0f / maxFrames;
-	float th = 1.0f;
-	float tx = currentFrame * tw;
-	float ty = 0.0f;
+    // UV	
+    float tw = 1.0f / maxFrames;
+    float th = 1.0f;
+    float tx = currentFrame * tw;
+    float ty = 0.0f;
 
-	v[0].TexCoord = XMFLOAT2(tx, ty);
-	v[1].TexCoord = XMFLOAT2(tx + tw, ty);
-	v[2].TexCoord = XMFLOAT2(tx, ty + th);
-	v[3].TexCoord = XMFLOAT2(tx + tw, ty + th);
+    v[0].TexCoord = XMFLOAT2(tx, ty);
+    v[1].TexCoord = XMFLOAT2(tx + tw, ty);
+    v[2].TexCoord = XMFLOAT2(tx, ty + th);
+    v[3].TexCoord = XMFLOAT2(tx + tw, ty + th);
 
-	GetDeviceContext()->Unmap(g_VertexBufferBoss, 0);
+    GetDeviceContext()->Unmap(g_VertexBufferBoss, 0);
 
-	// レンダリング
-	SetAlphaTestEnable(FALSE);
-	SetBlendState(BLEND_MODE_ALPHABLEND);
-	SetWorldMatrix(&mtxWorld);
-	SetMaterial(*material);
+    // レンダリング
+    SetAlphaTestEnable(FALSE);
+    SetBlendState(BLEND_MODE_ALPHABLEND);
+    SetWorldMatrix(&mtxWorld);
+    SetMaterial(*material);
 
-	// 段階に応じたテクスチャセット
-	ID3D11ShaderResourceView* currentTexture = nullptr;
-	switch (currentPhase) {
-	case BossPhase::PHASE_1: currentTexture = phaseTextures[0]; break;
-	case BossPhase::PHASE_2: currentTexture = phaseTextures[1]; break;
-	case BossPhase::PHASE_3: currentTexture = phaseTextures[2]; break;
-	default: currentTexture = phaseTextures[0]; break;
-	}
+    // 段階に応じたテクスチャセット
+    ID3D11ShaderResourceView* currentTexture = nullptr;
+    switch (currentPhase) {
+    case BossPhase::PHASE_1: currentTexture = phaseTextures[0]; break;
+    case BossPhase::PHASE_2: currentTexture = phaseTextures[1]; break;
+    case BossPhase::PHASE_3: currentTexture = phaseTextures[2]; break;
+    default: currentTexture = phaseTextures[0]; break;
+    }
 
-	if (currentTexture) {
-		GetDeviceContext()->PSSetShaderResources(0, 1, &currentTexture);
-		GetDeviceContext()->Draw(4, 0);
-	}
+    if (currentTexture) {
+        GetDeviceContext()->PSSetShaderResources(0, 1, &currentTexture);
+        GetDeviceContext()->Draw(4, 0);
+    }
 }
 
 // トリガー領域
 void Boss::SetTriggerZone(const XMFLOAT3& center, float radius)
 {
-	triggerZoneCenter = center;
-	triggerZoneRadius = radius;
+    triggerZoneCenter = center;
+    triggerZoneRadius = radius;
 }
 
 // 固定位置設定
 void Boss::SetFixedPosition(const XMFLOAT3& position)
 {
-	fixedPosition = position;
-	pos = position;
-	useFixedPosition = true;
+    fixedPosition = position;
+    pos = position;
+    useFixedPosition = true;
 }
 
 // 固定回転設定
 void Boss::SetFixedRotation(const XMFLOAT3& rotation)
 {
-	fixedRotation = rotation;
+    fixedRotation = rotation;
 }
 
 // プレイヤーがトリガー領域内にいるかチェック
 bool Boss::IsPlayerInTriggerZone() const
 {
-	XMFLOAT3 playerPos = GetPlayer()->GetPosition();
+    XMFLOAT3 playerPos = GetPlayer()->GetPosition();
 
-	float dx = playerPos.x - triggerZoneCenter.x;
-	float dy = playerPos.y - triggerZoneCenter.y;
-	float dz = playerPos.z - triggerZoneCenter.z;
+    float dx = playerPos.x - triggerZoneCenter.x;
+    float dy = playerPos.y - triggerZoneCenter.y;
+    float dz = playerPos.z - triggerZoneCenter.z;
 
-	float distanceSquared = dx * dx + dy * dy + dz * dz;
-	return distanceSquared <= (triggerZoneRadius * triggerZoneRadius);
+    float distanceSquared = dx * dx + dy * dy + dz * dz;
+    return distanceSquared <= (triggerZoneRadius * triggerZoneRadius);
 }
 
 // BOSS戦闘開始
 void Boss::ActivateBoss()
 {
-	if (isActivated) return;
+    if (isActivated) return;
 
-	isActivated = true;
-	currentPhase = BossPhase::PHASE_1;
-	SetupPhaseSkills(currentPhase);
+    isActivated = true;
+    currentPhase = BossPhase::PHASE_1;
+    SetupPhaseSkills(currentPhase);
 
 #ifdef _DEBUG
-	PrintDebugProc("BOSS ACTIVATED!\n");
+    PrintDebugProc("BOSS ACTIVATED!\n");
 #endif
 }
 
@@ -337,51 +533,51 @@ void Boss::ActivateBoss()
 // 段階チェック
 void Boss::CheckPhaseTransition()
 {
-	if (HP <= 0 && currentPhase != BossPhase::DYING) {
-		currentPhase = BossPhase::DYING;
-		return;
-	}
+    if (HP <= 0 && currentPhase != BossPhase::DYING) {
+        currentPhase = BossPhase::DYING;
+        return;
+    }
 
-	float healthPercent = (float)HP / (float)maxHP;
+    float healthPercent = (float)HP / (float)maxHP;
 
-	// 段階1から2へ
-	if (currentPhase == BossPhase::PHASE_1 && healthPercent <= phaseChangeThresholds[0]) {
-		ForcePhaseChange(BossPhase::PHASE_2);
-	}
-	// 段階2から3へ
-	else if (currentPhase == BossPhase::PHASE_2 && healthPercent <= phaseChangeThresholds[1]) {
-		ForcePhaseChange(BossPhase::PHASE_3);
-	}
+    // 段階1から2へ
+    if (currentPhase == BossPhase::PHASE_1 && healthPercent <= phaseChangeThresholds[0]) {
+        ForcePhaseChange(BossPhase::PHASE_2);
+    }
+    // 段階2から3へ
+    else if (currentPhase == BossPhase::PHASE_2 && healthPercent <= phaseChangeThresholds[1]) {
+        ForcePhaseChange(BossPhase::PHASE_3);
+    }
 }
 
 // 強制段階変更
 void Boss::ForcePhaseChange(BossPhase newPhase)
 {
-	if (currentPhase == newPhase) return;
+    if (currentPhase == newPhase) return;
 
-	currentPhase = newPhase;
+    currentPhase = newPhase;
 
-	switch (newPhase) {
-	case BossPhase::PHASE_1:
-		maxFrames = 1;  // 通常アニメーションフレーム数
-		break;
-	case BossPhase::PHASE_2:
-		maxFrames = 1;
-		break;
-	case BossPhase::PHASE_3:
-		maxFrames = 1;
-		break;
-	}
+    switch (newPhase) {
+    case BossPhase::PHASE_1:
+        maxFrames = 1;  // 通常アニメーションフレーム数
+        break;
+    case BossPhase::PHASE_2:
+        maxFrames = 1;
+        break;
+    case BossPhase::PHASE_3:
+        maxFrames = 1;
+        break;
+    }
 
-	SetupPhaseSkills(newPhase);
+    SetupPhaseSkills(newPhase);
 
-	// アニメーションリセット
-	isPlayingSkillAnimation = false;
-	frameCounter = 0;
-	currentFrame = 0;
+    // アニメーションリセット
+    isPlayingSkillAnimation = false;
+    frameCounter = 0;
+    currentFrame = 0;
 
 #ifdef _DEBUG
-	PrintDebugProc("BOSS Phase changed to: %d\n", (int)newPhase);
+    PrintDebugProc("BOSS Phase changed to: %d\n", (int)newPhase);
 #endif
 }
 
@@ -391,15 +587,15 @@ void Boss::ForcePhaseChange(BossPhase newPhase)
 XMMATRIX Boss::CreateFixedWorldMatrix()
 {
 
-	XMMATRIX mtxRotX = XMMatrixRotationX(fixedRotation.x);
-	XMMATRIX mtxRotY = XMMatrixRotationY(fixedRotation.y);
-	XMMATRIX mtxRotZ = XMMatrixRotationZ(fixedRotation.z);
-	XMMATRIX mtxRot = XMMatrixMultiply(XMMatrixMultiply(mtxRotX, mtxRotY), mtxRotZ);
+    XMMATRIX mtxRotX = XMMatrixRotationX(fixedRotation.x);
+    XMMATRIX mtxRotY = XMMatrixRotationY(fixedRotation.y);
+    XMMATRIX mtxRotZ = XMMatrixRotationZ(fixedRotation.z);
+    XMMATRIX mtxRot = XMMatrixMultiply(XMMatrixMultiply(mtxRotX, mtxRotY), mtxRotZ);
 
-	XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
-	XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+    XMMATRIX mtxScl = XMMatrixScaling(scl.x, scl.y, scl.z);
+    XMMATRIX mtxTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
 
-	return XMMatrixMultiply(XMMatrixMultiply(mtxScl, mtxRot), mtxTranslate);
+    return XMMatrixMultiply(XMMatrixMultiply(mtxScl, mtxRot), mtxTranslate);
 }
 
 
@@ -410,16 +606,17 @@ XMMATRIX Boss::CreateFixedWorldMatrix()
 // スキルアニメーション
 void Boss::PlaySkillAnimation(int frame, float duration)
 {
-	isPlayingSkillAnimation = true;
-	skillAnimationFrame = frame;
-	skillAnimationTimer = duration;
-	skillAnimationDuration = duration;
-	currentFrame = frame;  // そのフレームに切り替え
+    isPlayingSkillAnimation = true;
+    skillAnimationFrame = frame;
+    skillAnimationTimer = duration;
+    skillAnimationDuration = duration;
+    currentFrame = frame;  // そのフレームに切り替え
 }
 
 // スキル追加
 void Boss::AddSkill(std::unique_ptr<BossSkill> skill)
 {
+    skills.push_back(std::move(skill));
 
 }
 
@@ -427,97 +624,66 @@ void Boss::AddSkill(std::unique_ptr<BossSkill> skill)
 // 段階に応じたスキル設定
 void Boss::SetupPhaseSkills(BossPhase phase)
 {
-	skills.clear();
+    skills.clear();
 
-	switch (phase) {
-	case BossPhase::PHASE_1:
+    switch (phase) {
+    case BossPhase::PHASE_1:
 
-		skillInterval = 3.0f;
-		break;
+        skillInterval = 3.0f;
+        AddSkill(std::make_unique<SkillNormalAttack>());
+        break;
 
-	case BossPhase::PHASE_2:
+    case BossPhase::PHASE_2:
 
-		skillInterval = 2.0f;
-		break;
+        skillInterval = 2.0f;
+        AddSkill(std::make_unique<SkillNormalAttack>());
+        AddSkill(std::make_unique<SkillFallingRocks>());
+        break;
 
-	case BossPhase::PHASE_3:
+    case BossPhase::PHASE_3:
 
-		skillInterval = 1.5f;
-		break;
-	}
+        skillInterval = 1.5f;
+        AddSkill(std::make_unique<SkillNormalAttack>());
+        AddSkill(std::make_unique<SkillFallingRocks>());
+        break;
+    }
+    skillTimer = 0.8f;
+
 }
 
 // スキル更新
 void Boss::UpdateSkills(float deltaTime)
 {
-	// スキルクールダウン更新
-	for (auto& skill : skills) {
-		skill->Update(deltaTime);
-	}
+    // スキルクールダウン更新
+    for (auto& skill : skills) {
+        skill->Update(deltaTime);
+    }
 
-	// スキル発動タイマー更新
-	if (skillTimer <= 0.0f && isActivated) {
-		ExecuteRandomSkill();
-		skillTimer = skillInterval;
-	}
+    // スキル発動タイマー更新
+    if (skillTimer <= 0.0f && isActivated) {
+        ExecuteRandomSkill();
+        skillTimer = skillInterval;
+    }
 }
 
 // ランダムスキル実行
 void Boss::ExecuteRandomSkill()
 {
-	// 使用可能なスキルを収集
-	std::vector<BossSkill*> availableSkills;
-	for (auto& skill : skills) {
-		if (skill->CanUse()) {
-			availableSkills.push_back(skill.get());
-		}
-	}
+    // 使用可能なスキルを収集
+    std::vector<BossSkill*> availableSkills;
+    for (auto& skill : skills) {
+        if (skill->CanUse()) {
+            availableSkills.push_back(skill.get());
+        }
+    }
 
-	if (!availableSkills.empty()) {
-		int randomIndex = rand() % availableSkills.size();
-		availableSkills[randomIndex]->Execute(this);
-	}
+    if (!availableSkills.empty()) {
+        int randomIndex = rand() % availableSkills.size();
+        availableSkills[randomIndex]->Execute(this);
+    }
 }
 
 
-// 受撃効果
-void Boss::TriggerHitEffect()
-{
-	isHit = true;
-	hitEffectTimer = hitEffectDuration;
-	originalPosition = pos;  // 元々の位置を保存
-}
-
-// 受撃効果更新
-void Boss::UpdateHitEffect(float deltaTime)//deltaTimeは1/60f
-{
-	if (!isHit) return;
-
-	hitEffectTimer -= deltaTime;
-
-	if (hitEffectTimer <= 0.0f) {
-		// 終わり
-		isHit = false;
-		pos = originalPosition;  // 位置復元
-		material->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // 色復元
-	}
-	else {
-		// 揺れ効果
-		float shakeX = (rand() % 100 - 50) / 50.0f * shakeIntensity;
-		float shakeY = (rand() % 100 - 50) / 50.0f * shakeIntensity;
-		pos.x = originalPosition.x + shakeX;
-		pos.y = originalPosition.y + shakeY;
-
-		// 点滅効果
-		float flashIntensity = sin(hitEffectTimer * 20.0f);  // 頻度調整
-		if (flashIntensity > 0) {
-			material->Diffuse = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);  // 赤い
-		}
-		else {
-			material->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // 普通
-		}
-	}
-}
 
 
 //*****************************************************************************
@@ -526,59 +692,64 @@ void Boss::UpdateHitEffect(float deltaTime)//deltaTimeは1/60f
 
 void InitBoss()
 {
-	// 頂点バッファ作成
-	D3D11_BUFFER_DESC bd = {};
-	bd.Usage = D3D11_USAGE_DYNAMIC;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    // 頂点バッファ作成
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	GetDevice()->CreateBuffer(&bd, nullptr, &g_VertexBufferBoss);
+    GetDevice()->CreateBuffer(&bd, nullptr, &g_VertexBufferBoss);
 
-	g_Boss = nullptr;
+
+    //LoadRockTextureOnce();//rockarthere
+    g_Boss = nullptr;
 }
 
 void UpdateBoss()
 {
-	if (g_Boss && g_Boss->IsUsed()) {
-		g_Boss->Update();
-	}
+    if (g_Boss && g_Boss->IsUsed()) {
+        g_Boss->Update();
+        UpdateRocks(1.0f / 60.0f);
+    }
 }
 
 void DrawBoss()
 {
-	if (g_Boss && g_Boss->IsUsed()) {
-		g_Boss->Draw();
-	}
+    if (g_Boss && g_Boss->IsUsed()) {
+        g_Boss->Draw();
+    }
+    DrawRocks();
 }
 
 void UninitBoss()
 {
-	if (g_Boss) {
-		delete g_Boss;
-		g_Boss = nullptr;
-	}
+    if (g_Boss) {
+        delete g_Boss;
+        g_Boss = nullptr;
+    }
 
-	if (g_VertexBufferBoss) {
-		g_VertexBufferBoss->Release();
-		g_VertexBufferBoss = nullptr;
-	}
+    if (g_VertexBufferBoss) {
+        g_VertexBufferBoss->Release();
+        g_VertexBufferBoss = nullptr;
+    }
+    // if (g_TexRock) { g_TexRock->Release(); g_TexRock = nullptr; }
 }
 
 Boss* GetBoss()
 {
-	return g_Boss;
+    return g_Boss;
 }
 
 void SpawnBoss(const XMFLOAT3& position, const XMFLOAT3& triggerCenter, float triggerRadius)
 {
-	if (g_Boss) {
-		delete g_Boss;
-	}
+    if (g_Boss) {
+        delete g_Boss;
+    }
 
-	g_Boss = new Boss();
-	g_Boss->SetFixedPosition(position);
-	g_Boss->SetTriggerZone(triggerCenter, triggerRadius);
-	g_Boss->Init();
-	g_Boss->SetUsed(true);
+    g_Boss = new Boss();
+    g_Boss->SetFixedPosition(position);
+    g_Boss->SetTriggerZone(triggerCenter, triggerRadius);
+    g_Boss->Init();
+    g_Boss->SetUsed(true);
 }
