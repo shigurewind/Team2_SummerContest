@@ -146,47 +146,66 @@ void ShowDebugUI()
 	}
 
 	//エネミーエディター
-	/*if (ImGui::CollapsingHeader(u8"エネミー配置エディター"))
+	if (ImGui::CollapsingHeader(u8"エネミー配置エディター"))
 	{
-		auto& enemies = GetEnemies();
+		std::vector<BaseEnemy*>& enemies = GetEnemies();
+		ImGui::Text(u8"敵の数：%d", (int)enemies.size());
+		ImGui::Separator();
 
-		static int selectedEnemy = -1;
-
-		for (int i = 0; i < enemies.size(); ++i)
+		for (int i = 0; i < (int)enemies.size(); ++i)
 		{
-			BaseEnemy* e = enemies[i];
-			if (!e->IsUsed()) continue;
-
-			XMFLOAT3 pos = e->GetPosition();
+			BaseEnemy* enemy = enemies[i];
+			if (!enemy || !enemy->IsUsed()) continue;
 
 			ImGui::PushID(i);
+
+			// 敵の種類
+			const char* enemyTypeName = "Unknown";
+			int enemyType = -1;
+			if (dynamic_cast<SpiderEnemy*>(enemy)) {
+				enemyTypeName = "Spider";
+				enemyType = SPIDER;
+			}
+			else if (dynamic_cast<GhostEnemy*>(enemy)) {
+				enemyTypeName = "Ghost";
+				enemyType = GHOST;
+			}
+			else if (dynamic_cast<BugEnemy*>(enemy)) {
+				enemyTypeName = "Bug";
+				enemyType = BUG;
+			}
+
+			ImGui::Text(u8"ID: %d (%s)", i, enemyTypeName);
+
+			XMFLOAT3 pos = enemy->GetPosition();
 			if (ImGui::DragFloat3(u8"位置", (float*)&pos, 0.5f)) {
-				e->SetPosition(pos);
+				enemy->SetPosition(pos);
 			}
+
+			XMFLOAT3 scl = enemy->GetScale();
+			if (ImGui::DragFloat3(u8"サイズ", (float*)&scl, 0.1f)) {
+				enemy->SetScale(scl);
+			}
+
+			if (SpiderEnemy* spider = dynamic_cast<SpiderEnemy*>(enemy)) {
+				ImGui::Text(u8"HP: %d", spider->GetHP());
+			}
+			else if (GhostEnemy* ghost = dynamic_cast<GhostEnemy*>(enemy)) {
+				ImGui::Text(u8"HP: %d", ghost->GetHP());
+			}
+			else if (BugEnemy* bug = dynamic_cast<BugEnemy*>(enemy)) {
+				ImGui::Text(u8"HP: %d", bug->GetHP());
+			}
+
 			if (ImGui::Button(u8"削除")) {
-				e->SetUsed(false);
+				enemy->SetUsed(false);
 			}
+
 			ImGui::Separator();
 			ImGui::PopID();
 		}
 
-		if (ImGui::Button(u8"エネミー追加")) {
-			ScarecrowEnemy* newEnemy = new ScarecrowEnemy();
-			newEnemy->Init();
-			newEnemy->SetUsed(true);
-			CAMERA* cam = GetCamera();
-			newEnemy->SetPosition(cam->pos);
-			GetEnemies().push_back(newEnemy);
-		}
-
-		if (ImGui::Button(u8"保存")) {
-			SaveEnemyData("enemy_data.json");
-		}
-		ImGui::SameLine();
-		if (ImGui::Button(u8"読込")) {
-			LoadEnemyData("enemy_data.json");
-		}
-	}*/
+	}
 
 
 	//アイテムエディター

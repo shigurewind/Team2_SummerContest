@@ -42,6 +42,8 @@ public:
 	static void UnloadBloodTexture();
 
 
+	int GetHP() const { return HP; }
+
 protected:
 	XMFLOAT3 pos;
 	XMFLOAT3 scl;
