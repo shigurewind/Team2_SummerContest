@@ -17,7 +17,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(10)		// テクスチャの数
+#define TEXTURE_MAX					(11)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -42,6 +42,8 @@ static char* g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/rocket_launcher.png",
 	"data/2Dpicture/enemy/bug02.png",
 	"data/TEXTURE/cross.png",
+	"data/TEXTURE/paused.png",
+
 
 
 
@@ -373,6 +375,31 @@ void DrawAmmoUI(void)
 
 }
 
+// 画面中央に "PAUSED" 画像を出す
+void DrawPaused(void)
+{
+	// 半透明で少しだけ目立たせたい場合はここで色・アルファ調整
+	MATERIAL m = {};
+	m.Diffuse = XMFLOAT4(1, 1, 1, 1); // 不透明でOK
+	SetMaterial(m);
+
+	// 2D 描画設定
+	SetWorldViewProjection2D();
+	SetAlphaTestEnable(FALSE);
+	SetBlendState(BLEND_MODE_ALPHABLEND);
+
+	// 「paused.png」を読み込んだインデックス（上で TEXTURE_MAX を 11 にして配列末尾に追加したので index=10）
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[10]);
+
+	// 画面中央に表示（解像度 1280x720 想定）
+	const float w = 300.0f;
+	const float h = 120.0f;
+	const float cx = 640.0f;
+	const float cy = 360.0f;
+
+	SetSprite(g_VertexBuffer, cx, cy, w, h, 0, 0, 1, 1);
+	GetDeviceContext()->Draw(4, 0);
+}
 
 //=============================================================================
 // 蜘蛛のネット効果（画面に表示）を一定時間見せる関数

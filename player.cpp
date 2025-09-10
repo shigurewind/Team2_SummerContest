@@ -220,13 +220,13 @@ void PLAYER::Init()
 	if (inv)
 	{
 		// まだ未所持なら、該当パーツをインベントリへ追加する（重複追加を避ける）
-		// ・武器種（FireType）＝リボルバー
+		// ・リボルバーを最初から所持
 		if (!inv->Has(ItemCategory::WeaponPart_FireType, PART_REVOLVER))  // 所持確認
 		{
 			inv->AddItem(CreateItemFromID(PART_REVOLVER));                 // 追加
 		}
 
-		// ・弾種（Ammo）＝ノーマル弾
+		// ・ノーマル弾
 		if (!inv->Has(ItemCategory::WeaponPart_Ammo, PART_NORMAL_AMMO))    // 所持確認
 		{
 			inv->AddItem(CreateItemFromID(PART_NORMAL_AMMO));              // 追加

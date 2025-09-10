@@ -157,12 +157,11 @@ void UpdateGame(void)
 		SetViewPort(g_ViewPortType_Game);
 	}
 
-	// 時間を止める
 	if (GetKeyboardTrigger(DIK_P))
 	{
 		g_bPause = g_bPause ? FALSE : TRUE;
 	}
-
+	if (g_bPause == TRUE) return;
 
 #endif
 
@@ -305,7 +304,10 @@ void DrawGame0(void)
 
 	DrawOverlay2D();
 	
-
+	// UI類の描画が終わった直後（2D状態のまま）に、ポーズ時は "PAUSED" を重ねる
+	if (g_bPause) {
+		DrawPaused();
+	}
 
 	// ライティングを有効に
 	SetLightEnable(TRUE);

@@ -35,5 +35,6 @@ void HideBugEffect();
 
 
 void DrawItemSlot(void);
+void DrawPaused(void);
 
 
