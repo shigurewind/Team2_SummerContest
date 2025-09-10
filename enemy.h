@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Object.h"
+#include <string>
 
 using namespace DirectX;
 
@@ -37,10 +38,13 @@ public:
 	ID3D11ShaderResourceView* dissolveTexture;// ディゾルブ用テクスチャ
 	static ID3D11ShaderResourceView* s_BloodTexture;// 血痕テクスチャ
 
-	static bool LoadBloodTexture();    
+	static bool LoadBloodTexture();
 	static void UnloadBloodTexture();
+
+	int GetHP() const { return HP; }
 	
 virtual void ApplyKnockback(const XMFLOAT3& dirXZ, float strength, float duration); 
+
 protected:
 	XMFLOAT3 pos;
 	XMFLOAT3 scl;
@@ -220,3 +224,8 @@ void UninitEnemy();
 
 void EnemySpawner(XMFLOAT3 position, int type);
 void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType);
+
+// JSONセーブ/ロード
+void SaveEnemyData(const std::string& filename);
+void LoadEnemyData(const std::string& filename);
+void ClearAllEnemies(void);

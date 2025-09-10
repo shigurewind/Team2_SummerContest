@@ -11,7 +11,7 @@
 
 //-------------------------------------------------------------------------
 static std::vector<TriangleData> g_TriangleList;
-static FBXTESTMODEL g_FBXTestModel;	// FBXモデルのデータ
+static FBXMAPMODEL g_FBXMapModel;	// FBXモデルのデータ
 
 
 
@@ -29,45 +29,45 @@ const std::vector<TriangleData>& GetWallTriangles() { return g_WallTris; }
 
 
 
-HRESULT InitFBXTestModel(void)
+HRESULT InitFBXMapModel(const char* modelPath)
 {
-	g_FBXTestModel.load = TRUE;
+	g_FBXMapModel.load = TRUE;
 
-	//g_FBXTestModel.model = ModelLoad("data/MODEL/model.fbx");	// FBXモデルの読み込み
-	g_FBXTestModel.model = ModelLoad("data/MODEL/stage111.fbx");	// FBXモデルの読み込み
-	if (!g_FBXTestModel.model) {
-		MessageBoxA(NULL, "Failed to load stage1.fbx", "Error", MB_OK);
+	//g_FBXMapModel.model = ModelLoad("data/MODEL/model.fbx");	// FBXモデルの読み込み
+	g_FBXMapModel.model = ModelLoad(modelPath);	// FBXモデルの読み込み
+	if (!g_FBXMapModel.model) {
+		MessageBoxA(NULL, "Failed to load map", "Error", MB_OK);
 		return E_FAIL;
 	}
 
 	/*char debugPos[128];
-	sprintf_s(debugPos, "FBX pos.y = %.2f\n", g_FBXTestModel.pos.y);
+	sprintf_s(debugPos, "FBX pos.y = %.2f\n", g_FBXMapModel.pos.y);
 	OutputDebugStringA(debugPos);*/
 
 
 
 
-	g_FBXTestModel.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_FBXTestModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	g_FBXTestModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	g_FBXMapModel.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	g_FBXMapModel.rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	g_FBXMapModel.scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
-	g_FBXTestModel.spd = 0.0f;			// 移動スピードクリア
+	g_FBXMapModel.spd = 0.0f;			// 移動スピードクリア
 
-	g_FBXTestModel.alive = TRUE;			// TRUE:生きてる
-	XMMATRIX mtxScl = XMMatrixScaling(g_FBXTestModel.scl.x, g_FBXTestModel.scl.y, g_FBXTestModel.scl.z);
-	XMMATRIX mtxRot = XMMatrixRotationRollPitchYaw(g_FBXTestModel.rot.x, g_FBXTestModel.rot.y + XM_PI, g_FBXTestModel.rot.z);
-	XMMATRIX mtxQuat = XMMatrixRotationQuaternion(XMLoadFloat4(&g_FBXTestModel.Quaternion));
-	XMMATRIX mtxTrans = XMMatrixTranslation(g_FBXTestModel.pos.x, g_FBXTestModel.pos.y, g_FBXTestModel.pos.z);
+	g_FBXMapModel.alive = TRUE;			// TRUE:生きてる
+	XMMATRIX mtxScl = XMMatrixScaling(g_FBXMapModel.scl.x, g_FBXMapModel.scl.y, g_FBXMapModel.scl.z);
+	XMMATRIX mtxRot = XMMatrixRotationRollPitchYaw(g_FBXMapModel.rot.x, g_FBXMapModel.rot.y + XM_PI, g_FBXMapModel.rot.z);
+	XMMATRIX mtxQuat = XMMatrixRotationQuaternion(XMLoadFloat4(&g_FBXMapModel.Quaternion));
+	XMMATRIX mtxTrans = XMMatrixTranslation(g_FBXMapModel.pos.x, g_FBXMapModel.pos.y, g_FBXMapModel.pos.z);
 
 	XMMATRIX world = mtxScl * mtxRot * mtxQuat * mtxTrans;
 
-	std::string currentMapFile = "data/MODEL/stage111.fbx"; // マップファイル名
+	std::string currentMapFile = modelPath; // マップファイル名
 	bool cacheLoaded = LoadTriangleCache(currentMapFile);
 
 	if (!cacheLoaded) {
 		// Cacheいない
 		OutputDebugStringA("Extracting triangle data from FBX model...\n");
-		ExtractTriangleData(g_FBXTestModel.model, world);
+		ExtractTriangleData(g_FBXMapModel.model, world);
 
 		// データを保存
 		SaveTriangleCache(currentMapFile);
@@ -126,25 +126,25 @@ HRESULT InitFBXTestModel(void)
 	return S_OK;
 }
 
-void UninitFBXTestModel(void)
+void UninitFBXMapModel(void)
 {
 	// モデルの解放処理
-	if (g_FBXTestModel.load == TRUE)
+	if (g_FBXMapModel.load == TRUE)
 	{
-		ModelRelease(g_FBXTestModel.model);	// FBXモデルの解放
-		g_FBXTestModel.load = FALSE;
+		ModelRelease(g_FBXMapModel.model);	// FBXモデルの解放
+		g_FBXMapModel.load = FALSE;
 	}
 
 }
 
-void UpdateFBXTestModel(void)
+void UpdateFBXMapModel(void)
 {
-	//g_FBXTestModel.rot.y += 0.01f;	// 回転させてみる
-	//g_FBXTestModel.rot.x += 0.01f;
-	//g_FBXTestModel.pos.x +=  0.1f;	// X軸方向に移動
+	//g_FBXMapModel.rot.y += 0.01f;	// 回転させてみる
+	//g_FBXMapModel.rot.x += 0.01f;
+	//g_FBXMapModel.pos.x +=  0.1f;	// X軸方向に移動
 }
 
-void DrawFBXTestModel(void)
+void DrawFBXMapModel(void)
 {
 	SHADER_SCOPE(SHADER_TERRAIN);//自動Shader切り替え
 
@@ -157,25 +157,25 @@ void DrawFBXTestModel(void)
 	mtxWorld = XMMatrixIdentity();
 
 	// スケールを反映
-	mtxScl = XMMatrixScaling(g_FBXTestModel.scl.x, g_FBXTestModel.scl.y, g_FBXTestModel.scl.z);
+	mtxScl = XMMatrixScaling(g_FBXMapModel.scl.x, g_FBXMapModel.scl.y, g_FBXMapModel.scl.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxScl);
 
 	// 回転を反映
-	mtxRot = XMMatrixRotationRollPitchYaw(g_FBXTestModel.rot.x, g_FBXTestModel.rot.y + XM_PI, g_FBXTestModel.rot.z);
+	mtxRot = XMMatrixRotationRollPitchYaw(g_FBXMapModel.rot.x, g_FBXMapModel.rot.y + XM_PI, g_FBXMapModel.rot.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxRot);
 
 	// クォータニオンを反映
-	quatMatrix = XMMatrixRotationQuaternion(XMLoadFloat4(&g_FBXTestModel.Quaternion));
+	quatMatrix = XMMatrixRotationQuaternion(XMLoadFloat4(&g_FBXMapModel.Quaternion));
 	mtxWorld = XMMatrixMultiply(mtxWorld, quatMatrix);
 
 	// 移動を反映
-	mtxTranslate = XMMatrixTranslation(g_FBXTestModel.pos.x, g_FBXTestModel.pos.y, g_FBXTestModel.pos.z);
+	mtxTranslate = XMMatrixTranslation(g_FBXMapModel.pos.x, g_FBXMapModel.pos.y, g_FBXMapModel.pos.z);
 	mtxWorld = XMMatrixMultiply(mtxWorld, mtxTranslate);
 
 	// ワールドマトリックスの設定
 	SetWorldMatrix(&mtxWorld);
 
-	XMStoreFloat4x4(&g_FBXTestModel.mtxWorld, mtxWorld);
+	XMStoreFloat4x4(&g_FBXMapModel.mtxWorld, mtxWorld);
 
 	MATERIAL mat = {};
 	mat.Diffuse = XMFLOAT4(0.6f, 0.0f, 0.0f, 1.0f);
@@ -196,7 +196,7 @@ void DrawFBXTestModel(void)
 	}
 
 	// モデル描画
-	ModelDraw(g_FBXTestModel.model);
+	ModelDraw(g_FBXMapModel.model);
 
 
 	//SetFuchi(0);
@@ -209,9 +209,9 @@ void DrawFBXTestModel(void)
 //=============================================================================
 // プレイヤー情報を取得
 //=============================================================================
-FBXTESTMODEL* GetFBXTestModel(void)
+FBXMAPMODEL* GetFBXMapModel(void)
 {
-	return &g_FBXTestModel;
+	return &g_FBXMapModel;
 }
 
 

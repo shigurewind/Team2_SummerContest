@@ -29,6 +29,7 @@
 
 #include "shaderManager.h"
 #include "inputManager.h"
+#include "map.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -94,7 +95,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	};
 	HWND		hWnd;
 	MSG			msg;
-	
+
 	// ウィンドウクラスの登録
 	RegisterClassEx(&wcex);
 
@@ -143,13 +144,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	// ウインドウの表示(初期化処理の後に呼ばないと駄目)
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
-	
+
 	// メッセージループ
-	while(1)
+	while (1)
 	{
-		if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			if(msg.message == WM_QUIT)
+			if (msg.message == WM_QUIT)
 			{// PostQuitMessage()が呼ばれたらループ終了
 				break;
 			}
@@ -220,14 +221,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return true;
 	// (Your code process Win32 messages)
 
-	switch(message)
+	switch (message)
 	{
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
 
 	case WM_KEYDOWN:
-		switch(wParam)
+		switch (wParam)
 		{
 		case VK_ESCAPE:				 //escapeキーでゲーム終わる
 			DestroyWindow(hWnd);
@@ -308,6 +309,12 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	//inputManagerの初期化
 	g_pInputManager = new InputManager();
 
+	// マップマネージャーの初期化
+	if (FAILED(InitMapManager())) {
+		MessageBox(NULL, "Failed to initialize MapManager", "Error", MB_OK);
+		return E_FAIL;
+	}
+
 	// 最初のモードをセット
 	SetMode(g_Mode);	// ここはSetModeのままで！
 
@@ -324,6 +331,9 @@ void Uninit(void)
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+
+	// マップマネージャーの終了処理
+	UninitMapManager();
 
 	// 終了のモードをセット
 	SetMode(MODE_MAX);
@@ -357,7 +367,7 @@ float testFloat = 5.5f;
 void Update(void)
 {
 	// (Your code process and dispatch Win32 messages)
-    // Imguiの画面を作る
+	// Imguiの画面を作る
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
@@ -583,16 +593,22 @@ void SetMode(int mode)
 		// カメラもここで初期化しておく事にした
 		UninitCamera();
 		InitCamera();
+
 		// ゲーム画面の初期化
 		InitGame();
+		LoadMap(0);
+
 		break;
 
 	case MODE_GAME:
 		// カメラもここで初期化しておく事にした
 		UninitCamera();
 		InitCamera();
+
 		// ゲーム画面の初期化
 		InitGame1();
+		LoadMap(1);
+
 		break;
 
 	case MODE_RESULT:
@@ -604,7 +620,7 @@ void SetMode(int mode)
 	case MODE_MAX:
 		// エネミーの終了処理
 		UninitEnemy();
-		
+
 		// プレイヤーの終了処理
 		UninitPlayer();
 		break;

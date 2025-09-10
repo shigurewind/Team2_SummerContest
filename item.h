@@ -133,7 +133,7 @@ void InitItemTextures();
 
 Item CreateItemFromID(int id);
 
-
+void ClearAllItems();
 void SaveItemData(const std::string& filename);
 void LoadItemData(const std::string& filename);
 

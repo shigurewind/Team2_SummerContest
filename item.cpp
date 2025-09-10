@@ -434,10 +434,7 @@ HRESULT InitItem()
 
 	g_bAlpaTest = TRUE;
 
-	SpawnItem(XMFLOAT3(30.0f, 0.0f, 20.0f), ITEM_APPLE); // アイテムをセット（例）
-	SpawnItem(XMFLOAT3(50.0f, 0.0f, 0.0f), ITEM_SAN); // アイテムをセット（例）
-
-
+	
 
 	return S_OK;
 
@@ -617,6 +614,14 @@ Item CreateItemFromID(int id) {
 	}
 }
 
+
+void ClearAllItems()
+{
+	for (int i = 0; i < MAX_ITEM; ++i)
+	{
+		g_aItem[i].SetUsed(false);
+	}
+}
 
 
 

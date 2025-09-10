@@ -14,6 +14,7 @@
 
 #include "light.h"
 #include "boundingBoxDebug.h"
+#include "map.h"
 
 
 // item.cppにあるアイテム配列
@@ -132,57 +133,133 @@ void ShowDebugUI()
 	//モデルエディター
 	if (ImGui::CollapsingHeader(u8"モデルエディター"))
 	{
-		FBXTESTMODEL* FBXModel = GetFBXTestModel();
+		FBXMAPMODEL* FBXModel = GetFBXMapModel();
 
-		ImGui::DragFloat3(u8"位置", (float*)&FBXModel->pos, 0.5f);
-		ImGui::SliderFloat3(u8"回転", (float*)&FBXModel->rot, -XM_PI, XM_PI);
-		ImGui::SliderFloat3(u8"サイズ", (float*)&FBXModel->scl, 0, 100.0f);
-		ImGui::InputFloat3(u8"サイズ入力", (float*)&FBXModel->scl, "%.2f");
+		if (FBXModel && FBXModel->model) {
+			ImGui::DragFloat3(u8"位置", (float*)&FBXModel->pos, 0.5f);
+			ImGui::SliderFloat3(u8"回転", (float*)&FBXModel->rot, -XM_PI, XM_PI);
+			ImGui::SliderFloat3(u8"サイズ", (float*)&FBXModel->scl, 0, 100.0f);
+			ImGui::InputFloat3(u8"サイズ入力", (float*)&FBXModel->scl, "%.2f");
+		}
+
+		
 
 	}
 
 	//エネミーエディター
-	/*if (ImGui::CollapsingHeader(u8"エネミー配置エディター"))
+	if (ImGui::CollapsingHeader(u8"エネミー配置エディター"))
 	{
-		auto& enemies = GetEnemies();
+		std::vector<BaseEnemy*>& enemies = GetEnemies();
+		ImGui::Text(u8"敵の数：%d", (int)enemies.size());
+		ImGui::Separator();
 
-		static int selectedEnemy = -1;
-
-		for (int i = 0; i < enemies.size(); ++i)
+		for (int i = 0; i < (int)enemies.size(); ++i)
 		{
-			BaseEnemy* e = enemies[i];
-			if (!e->IsUsed()) continue;
-
-			XMFLOAT3 pos = e->GetPosition();
+			BaseEnemy* enemy = enemies[i];
+			if (!enemy || !enemy->IsUsed()) continue;
 
 			ImGui::PushID(i);
+
+			// 敵の種類
+			const char* enemyTypeName = "Unknown";
+			int enemyType = -1;
+			if (dynamic_cast<SpiderEnemy*>(enemy)) {
+				enemyTypeName = "Spider";
+				enemyType = SPIDER;
+			}
+			else if (dynamic_cast<GhostEnemy*>(enemy)) {
+				enemyTypeName = "Ghost";
+				enemyType = GHOST;
+			}
+			else if (dynamic_cast<BugEnemy*>(enemy)) {
+				enemyTypeName = "Bug";
+				enemyType = BUG;
+			}
+
+			ImGui::Text(u8"ID: %d (%s)", i, enemyTypeName);
+
+			XMFLOAT3 pos = enemy->GetPosition();
 			if (ImGui::DragFloat3(u8"位置", (float*)&pos, 0.5f)) {
-				e->SetPosition(pos);
+				enemy->SetPosition(pos);
 			}
+
+			XMFLOAT3 scl = enemy->GetScale();
+			if (ImGui::DragFloat3(u8"サイズ", (float*)&scl, 0.1f)) {
+				enemy->SetScale(scl);
+			}
+
+			if (SpiderEnemy* spider = dynamic_cast<SpiderEnemy*>(enemy)) {
+				ImGui::Text(u8"HP: %d", spider->GetHP());
+			}
+			else if (GhostEnemy* ghost = dynamic_cast<GhostEnemy*>(enemy)) {
+				ImGui::Text(u8"HP: %d", ghost->GetHP());
+			}
+			else if (BugEnemy* bug = dynamic_cast<BugEnemy*>(enemy)) {
+				ImGui::Text(u8"HP: %d", bug->GetHP());
+			}
+
 			if (ImGui::Button(u8"削除")) {
-				e->SetUsed(false);
+				enemy->SetUsed(false);
 			}
+
 			ImGui::Separator();
 			ImGui::PopID();
 		}
 
-		if (ImGui::Button(u8"エネミー追加")) {
-			ScarecrowEnemy* newEnemy = new ScarecrowEnemy();
-			newEnemy->Init();
-			newEnemy->SetUsed(true);
+		ImGui::Separator();
+		ImGui::Text(u8"=== エネミー配置 ===");
+
+		static int selectedEnemyType = SPIDER;
+		const char* enemyTypes[] = { "Spider", "Ghost", "Bug" };
+		ImGui::Combo(u8"敵種類", &selectedEnemyType, enemyTypes, 3);
+
+		if (ImGui::Button(u8"カメラ位置でエネミー追加"))
+		{
 			CAMERA* cam = GetCamera();
-			newEnemy->SetPosition(cam->pos);
-			GetEnemies().push_back(newEnemy);
+			EnemySpawner(cam->pos, selectedEnemyType);
 		}
 
-		if (ImGui::Button(u8"保存")) {
-			SaveEnemyData("enemy_data.json");
+		ImGui::Separator();
+		ImGui::Text(u8"=== 配置ファイル管理 ===");
+
+		int currentMapID = GetCurrentMapID();
+		MapConfig* currentConfig = GetCurrentMapConfig();
+		if (currentConfig) {
+			ImGui::Text(u8"今のマップIDID: %d", currentMapID);
+			ImGui::Text(u8"エネミー配置ファイル: %s", currentConfig->enemyConfigPath);
 		}
+
+		if (ImGui::Button(u8"今のマップ配置保存")) {
+			if (currentConfig) {
+				SaveEnemyData(currentConfig->enemyConfigPath);
+			}
+		}
+
 		ImGui::SameLine();
-		if (ImGui::Button(u8"読込")) {
-			LoadEnemyData("enemy_data.json");
+		if (ImGui::Button(u8"今のマップ配置ファイルロード")) {
+			if (currentConfig) {
+				LoadEnemyData(currentConfig->enemyConfigPath);
+			}
 		}
-	}*/
+
+		// 新しい配置ファイル作成
+		ImGui::Text(u8"=== 新しい配置ファイル作成 ===");
+		static char newEnemyConfigName[256] = "";
+		ImGui::InputText(u8"ファイル名：", newEnemyConfigName, sizeof(newEnemyConfigName));
+		ImGui::SameLine();
+		if (ImGui::Button(u8"作成")) {
+			if (strlen(newEnemyConfigName) > 0) {
+				std::string fullPath = "data/CONFIG/" + std::string(newEnemyConfigName) + "_enemies.json";
+				SaveEnemyData(fullPath);
+			}
+		}
+
+		// エネミー全削除
+		if (ImGui::Button(u8"すべてのエネミークリア")) {
+			ClearAllEnemies();
+		}
+
+	}
 
 
 	//アイテムエディター
@@ -207,6 +284,9 @@ void ShowDebugUI()
 			ImGui::PopID();
 		}
 
+		ImGui::Separator();
+		ImGui::Text(u8"=== Item配置 ===");
+
 		static int selectedItemID = 0;
 		ImGui::InputInt(u8"追加アイテムID", &selectedItemID);
 		if (ImGui::Button(u8"アイテム追加"))
@@ -215,24 +295,52 @@ void ShowDebugUI()
 			SpawnItem(cam->pos, selectedItemID);
 		}
 
-		if (ImGui::Button(u8"保存")) {
-			SaveItemData("item_data.json");
+		ImGui::Separator();
+		ImGui::Text(u8"=== 配置ファイル管理 ===");
+
+		int currentMapID = GetCurrentMapID();
+		MapConfig* currentConfig = GetCurrentMapConfig();
+		if (currentConfig) {
+			ImGui::Text(u8"今のマップID: %d", currentMapID);
+			ImGui::Text(u8"配置ファイル: %s", currentConfig->itemConfigPath);
 		}
+
+		if (ImGui::Button(u8"今のマップ配置保存")) {
+			if (currentConfig) {
+				SaveItemData(currentConfig->itemConfigPath);
+				ImGui::Text(u8"保存完了: %s", currentConfig->itemConfigPath);
+			}
+		}
+
 		ImGui::SameLine();
-		if (ImGui::Button(u8"読込")) {
-			LoadItemData("item_data.json");
+		if (ImGui::Button(u8"今のマップ配置ロード")) {
+			if (currentConfig) {
+				LoadItemData(currentConfig->itemConfigPath);
+			}
 		}
+
+		// 新しい配置ファイル作成
+		ImGui::Text(u8"=== 新しい配置ファイル作成 ===");
+		static char newConfigName[256] = "";
+		ImGui::InputText(u8"ファイル名", newConfigName, sizeof(newConfigName));
+		ImGui::SameLine();
+		if (ImGui::Button(u8"作成")) {
+			if (strlen(newConfigName) > 0) {
+				std::string fullPath = "data/CONFIG/" + std::string(newConfigName) + "_items.json";
+				SaveItemData(fullPath);
+			}
+		}
+
+		// 重置当前配置
+		if (ImGui::Button(u8"すべてItemクリア")) {
+			ClearAllItems();
+		}
+
+
+
 	}
 
-	//Shaderエディター
-	/*if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
-	{
-
-
-		
-
-		
-	}*/
+	
 
 	//ライトエディター
 	if (ImGui::CollapsingHeader(u8"ライトエディター"))

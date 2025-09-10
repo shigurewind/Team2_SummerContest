@@ -20,10 +20,12 @@
 #include "item.h"
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 #include <algorithm> 
 #include <cmath> 
-
 
 //*****************************************************************************
 //
@@ -55,7 +57,7 @@ isDying(false), dissolveTimer(0.0f), dissolveAmount(0.0f), hasDroppedItems(false
 		"data/TEXTURE/sampleNoise.png",
 		NULL, NULL, &dissolveTexture, NULL);
 
-	
+
 
 }
 
@@ -70,11 +72,11 @@ BaseEnemy::~BaseEnemy() {
 
 bool BaseEnemy::LoadBloodTexture()
 {
-	if (s_BloodTexture) return true; 
+	if (s_BloodTexture) return true;
 
 	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(
 		GetDevice(),
-		"data/TEXTURE/bloodStain.png",  
+		"data/TEXTURE/bloodStain.png",
 		NULL, NULL, &s_BloodTexture, NULL);
 
 
@@ -199,7 +201,7 @@ void SpiderEnemy::Update() {
 		// dissolve完了したら消える
 		if (dissolveTimer <= 0.0f) {
 			use = false;
-			return;  
+			return;
 		}
 
 		return;  // 死亡したら他のロジックを実行しない
@@ -283,10 +285,10 @@ void SpiderEnemy::Update() {
 			bullet[i].use = false;
 			HP -= 1;
 
-			
+
 			//血痕エフェクト
 			XMFLOAT3 bulletDirection = {
-		  bullet[i].vel.x,  
+		  bullet[i].vel.x,
 		  bullet[i].vel.y,
 		  bullet[i].vel.z
 			};// 弾のベクトルを使用
@@ -294,7 +296,7 @@ void SpiderEnemy::Update() {
 			XMVECTOR bulletDir = XMVector3Normalize(XMLoadFloat3(&bulletDirection));
 			XMFLOAT3 normalizedBulletDir;
 			XMStoreFloat3(&normalizedBulletDir, bulletDir);
-			
+
 			EffectManager::CreateBloodSplatter(pos, normalizedBulletDir, normalizedBulletDir, 1.5f);
 			EffectManager::ApplyEffects();
 
@@ -340,7 +342,7 @@ void SpiderEnemy::Draw() {
 
 	if (!use || !texture || !g_VertexBufferEnemy) return;
 
-	
+
 
 	SetLightEnable(FALSE);
 
@@ -505,14 +507,7 @@ void InitEnemy() {
 	BaseEnemy::LoadBloodTexture();
 
 	g_enemies.clear();
-	for (int i = 0; i < ENEMY_MAX; ++i) {
-
-		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
-		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
-		//EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
-		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
-
-	}
+	
 }
 
 void UpdateEnemy() {
@@ -793,7 +788,7 @@ void GhostEnemy::Init()
 	frameInterval = 15;//change speed
 	maxFrames = 3;
 
-	HP = 50;
+	HP = 5;
 
 	//幽霊は重力いらない
 	EnableGravity(false);
@@ -868,8 +863,8 @@ void GhostEnemy::Update()
 		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
 		{
 			if (bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
-        ApplyExplosionAt(bullet[i].pos);
-    }
+				ApplyExplosionAt(bullet[i].pos);
+			}
 
 
 			bullet[i].use = false;
@@ -1219,4 +1214,105 @@ void BugEnemy::NormalMovement()
 void BugEnemy::Attack()
 {
 }
+
+
+
+// Jsonデータ
+
+// すべてのエネミーをクリア
+void ClearAllEnemies(void) {
+
+	for (auto* enemy : g_enemies) {
+		if (enemy) {
+			delete enemy;
+		}
+	}
+	g_enemies.clear();
+}
+
+// エネミーデータを保存
+void SaveEnemyData(const std::string& filename) {
+	json j = json::array();
+
+	for (auto* enemy : g_enemies) {
+		if (enemy && enemy->IsUsed()) {
+			XMFLOAT3 pos = enemy->GetPosition();
+			XMFLOAT3 scl = enemy->GetScale();
+
+			// エネミータイプ
+			int enemyType = -1;
+			if (dynamic_cast<SpiderEnemy*>(enemy)) {
+				enemyType = SPIDER;
+			}
+			else if (dynamic_cast<GhostEnemy*>(enemy)) {
+				enemyType = GHOST;
+			}
+			else if (dynamic_cast<BugEnemy*>(enemy)) {
+				enemyType = BUG;
+			}
+
+			if (enemyType != -1) {
+				json enemyObj;
+				enemyObj["type"] = enemyType;
+				enemyObj["pos"] = { pos.x, pos.y, pos.z };
+				enemyObj["scl"] = { scl.x, scl.y, scl.z };
+				j.push_back(enemyObj);
+			}
+		}
+	}
+
+	std::ofstream file(filename);
+	file << j.dump(4);
+}
+
+// エネミーデータを読み込み
+void LoadEnemyData(const std::string& filename) {
+	std::ifstream file(filename);
+	if (!file) {
+		// 存在しない
+		return;
+	}
+
+	json j;
+	try {
+		file >> j;
+	}
+	catch (const std::exception& e) {
+		// JSON解析エラー
+		return;
+	}
+
+	// クリア
+	ClearAllEnemies();
+
+	// ロード
+	for (const auto& enemyObj : j) {
+		try {
+			int type = enemyObj["type"];
+			XMFLOAT3 pos = XMFLOAT3(
+				enemyObj["pos"][0],
+				enemyObj["pos"][1],
+				enemyObj["pos"][2]
+			);
+			XMFLOAT3 scl = XMFLOAT3(
+				enemyObj["scl"][0],
+				enemyObj["scl"][1],
+				enemyObj["scl"][2]
+			);
+
+			// エネミー生成
+			EnemySpawner(pos, type);
+
+			// スケール設定
+			if (!g_enemies.empty()) {
+				g_enemies.back()->SetScale(scl);
+			}
+		}
+		catch (const std::exception& e) {
+			//無効なデータ
+			continue;
+		}
+	}
+}
+
 
