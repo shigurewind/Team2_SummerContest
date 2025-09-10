@@ -334,6 +334,11 @@ void DrawAmmoUI(void)
 		? player->ammoNormal
 		: player->ammoFire;
 
+	// その弾種を未所持なら表示は 0 にする
+	if (!player->IsBulletUnlocked((int)GetCurrentBulletType())) {
+		currentAmmo = 0;
+	}
+
 	// 弾種の色（既存のまま）
 	MATERIAL material = {};
 	if (GetCurrentBulletType() == BULLET_FIRE) {

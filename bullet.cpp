@@ -80,6 +80,25 @@ namespace {
             n.z * force * falloff);
 
         // 既存速度に加算（AddForce）。速度を即時置換したいなら SetVelocity を使う
+        if (auto* enemy = dynamic_cast<BaseEnemy*>(obj)) {
+            // 水平成分だけでノックバック方向を作る
+            XMFLOAT3 dirXZ{ n.x, 0.0f, n.z };
+            float lenXZ = sqrtf(dirXZ.x * dirXZ.x + dirXZ.z * dirXZ.z);
+            if (lenXZ > 0.0001f) {
+                dirXZ.x /= lenXZ;
+                dirXZ.z /= lenXZ;
+            }
+            else {
+                dirXZ = { 0.0f, 0.0f, 1.0f }; // 万一のゼロ除算回避
+            }
+
+            const float kbStrength = force * falloff * 7.0f; // ノックバック強さ
+            const float kbDuration = 0.50f;                  // ノックバック継続時間
+
+            enemy->ApplyKnockback(dirXZ, kbStrength, kbDuration);
+            return; // 敵はここで処理終了（下の AddForce は使わない）
+        }
+
         obj->AddForce(impulse);
         if (auto* item = dynamic_cast<ITEM_OBJ*>(obj)) {
             item->SetSleeping(false);

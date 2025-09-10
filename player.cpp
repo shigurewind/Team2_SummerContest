@@ -226,7 +226,12 @@ void PLAYER::Init()
 			inv->AddItem(CreateItemFromID(PART_REVOLVER));                 // 追加
 		}
 
-		// ・ノーマル弾
+		// ・ロケットランチャーを最初から所持
+		if (!inv->Has(ItemCategory::WeaponPart_FireType, PART_ROCKET)) {
+			inv->AddItem(CreateItemFromID(PART_ROCKET));
+		}
+
+		 //・ノーマル弾
 		if (!inv->Has(ItemCategory::WeaponPart_Ammo, PART_NORMAL_AMMO))    // 所持確認
 		{
 			inv->AddItem(CreateItemFromID(PART_NORMAL_AMMO));              // 追加
