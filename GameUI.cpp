@@ -306,7 +306,7 @@ void DrawShootingHand()
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[10]);
 
 		// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ðÝ’è
-		SetSprite(g_VertexBuffer, SCREEN_CENTER_X, SCREEN_CENTER_Y-50, 50, 50, 0.0f, 0.0f, 1.0f, 1.0f);
+		SetSprite(g_VertexBuffer, SCREEN_CENTER_X+10, SCREEN_CENTER_Y-5, 50, 50, 0.0f, 0.0f, 1.0f, 1.0f);
 
 		// ƒ|ƒŠƒSƒ“•`‰æ
 		GetDeviceContext()->Draw(4, 0);
