@@ -57,7 +57,8 @@ struct BULLET {
     float spd;
     float size;
     float lifetime;
-    DX11_MODEL model;
+    DX11_MODEL* model;
+    BulletType type;
     XMFLOAT3 vel; // ← 速度ベクトルを追加
     float fWidth;
     float fHeight;

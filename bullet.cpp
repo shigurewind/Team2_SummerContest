@@ -19,14 +19,16 @@
 #include <vector>
 #include "enemy.h"
 #include "item.h"
+#include <cmath>    
+#include <cstdlib>  
 
 
 //=============================================================================
 // 弾の基本データ構造（属性など） //追加箇所
 //=============================================================================
 //                                  種類　　　　速さ  DMG  scl  lifetime    　　モデル　　　　　　　　RGB
-BulletData bulletData_Normal = { BULLET_NORMAL,  15.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
-BulletData bulletData_Fire = { BULLET_FIRE,     8.0f, 20, 0.6f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
+BulletData bulletData_Normal = { BULLET_NORMAL,  50.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
+BulletData bulletData_Fire = { BULLET_FIRE,     15.0f, 20, 0.6f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
 
 
 // 武器インスタンス 
@@ -36,7 +38,9 @@ Weapon g_RocketLauncher;
 
 // 弾のインスタンス配列
 BULLET g_Bullet[MAX_BULLET];
-
+// 共有モデル（1回だけロードして全弾で使い回す）
+static DX11_MODEL g_BulletModelNormal = {};
+static DX11_MODEL g_BulletModelFire = {};
 //==========================================================================
 // 爆風
 //==========================================================================
@@ -145,6 +149,11 @@ HRESULT InitBullet(void)
         g_Bullet[i].isLoaded = FALSE;
     }
 
+    // ここで一度だけ共有モデルをロード（ループの外）
+    LoadModel(const_cast<char*>(bulletData_Normal.modelPath), &g_BulletModelNormal);
+    LoadModel(const_cast<char*>(bulletData_Fire.modelPath), &g_BulletModelFire);
+
+
     // 武器ごとの弾をセット 
     g_Revolver.weaponType = WEAPON_REVOLVER;
     g_Revolver.bulletData = &bulletData_Normal;
@@ -167,17 +176,20 @@ HRESULT InitBullet(void)
 //=====================================================
 void UninitBullet()
 {
-    for (int i = 0; i < MAX_BULLET; i++)
+    // ① 弾スロット側の後始末（使ってないなら軽く初期化だけでOK）
+    for (int i = 0; i < MAX_BULLET; ++i)
     {
-        if (g_Bullet[i].isLoaded)
-        {
-            UnloadModel(&g_Bullet[i].model);
-            g_Bullet[i].isLoaded = FALSE;
-        }
         g_Bullet[i].use = FALSE;
-    }
-}
+        g_Bullet[i].isLoaded = FALSE;
 
+        // BULLET::model を DX11_MODEL* にした場合はポインタを切る
+        g_Bullet[i].model = nullptr;   // ← 共有モデル参照を外すだけ。Unloadしない！
+    }
+
+    // ② 共有モデルを最後に1回だけ解放（★ループの外）
+    UnloadModel(&g_BulletModelNormal);
+    UnloadModel(&g_BulletModelFire);
+}
 //=============================================================================
 // 弾の発射（共通）
 //=============================================================================
@@ -192,8 +204,9 @@ int SetBullet(XMFLOAT3 pos, XMFLOAT3 rot, BulletData data, WeaponType firedBy)
             g_Bullet[i].rot = rot;
             g_Bullet[i].spd = data.speed;
             g_Bullet[i].size = data.size;
-            LoadModel(const_cast<char*>(data.modelPath), &g_Bullet[i].model);
-            g_Bullet[i].isLoaded = TRUE;
+            g_Bullet[i].type = data.type;
+            g_Bullet[i].model = (data.type == BULLET_NORMAL) ? &g_BulletModelNormal : &g_BulletModelFire;
+            g_Bullet[i].isLoaded = true; // 参照を持つ意味で true に            
             g_Bullet[i].fWidth = 1.0f;
             g_Bullet[i].fHeight = 1.0f;
             g_Bullet[i].lifetime = data.lifetime;
@@ -280,8 +293,7 @@ void UpdateBullet(void)
             XMFLOAT3 boxMax = { nextPos.x + r, nextPos.y + r, nextPos.z + r };
 
             // 壁当たり判定
-            if (AABBHitOctree(GetWallTree(), GetWallTriangles(), boxMin, boxMax, 0, 5, 5))
-            {
+            if (AABBHitOctree(GetWallTree(), GetWallTriangles(), boxMin, boxMax, 0, 3, 3)) {
                 if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
                     // 直前に計算した nextPos を着弾点として爆発
                     ApplyExplosionAt(nextPos);
@@ -291,15 +303,18 @@ void UpdateBullet(void)
             }
 
             // 床当たり判定
-            if (AABBHitOctree(GetFloorTree(), GetFloorTriangles(), boxMin, boxMax, 0, 5, 5))
-            {
-                if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
-                    ApplyExplosionAt(nextPos);
+            if (nextPos.y <= 1.0f)
+            { // マップ原点系に合わせて適宜
+                if (AABBHitOctree(GetFloorTree(), GetFloorTriangles(), boxMin, boxMax, 0, 3, 3))
+                {
+                    if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
+                    {
+                        ApplyExplosionAt(nextPos);
+                    }
+                    g_Bullet[i].use = FALSE;
+                    continue;
                 }
-                g_Bullet[i].use = FALSE;
-                continue;
             }
-
             // ロケットランチャーの弾だけ重力をかける
             if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
             {
@@ -316,11 +331,6 @@ void UpdateBullet(void)
             {
                 g_Bullet[i].use = FALSE;
 
-                if (g_Bullet[i].isLoaded)
-                {
-                    UnloadModel(&g_Bullet[i].model);
-                    g_Bullet[i].isLoaded = FALSE;
-                }
             }
         }
     }
@@ -331,30 +341,49 @@ void UpdateBullet(void)
 
 void DrawBullet(void)
 {
+    // 使っている弾が1つも無ければ何もしない（描画状態も触らない）
+    bool any = false;
+    for (int i = 0; i < MAX_BULLET; ++i) {
+        if (g_Bullet[i].use) { any = true; break; }
+    }
+    if (!any) return;
+
+    // 弾は両面描画にしておく（★後で必ず元に戻す）
     SetCullingMode(CULL_MODE_NONE);
+
+    // 距離カリング用にカメラ位置を取得
+    CAMERA* cam = GetCamera();
+    const XMFLOAT3 camPos = cam ? cam->pos : XMFLOAT3{ 0.0f, 0.0f, 0.0f };
+
+    // しきい値：この距離より遠い弾は描画しない（必要に応じて調整）
+    constexpr float kDrawDist = 400.0f;
+    const float kDrawDist2 = (kDrawDist * kDrawDist);
+
     for (int i = 0; i < MAX_BULLET; i++)
     {
-        if (g_Bullet[i].use)
-        {
-            XMMATRIX mtxScl = XMMatrixScaling(g_Bullet[i].size, g_Bullet[i].size, g_Bullet[i].size);
-            XMMATRIX mtxRot = XMMatrixRotationRollPitchYaw(g_Bullet[i].rot.x, g_Bullet[i].rot.y, g_Bullet[i].rot.z);
-            XMMATRIX mtxTrans = XMMatrixTranslation(g_Bullet[i].pos.x, g_Bullet[i].pos.y, g_Bullet[i].pos.z);
+        if (!g_Bullet[i].use) continue;
 
-            XMMATRIX mtxWorld = mtxScl * mtxRot * mtxTrans;
-            SetWorldMatrix(&mtxWorld);
+        // 距離で省略（遠すぎる弾はスキップ）
+        const XMFLOAT3& p = g_Bullet[i].pos;
+        const float dx = p.x - camPos.x;
+        const float dy = p.y - camPos.y;
+        const float dz = p.z - camPos.z;
+        const float dist2 = dx * dx + dy * dy + dz * dz;
+        if (dist2 > kDrawDist2) continue;
 
-            //MATERIAL material = {};
-            //material.Diffuse = XMFLOAT4(g_Bullet[i].color.x, g_Bullet[i].color.y, g_Bullet[i].color.z, 1.0f);
-            //material.Ambient = material.Diffuse; 
-            //material.noTexSampling = 1;
-            //SetMaterial(material); 
+        // 通常描画
+        XMMATRIX mtxScl = XMMatrixScaling(g_Bullet[i].size, g_Bullet[i].size, g_Bullet[i].size);
+        XMMATRIX mtxRot = XMMatrixRotationRollPitchYaw(g_Bullet[i].rot.x, g_Bullet[i].rot.y, g_Bullet[i].rot.z);
+        XMMATRIX mtxTrans = XMMatrixTranslation(p.x, p.y, p.z);
+        XMMATRIX mtxWorld = mtxScl * mtxRot * mtxTrans;
+        SetWorldMatrix(&mtxWorld);
 
-            DrawModel(&g_Bullet[i].model);
-
-        }
+        DrawModel(g_Bullet[i].model);
     }
-}
 
+    // 描画状態を元に戻す（あなたのデフォルトが BACK なのでこれでOK）
+    SetCullingMode(CULL_MODE_BACK);
+}
 //=============================================================================
 // 弾の取得
 //=============================================================================

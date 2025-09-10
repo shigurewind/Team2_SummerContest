@@ -152,18 +152,26 @@ void LoadModel( char *FileName, DX11_MODEL *Model )
 void UnloadModel( DX11_MODEL *Model )
 {
 
-	for (unsigned short i = 0; i < Model->SubsetNum; i++)
+	if (!Model) return;
+
+	// サブセット配列が有効なときだけテクスチャを解放
+	if (Model->SubsetArray)
 	{
-		if (Model->SubsetArray[i].Material.Texture)
+		for (unsigned short i = 0; i < Model->SubsetNum; i++)
 		{
-			Model->SubsetArray[i].Material.Texture->Release();
-			Model->SubsetArray[i].Material.Texture = NULL;
+			if (Model->SubsetArray[i].Material.Texture)
+			{
+				Model->SubsetArray[i].Material.Texture->Release();
+				Model->SubsetArray[i].Material.Texture = nullptr;
+			}
 		}
+		delete[] Model->SubsetArray;
+		Model->SubsetArray = nullptr;   // ★重要：ダングリング防止
+		Model->SubsetNum = 0;        // ★重要：二度目以降のループ抑止
 	}
 
-	if( Model->VertexBuffer )		Model->VertexBuffer->Release();
-	if( Model->IndexBuffer )		Model->IndexBuffer->Release();
-	if( Model->SubsetArray )		delete[] Model->SubsetArray;
+	if (Model->VertexBuffer) { Model->VertexBuffer->Release(); Model->VertexBuffer = nullptr; }
+	if (Model->IndexBuffer) { Model->IndexBuffer->Release();  Model->IndexBuffer = nullptr; }
 }
 
 
