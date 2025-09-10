@@ -14,6 +14,7 @@
 
 #include "light.h"
 #include "boundingBoxDebug.h"
+#include "map.h"
 
 
 // item.cppにあるアイテム配列
@@ -205,6 +206,59 @@ void ShowDebugUI()
 			ImGui::PopID();
 		}
 
+		ImGui::Separator();
+		ImGui::Text(u8"=== エネミー配置 ===");
+
+		static int selectedEnemyType = SPIDER;
+		const char* enemyTypes[] = { "Spider", "Ghost", "Bug" };
+		ImGui::Combo(u8"敵種類", &selectedEnemyType, enemyTypes, 3);
+
+		if (ImGui::Button(u8"カメラ位置でエネミー追加"))
+		{
+			CAMERA* cam = GetCamera();
+			EnemySpawner(cam->pos, selectedEnemyType);
+		}
+
+		ImGui::Separator();
+		ImGui::Text(u8"=== 配置ファイル管理 ===");
+
+		int currentMapID = GetCurrentMapID();
+		MapConfig* currentConfig = GetCurrentMapConfig();
+		if (currentConfig) {
+			ImGui::Text(u8"今のマップIDID: %d", currentMapID);
+			ImGui::Text(u8"エネミー配置ファイル: %s", currentConfig->enemyConfigPath);
+		}
+
+		if (ImGui::Button(u8"今のマップ配置保存")) {
+			if (currentConfig) {
+				SaveEnemyData(currentConfig->enemyConfigPath);
+			}
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button(u8"今のマップ配置ファイルロード")) {
+			if (currentConfig) {
+				LoadEnemyData(currentConfig->enemyConfigPath);
+			}
+		}
+
+		// 新しい配置ファイル作成
+		ImGui::Text(u8"=== 新しい配置ファイル作成 ===");
+		static char newEnemyConfigName[256] = "";
+		ImGui::InputText(u8"ファイル名：", newEnemyConfigName, sizeof(newEnemyConfigName));
+		ImGui::SameLine();
+		if (ImGui::Button(u8"作成")) {
+			if (strlen(newEnemyConfigName) > 0) {
+				std::string fullPath = "data/CONFIG/" + std::string(newEnemyConfigName) + "_enemies.json";
+				SaveEnemyData(fullPath);
+			}
+		}
+
+		// エネミー全削除
+		if (ImGui::Button(u8"すべてのエネミークリア")) {
+			ClearAllEnemies();
+		}
+
 	}
 
 
@@ -230,6 +284,9 @@ void ShowDebugUI()
 			ImGui::PopID();
 		}
 
+		ImGui::Separator();
+		ImGui::Text(u8"=== Item配置 ===");
+
 		static int selectedItemID = 0;
 		ImGui::InputInt(u8"追加アイテムID", &selectedItemID);
 		if (ImGui::Button(u8"アイテム追加"))
@@ -238,24 +295,52 @@ void ShowDebugUI()
 			SpawnItem(cam->pos, selectedItemID);
 		}
 
-		if (ImGui::Button(u8"保存")) {
-			SaveItemData("item_data.json");
+		ImGui::Separator();
+		ImGui::Text(u8"=== 配置ファイル管理 ===");
+
+		int currentMapID = GetCurrentMapID();
+		MapConfig* currentConfig = GetCurrentMapConfig();
+		if (currentConfig) {
+			ImGui::Text(u8"今のマップID: %d", currentMapID);
+			ImGui::Text(u8"配置ファイル: %s", currentConfig->itemConfigPath);
 		}
+
+		if (ImGui::Button(u8"今のマップ配置保存")) {
+			if (currentConfig) {
+				SaveItemData(currentConfig->itemConfigPath);
+				ImGui::Text(u8"保存完了: %s", currentConfig->itemConfigPath);
+			}
+		}
+
 		ImGui::SameLine();
-		if (ImGui::Button(u8"読込")) {
-			LoadItemData("item_data.json");
+		if (ImGui::Button(u8"今のマップ配置ロード")) {
+			if (currentConfig) {
+				LoadItemData(currentConfig->itemConfigPath);
+			}
 		}
+
+		// 新しい配置ファイル作成
+		ImGui::Text(u8"=== 新しい配置ファイル作成 ===");
+		static char newConfigName[256] = "";
+		ImGui::InputText(u8"ファイル名", newConfigName, sizeof(newConfigName));
+		ImGui::SameLine();
+		if (ImGui::Button(u8"作成")) {
+			if (strlen(newConfigName) > 0) {
+				std::string fullPath = "data/CONFIG/" + std::string(newConfigName) + "_items.json";
+				SaveItemData(fullPath);
+			}
+		}
+
+		// 重置当前配置
+		if (ImGui::Button(u8"すべてItemクリア")) {
+			ClearAllItems();
+		}
+
+
+
 	}
 
-	//Shaderエディター
-	/*if (ImGui::CollapsingHeader(u8"シェーダーエディター"))
-	{
-
-
-		
-
-		
-	}*/
+	
 
 	//ライトエディター
 	if (ImGui::CollapsingHeader(u8"ライトエディター"))

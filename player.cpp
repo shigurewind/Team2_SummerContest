@@ -125,7 +125,7 @@ void PLAYER::Init()
 	ammoFire = 20;
 	maxAmmoFire = 20;
 
-	HP = HP_MAX = 100;
+	HP = HP_MAX = 10;
 	alive = true;
 
 	meleeCDTime = 0.8f;
