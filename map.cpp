@@ -29,10 +29,10 @@ static MapConfig g_MapConfigs[] = {
 		1,                                          // mapID
 		"data/MODEL/tutorial_map.fbx",                // modelPath
 		"data/CONFIG/map1_items.json",             // itemConfigPath
-		"data/CONFIG/tutorial_enemies.json",           // enemyConfigPath
+		"data/CONFIG/map1_enemies.json",           // enemyConfigPath
 		{20.0f, 0.0f, 30.0f},                      // playerSpawnPos
 		{0.3f, -1.0f, 0.7f},                       // lightDirection
-		{0.2f, 0.2f, 0.3f, 1.0f},                  // ambientColor
+		{0.2f, 0.2f, 0.3f, 1.0f},                  // ambientColor		
 		"data/SOUND/game_bgm.wav"                  // backgroundMusic
 	}
 };
