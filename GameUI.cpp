@@ -1,6 +1,6 @@
 //=============================================================================
 //
-// スコア処理 [score.cpp]
+// スコア処理 [GameUI.cpp]
 // Author : 
 //
 //=============================================================================
@@ -17,7 +17,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(9)		// テクスチャの数
+#define TEXTURE_MAX					(11)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -41,9 +41,8 @@ static char* g_TexturName[TEXTURE_MAX] = {
 	"data/2Dpicture/UI/item_slot.png",
 	"data/TEXTURE/rocket_launcher.png",
 	"data/2Dpicture/enemy/bug02.png",
-
-
-
+	"data/2Dpicture/UI/shooting.png",
+	"data/2Dpicture/UI/crosshair.png",
 };
 
 
@@ -64,6 +63,9 @@ static float g_WebEffectTimer = 0.0f;
 
 BOOL g_BugEffectActive = FALSE;
 float bugEffectTimer = 0.0f;
+
+static float g_UIRecoilY = 0.0f;       // 現在のリコイル量
+static float g_UIRecoilRecover = 2.0f; // リコイル回復速度
 
 
 //=============================================================================
@@ -158,6 +160,14 @@ void UpdateGameUI(void)
 		}
 	}
 
+
+	// --- UIリコイルを徐々に回復 ---
+	if (g_UIRecoilY < 0.0f) {
+		g_UIRecoilY += g_UIRecoilRecover;
+		if (g_UIRecoilY > 0.0f) g_UIRecoilY = 0.0f;
+	}
+
+
 #ifdef _DEBUG	// デバッグ情報を表示する
 	//char *str = GetDebugStr();
 	//sprintf(&str[strlen(str)], " PX:%.2f PY:%.2f", g_Pos.x, g_Pos.y);
@@ -249,6 +259,7 @@ void DrawGameUI(void)
 	//選択中のアイテム表示
 	DrawItemSlot();
 
+	DrawShootingHand();
 
 }
 
@@ -277,6 +288,29 @@ void DrawHP()
 
 	// ポリゴン描画
 	GetDeviceContext()->Draw(4, 0);
+}
+
+void DrawShootingHand()
+{
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[9]);
+
+	float drawY = SCREEN_HEIGHT - 385 + g_UIRecoilY;
+	SetSprite(g_VertexBuffer, SCREEN_CENTER_X + 240, drawY, 800, 800, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+
+
+	//crosshair
+	{
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[10]);
+
+		// １枚のポリゴンの頂点とテクスチャ座標を設定
+		SetSprite(g_VertexBuffer, SCREEN_CENTER_X, SCREEN_CENTER_Y-50, 50, 50, 0.0f, 0.0f, 1.0f, 1.0f);
+
+		// ポリゴン描画
+		GetDeviceContext()->Draw(4, 0);
+	}
 }
 
 //========================================================
@@ -378,9 +412,20 @@ void HideBugEffect()
 	g_BugEffectActive = FALSE;
 }
 
+//=============================================================================
+// 発砲時にUIをリコイルさせる
+//=============================================================================
+
+void AddUIRecoil()
+{
+	g_UIRecoilY = -15.0f; // 上方向に15px移動
+}
 
 
+//=============================================================================
 // 選択中のアイテム描画
+//=============================================================================
+
 void DrawItemSlot(void)
 {
 	const float slotX = 80.0f;   // 位置

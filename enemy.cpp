@@ -478,7 +478,7 @@ void InitEnemy() {
 
 		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), SPIDER);
 		EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, -50.0f, 20.0f), BUG);
-		EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
+		//EnemySpawner(XMFLOAT3(0, -50.0f, 20.0f), BUG);
 		//EnemySpawner(XMFLOAT3(-50.0f + i * 30.0f, 0.0f, 20.0f), GHOST);
 
 	}
