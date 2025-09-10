@@ -132,12 +132,16 @@ void ShowDebugUI()
 	//モデルエディター
 	if (ImGui::CollapsingHeader(u8"モデルエディター"))
 	{
-		FBXTESTMODEL* FBXModel = GetFBXTestModel();
+		FBXMAPMODEL* FBXModel = GetFBXMapModel();
 
-		ImGui::DragFloat3(u8"位置", (float*)&FBXModel->pos, 0.5f);
-		ImGui::SliderFloat3(u8"回転", (float*)&FBXModel->rot, -XM_PI, XM_PI);
-		ImGui::SliderFloat3(u8"サイズ", (float*)&FBXModel->scl, 0, 100.0f);
-		ImGui::InputFloat3(u8"サイズ入力", (float*)&FBXModel->scl, "%.2f");
+		if (FBXModel && FBXModel->model) {
+			ImGui::DragFloat3(u8"位置", (float*)&FBXModel->pos, 0.5f);
+			ImGui::SliderFloat3(u8"回転", (float*)&FBXModel->rot, -XM_PI, XM_PI);
+			ImGui::SliderFloat3(u8"サイズ", (float*)&FBXModel->scl, 0, 100.0f);
+			ImGui::InputFloat3(u8"サイズ入力", (float*)&FBXModel->scl, "%.2f");
+		}
+
+		
 
 	}
 

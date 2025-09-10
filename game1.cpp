@@ -136,7 +136,7 @@ void UninitGame1(void)
 	// 影の終了処理
 	UninitShadow();
 
-	UninitFBXTestModel();
+	UninitFBXMapModel();
 
 	UninitItem();
 
@@ -182,7 +182,7 @@ void UpdateGame1(void)
 	}
 	// 地面処理の更新
 	//UpdateMeshField();
-	UpdateFBXTestModel();
+	UpdateFBXMapModel();
 	// プレイヤーの更新処理
 	UpdatePlayer();
 
@@ -244,7 +244,7 @@ void DrawGame01(void)
 	// パーティクルの描画処理
 	DrawParticle();
 
-	DrawFBXTestModel();
+	DrawFBXMapModel();
 
 	DrawItem();
 

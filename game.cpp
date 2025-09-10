@@ -72,7 +72,7 @@ HRESULT InitGame(void)
 	InitPlayer();
 
 	// エネミーの初期化
-	//InitEnemy();
+	InitEnemy();
 
 
 	InitBlood();
@@ -90,7 +90,7 @@ HRESULT InitGame(void)
 
 	//InitFBXTestModel();
 
-	//InitItem();
+	InitItem();
 
 	InitBoss();
 
@@ -133,7 +133,7 @@ void UninitGame(void)
 	// 影の終了処理
 	UninitShadow();
 
-	UninitFBXTestModel();
+	UninitFBXMapModel();
 
 	UninitItem();
 
@@ -183,7 +183,7 @@ void UpdateGame(void)
 	}
 	// 地面処理の更新
 	//UpdateMeshField();
-	UpdateFBXTestModel();
+	UpdateFBXMapModel();
 	// プレイヤーの更新処理
 	UpdatePlayer();
 
@@ -209,7 +209,7 @@ void UpdateGame(void)
 	// UIの更新処理
 	UpdateGameUI();
 
-	UpdateFBXTestModel();
+	UpdateFBXMapModel();
 
 	UpdateItem();
 
@@ -279,7 +279,7 @@ void DrawGame0(void)
 	// パーティクルの描画処理
 	DrawParticle();
 
-	DrawFBXTestModel();
+	DrawFBXMapModel();
 
 
 	DrawItem();

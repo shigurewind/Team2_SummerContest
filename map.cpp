@@ -83,13 +83,13 @@ HRESULT LoadMap(int mapID) {
 	UnloadCurrentMap();
 
 	// FBXモデル
-	FBXTESTMODEL* fbxModel = GetFBXTestModel();
+	FBXMAPMODEL* fbxModel = GetFBXMapModel();
 	if (fbxModel && fbxModel->model) {
 		// もうFBXモデルがロードされている
-		UninitFBXTestModel();
+		UninitFBXMapModel();
 	}
 
-	InitFBXTestModel();//TODO: 変更する必要
+	InitFBXMapModel(config->modelPath); // 対応のFBXモデルをロード
 
 	// Itemsロード
 	LoadMapItems(config->itemConfigPath);
@@ -115,7 +115,7 @@ void UnloadCurrentMap(void) {
 
 
 	// FBXモデル解放
-	UninitFBXTestModel();
+	UninitFBXMapModel();
 
 	// アイテム解放
 	ClearAllItems();

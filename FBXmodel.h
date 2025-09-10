@@ -13,7 +13,7 @@
 //*****************************************************************************
 // 構造体定義
 //*****************************************************************************
-struct FBXTESTMODEL
+struct FBXMAPMODEL
 {
 	XMFLOAT4X4			mtxWorld;			// ワールドマトリックス
 	XMFLOAT3			pos;				// モデルの位置
@@ -51,12 +51,12 @@ struct FBXTESTMODEL
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
-HRESULT InitFBXTestModel(void);
-void UninitFBXTestModel(void);
-void UpdateFBXTestModel(void);
-void DrawFBXTestModel(void);
+HRESULT InitFBXMapModel(const char* modelPath);
+void UninitFBXMapModel(void);
+void UpdateFBXMapModel(void);
+void DrawFBXMapModel(void);
 
-FBXTESTMODEL* GetFBXTestModel(void);
+FBXMAPMODEL* GetFBXMapModel(void);
 
 void ExtractTriangleData(AMODEL* model, const XMMATRIX& worldMatrix);
 const std::vector<TriangleData>& GetTriangleList();
