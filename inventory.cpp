@@ -10,6 +10,7 @@ bool Inventory::AddItem(const Item& item) {
 	std::vector<Item>* target = nullptr;
 	int* capacity = nullptr;
 
+
 	switch (item.GetCategory()) {
 	case ItemCategory::WeaponPart_Ammo:
 		target = &ammoParts;

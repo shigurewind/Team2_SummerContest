@@ -33,9 +33,9 @@ DWORD g_aSizeAudio[SOUND_LABEL_MAX] = {};					// オーディオデータサイズ
 SOUNDPARAM g_aParam[SOUND_LABEL_MAX] =
 {
 	//BGM
-	{ (char*)"data/BGM/bgm_title.wav", -1 },		// タイトルのBGM
-	{ (char*)"data/BGM/bgm.wav", -1 },				// in-gameのBGM
-	{ (char*)"data/BGM/bgm_gameOver.wav", -1 },		// ゲームオーバーのBGM
+	{ (char*)"data/BGM/bgm.wav", 1 },				// タイトルのBGM
+	{ (char*)"data/BGM/bgm_title.wav", 1 },			// in-gameのBGM
+	{ (char*)"data/BGM/bgm_gameOver.wav", 1 },		// ゲームオーバーのBGM
 	//プレイヤー
 	{ (char*)"data/SE/maou_se_battle_gun01.wav", 0 },// 弾発射音
 	{ (char*)"data/SE/maou_se_battle_gun02.wav", 0 },// 弾発射音
@@ -43,12 +43,19 @@ SOUNDPARAM g_aParam[SOUND_LABEL_MAX] =
 	{ (char*)"data/SE/maou_se_battle_gun05.wav", 0 },// 弾発射音
 	{ (char*)"data/SE/maou_se_system22.wav", 0 },	// 武器組み立て時の音
 	{ (char*)"data/SE/maou_se_system44.wav", 0 },	// 武器組み立て時の音
-	{ (char*)"data/SE/shot000.wav", 0 },			// 弾発射音
+	{ (char*)"data/SE/shot001.wav", 0 },			// 弾発射音
 	{ (char*)"data/SE/hit000.wav", 0 },				// ヒット音
+	{ (char*)"data/SE/軽いパンチ2.wav", 0 },		// パンチ音
+	{ (char*)"data/SE/walk_grass.wav", 0 },			// 歩く
+	{ (char*)"data/SE/walk_grass2.wav", 0 },			// 歩く
+	//System
+	{ (char*)"data/SE/change_gun.wav", 0},			//銃変わり
+	{ (char*)"data/SE/pick_item.wav", 0},			//アイテムを拾う
 	//エネミー
 	{ (char*)"data/SE/spider_monster_movin.wav", 0 },//クモのタイプのエネミーの動きの音
 	{ (char*)"data/SE/spider_monster_bite.wav", 0 }, //クモのタイプのエネミーの噛む音
 	{ (char*)"data/SE/spider_monster_spitt.wav", 0 },//クモのタイプのエネミーの発射の音
+	{ (char*)"data/SE/spider_dead.wav", 0 },//クモのタイプのエネミーの発射の音
 
 };
 

@@ -13,6 +13,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Octree.h"
+#include "sound.h"
 
 using json = nlohmann::json;
 
@@ -134,6 +135,8 @@ void ITEM_OBJ::Update()
 	if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
 
 		Inventory* playerInventory = GetPlayerInventory();
+
+		PlaySound(SOUND_LABEL_SE_pickItem);
 
 		switch (item.GetCategory())
 		{
@@ -710,6 +713,8 @@ void SwitchToPreviousItem() {
 
 	if (consumables.empty()) return;
 
+	PlaySound(SOUND_LABEL_SE_pickItem);
+
 	player->currentConsumableIndex--;
 	if (player->currentConsumableIndex < 0) {
 		player->currentConsumableIndex = (int)consumables.size() - 1;
@@ -722,6 +727,7 @@ void SwitchToNextItem() {
 	const std::vector<Item>& consumables = player->inventory.GetConsumables();
 
 	if (consumables.empty()) return;
+	PlaySound(SOUND_LABEL_SE_pickItem);
 
 	player->currentConsumableIndex++;
 	if (player->currentConsumableIndex >= (int)consumables.size()) {

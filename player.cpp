@@ -21,6 +21,7 @@
 #include "enemy.h"
 #include "inputManager.h"
 #include "GameUI.h"
+#include "sound.h"
 
 //*****************************************************************************
 // マクロ定義	
@@ -63,6 +64,10 @@ static float meleeCooldown = 0.0f;
 //チュートリアル判定用
 static bool tutorialTriggered = false;
 
+//WalkingSoundCoolDown
+int soundCooldownFrames = 20;
+int soundTimerFrames = 0;
+static bool toggleStep = false;
 
 //weponとbullet弾の状態
 //static WeaponType currentWeapon = WEAPON_REVOLVER;
@@ -331,7 +336,21 @@ void PLAYER::HandleInput()
 	if (inputVector.x != 0.0f || inputVector.y != 0.0f) {
 		move.x += sinf(cam->rot.y) * inputVector.y + cosf(cam->rot.y) * inputVector.x;
 		move.z += cosf(cam->rot.y) * inputVector.y - sinf(cam->rot.y) * inputVector.x;
+		if (soundTimerFrames <= 0) {
+			if (toggleStep)
+			{
+				PlaySound(SOUND_LABEL_SE_walk);
+			}
+			else
+			{
+				PlaySound(SOUND_LABEL_SE_walk2);
+			}
+			toggleStep = !toggleStep;
+			soundTimerFrames = soundCooldownFrames;
+		}
 	}
+
+	if (soundTimerFrames > 0) soundTimerFrames--;
 
 	velocity.x = move.x * currentSpeed;
 	velocity.z = move.z * currentSpeed;
@@ -343,6 +362,7 @@ void PLAYER::HandleInput()
 	{
 		meleeCooldown = meleeCDTime;
 		PlayMeleeAnimation();
+		PlaySound(SOUND_LABEL_SE_punch);
 		//enemy 
 
 		auto& enemies = GetEnemies();
@@ -389,6 +409,8 @@ void PLAYER::HandleInput()
 	//キーボードの1　武器の切り替え
 	if (GetKeyboardTrigger(DIK_1))
 	{
+		PlaySound(SOUND_LABEL_SE_changeGun);
+
 		switch (currentWeapon)
 		{
 		case WEAPON_REVOLVER:
@@ -405,6 +427,8 @@ void PLAYER::HandleInput()
 	//キーボードの2　弾の切り替え
 	if (GetKeyboardTrigger(DIK_2))
 	{
+		PlaySound(SOUND_LABEL_SE_changeGun);
+
 		if (currentBullet == BULLET_NORMAL)
 		{
 			currentBullet = BULLET_FIRE;
@@ -570,14 +594,19 @@ void PLAYER::HandleShooting()
 		if (currentWeapon == WEAPON_REVOLVER)
 		{
 			SetRevolverBullet(currentBullet, pos, rot);
+			PlaySound(SOUND_LABEL_SE_shot001);
 		}
 		else if (currentWeapon == WEAPON_SHOTGUN)
 		{
 			SetShotgunBullet(currentBullet, pos, rot); // ばら撒きは既存のまま
+			PlaySound(SOUND_LABEL_SE_shot002);
+
 		}
 		else if (currentWeapon == WEAPON_ROCKET_LAUNCHER)
 		{
 			SetRocketLauncherBullet(currentBullet, pos, rot);
+			PlaySound(SOUND_LABEL_SE_shot0);
+
 		}
 
 		// 武器ごとのコストを消費
