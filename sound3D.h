@@ -20,7 +20,7 @@ using namespace DirectX;
 enum
 {
     SOUND3D_GUNSHOT,
-    SOUND3D_ENEMY_BUG,
+    SOUND3D_ENEMY_GHOST,
     SOUND3D_MAX
 };
 
@@ -33,4 +33,3 @@ void UninitSound3D();
 void UpdateListener(XMFLOAT3 listenerPos, XMFLOAT3 listenerFront);
 void UpdateSound3D();
 void PlaySound3D(int label, XMFLOAT3 pos);
-void PlaySound3D_Test(int label);

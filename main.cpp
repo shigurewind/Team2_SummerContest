@@ -410,7 +410,6 @@ void Update(void)
 	// カメラ更新
 	UpdateCamera();
 
-	UpdateSound3D();
 
 	// モードによって処理を分ける
 	switch (g_Mode)
@@ -576,6 +575,9 @@ void SetMode(int mode)
 
 	// リザルト画面の終了処理
 	UninitResult();
+
+	// リザルト画面の終了処理
+	UninitSound3D();
 
 
 	g_Mode = mode;	// 次のモードをセットしている

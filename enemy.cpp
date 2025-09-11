@@ -772,9 +772,9 @@ void GhostEnemy::Init()
 
 void GhostEnemy::Update()
 {
-
-
 	if (!use) return;
+
+	PlaySound3D(SOUND3D_ENEMY_GHOST, pos);
 
 	if (isAttacking)    //攻撃のアニメーション処理
 	{

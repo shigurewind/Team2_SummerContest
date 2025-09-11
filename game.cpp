@@ -30,7 +30,7 @@
 #include "FBXmodel.h"
 #include "item.h"
 #include "boss.h"
-
+#include "sound3D.h"
 #include "boundingBoxDebug.h"
 
 
@@ -214,6 +214,9 @@ void UpdateGame(void)
 	UpdateItem();
 
 	UpdateBoss();
+
+	UpdateSound3D();
+
 
 	//ƒvƒŒƒCƒ„[‚ª€‚ñ‚¾‚Æ‚«
 	if (GetFade() == FADE_NONE) {
