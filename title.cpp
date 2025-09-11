@@ -11,6 +11,7 @@
 #include "sound.h"
 #include "sprite.h"
 #include "title.h"
+#include "inputManager.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -52,10 +53,10 @@ float	alpha;
 BOOL	flag_alpha;
 
 // --- 当たり判定の手動調整用パラメータ ---
-static float g_HitOffsetX  = +60.0f;   // +で右へ、-で左へ
-static float g_HitOffsetY  = +50.0f;   // +で下へ、-で上へ
-static float g_HitInflateW = -60.0f;   // +で幅を広げる（全体）。-で狭める
-static float g_HitInflateH = -100.0f;   // +で高さを広げる（全体）。-で狭める
+static float g_HitOffsetX  = +65.0f;   // +で右へ、-で左へ
+static float g_HitOffsetY  = +85.0f;   // +で下へ、-で上へ
+static float g_HitInflateW = -190.0f;   // +で幅を広げる（全体）。-で狭める
+static float g_HitInflateH = -215.0f;   // +で高さを広げる（全体）。-で狭める
 
 // 「ゲームスタート」ボタン用の基本サイズと状態
 static float g_GameStartBaseW = 600.0f;   // 既存描画と同じ幅
@@ -151,7 +152,7 @@ void UpdateTitle(void)
 		SetFade(FADE_OUT, MODE_TUTORIAL);
 	}
 	// ゲームパッドで入力処理
-	else if (IsButtonTriggered(0, BUTTON_START))
+	else if (IsButtonTriggered(0, BUTTON_START) || g_pInputManager->IsActionPressed(ACTION_CONFIRM))
 	{
 		SetFade(FADE_OUT, MODE_TUTORIAL);
 	}

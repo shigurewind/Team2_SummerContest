@@ -12,7 +12,7 @@
 #include "sound.h"
 #include "sprite.h"
 #include "GameUI.h"
-
+#include "inputManager.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -67,15 +67,19 @@ static bool  g_TitleBtnHover = false;
 static bool  g_RestartBtnHover = false;
 
 // 当たり判定の手動補正（必要に応じて数値調整）
-static float g_TitleHitOffsetX = 50.0f;
+static float g_TitleHitOffsetX = 90.0f;
 static float g_TitleHitOffsetY = 80.0f;
 static float g_TitleHitInflateW = 0.0f;
 static float g_TitleHitInflateH = 0.0f;
 
-static float g_RestartHitOffsetX = 50.0f;
+static float g_RestartHitOffsetX = 60.0f;
 static float g_RestartHitOffsetY = 80.0f;
 static float g_RestartHitInflateW = 0.0f;
 static float g_RestartHitInflateH = 0.0f;
+
+// パッド選択のフォーカス状態
+enum RESULT_FOCUS { RESULT_FOCUS_NONE = 0, RESULT_FOCUS_TITLE, RESULT_FOCUS_RESTART };
+static RESULT_FOCUS g_ResultFocus = RESULT_FOCUS_NONE;
 
 //=============================================================================
 // 初期化処理
@@ -165,32 +169,74 @@ void UninitResult(void)
 //=============================================================================
 void UpdateResult(void)
 {
+	//========================
+	// 1) パッド入力（選択制御）
+	//========================
+	// 仕様：
+	//  - 最初は未選択
+	//  - 十字キーの「上 or 下」で TITLE を選択＆少し拡大
+	//  - その状態から十字キー「左/右」で TITLE <-> RESTART を切替
+	//  - 決定（A/Enter/Start）でそのモードへ
+	//  - キャンセル（B/Esc）は TITLE へ
 
-	if (GetKeyboardTrigger(DIK_RETURN))
-	{// Enter押したら、ステージを切り替える
-		SetFade(FADE_OUT, MODE_TITLE);
+	const bool dpadUp = IsDPadUpTriggered(0);
+	const bool dpadDown = IsDPadDownTriggered(0);
+	const bool dpadLeft = IsDPadLeftTriggered(0);
+	const bool dpadRight = IsDPadRightTriggered(0);
+
+	// 最初の選択：上 or 下で TITLE にフォーカス
+	if ((dpadUp || dpadDown) && g_ResultFocus == RESULT_FOCUS_NONE) {
+		g_ResultFocus = RESULT_FOCUS_TITLE;
 	}
-	// ゲームパッドで入力処理
-	else if (IsButtonTriggered(0, BUTTON_START))
+
+	// 左右でトグル（フォーカスが付いている時だけ）
+	if ((dpadLeft || dpadRight) && g_ResultFocus != RESULT_FOCUS_NONE) {
+		g_ResultFocus = (g_ResultFocus == RESULT_FOCUS_TITLE)
+			? RESULT_FOCUS_RESTART
+			: RESULT_FOCUS_TITLE;
+	}
+
+	//========================
+	// 2) 決定 / キャンセル
+	//========================
+	// 決定：InputManagerのACTION_CONFIRM or Enter or Start
+	bool confirm =
+		(g_pInputManager && g_pInputManager->IsActionTriggered(ACTION_CONFIRM)) ||
+		GetKeyboardTrigger(DIK_RETURN) ||
+		IsButtonTriggered(0, BUTTON_START);
+
+	if (confirm) {
+		switch (g_ResultFocus) {
+		case RESULT_FOCUS_RESTART:
+			SetFade(FADE_OUT, MODE_GAME); // 必要なら MODE_GAME1 / MODE_TUTORIAL 等に変更
+			break;
+		case RESULT_FOCUS_TITLE:
+		case RESULT_FOCUS_NONE:
+		default:
+			SetFade(FADE_OUT, MODE_TITLE);
+			break;
+		}
+	}
+
+	// キャンセル（B / Esc）は常に TITLE へ
+	if ((g_pInputManager && g_pInputManager->IsActionTriggered(ACTION_CANCEL)) ||
+		IsButtonTriggered(0, BUTTON_B) ||
+		GetKeyboardTrigger(DIK_ESCAPE))
 	{
 		SetFade(FADE_OUT, MODE_TITLE);
 	}
-	else if (IsButtonTriggered(0, BUTTON_B))
-	{
-		SetFade(FADE_OUT, MODE_TITLE);
-	}
 
-
-
+	//========================
+	// 3) マウス：当たり判定＆クリック（既存仕様）
+	//========================
 	POINT mp;
-	GetCursorPos(&mp); // マウス座標取得
+	GetCursorPos(&mp); // 画面座標
 
 	// ==== TITLEボタン ====
 	{
 		float drawW = g_TitleBtnBaseW * g_TitleBtnScale;
 		float drawH = g_TitleBtnBaseH * g_TitleBtnScale;
 
-		// 判定用サイズ（手動補正を適用）
 		float testW = drawW + g_TitleHitInflateW;
 		float testH = drawH + g_TitleHitInflateH;
 		float cx = g_TitleBtnPos.x + g_TitleHitOffsetX;
@@ -203,11 +249,13 @@ void UpdateResult(void)
 			(mp.x >= cx - halfW) && (mp.x <= cx + halfW) &&
 			(mp.y >= cy - halfH) && (mp.y <= cy + halfH);
 
-		const float targetScale = g_TitleBtnHover ? 1.08f : 1.0f;
+		// ここがポイント：ホバー or パッド選択 なら拡大
+		const bool highlight = g_TitleBtnHover || (g_ResultFocus == RESULT_FOCUS_TITLE);
+		const float targetScale = highlight ? 1.12f : 1.0f; // 「少し拡大」
 		g_TitleBtnScale += (targetScale - g_TitleBtnScale) * 0.2f;
 
 		if (g_TitleBtnHover && IsMouseLeftTriggered()) {
-			SetFade(FADE_OUT, MODE_TITLE); // ← タイトルへ
+			SetFade(FADE_OUT, MODE_TITLE);
 		}
 	}
 
@@ -228,22 +276,19 @@ void UpdateResult(void)
 			(mp.x >= cx - halfW) && (mp.x <= cx + halfW) &&
 			(mp.y >= cy - halfH) && (mp.y <= cy + halfH);
 
-		const float targetScale = g_RestartBtnHover ? 1.08f : 1.0f;
+		const bool highlight = g_RestartBtnHover || (g_ResultFocus == RESULT_FOCUS_RESTART);
+		const float targetScale = highlight ? 1.12f : 1.0f;
 		g_RestartBtnScale += (targetScale - g_RestartBtnScale) * 0.2f;
 
 		if (g_RestartBtnHover && IsMouseLeftTriggered()) {
-			SetFade(FADE_OUT, MODE_GAME);   // ← ゲームへ（※あなたの環境でMODE_GAME1なら置き換え）
-			// 例: SetFade(FADE_OUT, MODE_TUTORIAL); にしたい場合はここを変更
+			SetFade(FADE_OUT, MODE_GAME); // 必要なら置換
 		}
 	}
 
-
-#ifdef _DEBUG	// デバッグ情報を表示する
-	
+#ifdef _DEBUG
+	// デバッグ表示が必要ならここに
 #endif
-
 }
-
 //=============================================================================
 // 描画処理
 //=============================================================================

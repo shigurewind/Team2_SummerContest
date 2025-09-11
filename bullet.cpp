@@ -109,8 +109,8 @@ namespace
 }
 
 // ===== ロケット弾の軌道チューニング =====
-constexpr float kRocketRefSpeed = 70.0f;   // “元のロケラン速度”の基準（あなたの初期値）
-constexpr float kRocketBaseDrop = -3.00f;  // 基準速度のときに毎フレーム落下させる量
+constexpr float kRocketRefSpeed = 200.0f;   // “元のロケラン速度”の基準（あなたの初期値）
+constexpr float kRocketBaseDrop = -5.00f;  // 基準速度のときに毎フレーム落下させる量
 constexpr float kRocketDragXY = 0.03f;   // 水平ドラッグ（前進をわずかに減速）
 constexpr bool  kRocketFaceVelocity = true;  // 見た目：速度方向に向けるか
 
@@ -284,7 +284,28 @@ void UpdateBullet(void)
         // ロケットランチャーの弾だけ重力をかける
         if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
         {
-            g_Bullet[i].vel.y += rocketGravity;
+            // 速度に比例して落下を強める（速いほど強く落ちる）
+            const float speed = sqrtf(
+                g_Bullet[i].vel.x * g_Bullet[i].vel.x +
+                g_Bullet[i].vel.y * g_Bullet[i].vel.y +
+                g_Bullet[i].vel.z * g_Bullet[i].vel.z
+            );
+
+            // 例）基準速度に対する比で落下量をスケール
+            const float drop = kRocketBaseDrop * (speed / (kRocketRefSpeed + 1e-6f)); // kRocketBaseDrop は負の値
+            g_Bullet[i].vel.y += drop;  // 重力（強め）
+
+            // 水平ドラッグで前進を少しずつ減速（横方向のみ）
+            g_Bullet[i].vel.x *= (1.0f - kRocketDragXY);
+            g_Bullet[i].vel.z *= (1.0f - kRocketDragXY);
+
+            // 見た目を速度方向に向ける（ロケットが進行方向を向く）
+            if (kRocketFaceVelocity && speed > 1e-6f) {
+                const float yaw = atan2f(g_Bullet[i].vel.x, g_Bullet[i].vel.z);
+                const float pitch = atan2f(g_Bullet[i].vel.y, sqrtf(g_Bullet[i].vel.x * g_Bullet[i].vel.x + g_Bullet[i].vel.z * g_Bullet[i].vel.z));
+                g_Bullet[i].rot.y = yaw;
+                g_Bullet[i].rot.x = pitch;
+            }
         }
 
         const XMFLOAT3 start = g_Bullet[i].pos;
