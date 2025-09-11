@@ -774,7 +774,7 @@ void PLAYER::HandleShooting()
 	}
 
 	// クリックトリガ & 弾が足りる場合のみ発射（既存仕様）
-	if (IsMouseLeftTriggered() && *currentAmmo >= requiredCost)
+	if ((IsMouseLeftTriggered() && *currentAmmo >= requiredCost) || g_pInputManager->IsActionTriggered(ACTION_SHOOT) && *currentAmmo >= requiredCost)
 	{
 		XMFLOAT3 pos = GetGunMuzzlePosition();
 		XMFLOAT3 rot = GetGunMuzzleRotation();
