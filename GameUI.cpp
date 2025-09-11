@@ -11,6 +11,7 @@
 #include "player.h"
 #include "bullet.h"
 #include "item.h"
+#include "overlay2D.h"
 
 //*****************************************************************************
 // ƒ}ƒNƒ’è‹`
@@ -295,10 +296,13 @@ void DrawHP()
 
 void DrawShootingHand()
 {
+	if (g_HandState == HAND_HIDDEN) return;
+
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[11]);
 
-	float drawY = SCREEN_HEIGHT - 385 + g_UIRecoilY;
-	SetSprite(g_VertexBuffer, SCREEN_CENTER_X + 240, drawY, 800, 800, 0.0f, 0.0f, 1.0f, 1.0f);
+	float drawX = SCREEN_CENTER_X + 240;
+	float drawY = SCREEN_HEIGHT - 385 + g_UIRecoilY + GetHandOffsetY();
+	SetSprite(g_VertexBuffer, drawX, drawY, 800, 800, 0.0f, 0.0f, 1.0f, 1.0f);
 
 	// ƒ|ƒŠƒSƒ“•`‰æ
 	GetDeviceContext()->Draw(4, 0);

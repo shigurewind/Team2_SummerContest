@@ -1,6 +1,6 @@
 //=============================================================================
 //
-// スコア処理 [score.cpp]
+// スコア処理 [overlay2D.cpp]
 // Author : 
 //
 //=============================================================================
@@ -40,7 +40,8 @@ static ID3D11ShaderResourceView* g_TexTutorial = nullptr;
 static ID3D11Buffer* g_VertexBufferOverlay = NULL;
 
 
-
+HandState g_HandState = HAND_IDLE;
+float g_HandOffsetY = 0.0f;
 
 void InitOverlay2D()
 {
@@ -92,13 +93,36 @@ void UpdateOverlay2D()
             if (g_MeleeFrame >= MELEE_FRAME_COUNT)
             {
                 g_IsMeleePlaying = false;
+                g_HandState = HAND_SHOWING;
             }
         }
     }
 
 
+    // ====== Hand animation ======
+    switch (g_HandState)
+    {
+    case HAND_HIDING:
+        g_HandOffsetY += 40.0f;
+        if (g_HandOffsetY >= 300.0f)
+        {
+            g_HandOffsetY = 300.0f;
+            g_HandState = HAND_HIDDEN;
+        }
+        break;
 
+    case HAND_HIDDEN:
+        break;
 
+    case HAND_SHOWING:
+        g_HandOffsetY -= 40.0f;
+        if (g_HandOffsetY <= 0.0f)
+        {
+            g_HandOffsetY = 0.0f;
+            g_HandState = HAND_IDLE;
+        }
+        break;
+    }
 }
 
 void DrawOverlay2D()
@@ -172,6 +196,8 @@ void PlayMeleeAnimation()
     g_IsMeleePlaying = true;
     g_MeleeFrame = 0;
     g_MeleeTimer = 0;
+
+    g_HandState = HAND_HIDING;
 }
 
 bool IsTutorialShowing()
@@ -182,4 +208,10 @@ bool IsTutorialShowing()
 void SetTutorialShowing(bool flag)
 {
     g_IsTutorialShowing = flag;
+}
+
+
+float GetHandOffsetY()
+{
+    return g_HandOffsetY;
 }

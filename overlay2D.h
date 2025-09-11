@@ -11,7 +11,16 @@
 // É}ÉNÉçíËã`
 //*****************************************************************************
 
+enum HandState
+{
+    HAND_IDLE,
+    HAND_HIDING,
+    HAND_HIDDEN,
+    HAND_SHOWING
+};
 
+extern HandState g_HandState;
+extern float g_HandOffsetY;
 
 
 //*****************************************************************************
@@ -28,3 +37,4 @@ void PlayMeleeAnimation();
 
 bool IsTutorialShowing();
 void SetTutorialShowing(bool flag);
+float GetHandOffsetY();
