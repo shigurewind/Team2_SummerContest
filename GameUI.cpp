@@ -348,7 +348,7 @@ void DrawAmmoUI(void)
 
 	// === 武器アイコン表示（現状維持） ===
 	const float weaponIconX = 480.0f;
-	const float weaponIconY = 640.0f;
+	const float weaponIconY = 630.0f;
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[weaponTexNo]);
 	SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 90, 60, 0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
@@ -393,7 +393,7 @@ void DrawAmmoUI(void)
 	const float digitWidth = 16.0f;
 	const float digitHeight = 32.0f;
 	const float baseX = 470.0f;
-	const float baseY = 680.0f;
+	const float baseY = 670.0f;
 
 	char text[16];
 	sprintf(text, "%d", currentAmmo);
