@@ -30,3 +30,6 @@ MapConfig* GetCurrentMapConfig(void);
 void LoadMapItems(const char* configPath);
 void LoadMapEnemies(const char* configPath);
 void SetPlayerSpawnPosition(const XMFLOAT3& pos);
+
+// Player位置リセット
+void ResetPlayerPosition(void);

@@ -158,4 +158,19 @@ void SetPlayerSpawnPosition(const XMFLOAT3& pos)
 }
 
 
+// Player位置リセット
+void ResetPlayerPosition(void)
+{
+	// 今のマップコンフィグを取得
+	MapConfig* currentConfig = GetCurrentMapConfig();
+	if (currentConfig == nullptr) {
+		return;
+	}
+
+	// Player位置をリセット
+	PLAYER* player = GetPlayer();
+	if (player) {
+		player->SetPosition(currentConfig->playerSpawnPos);
+	}
+}
 

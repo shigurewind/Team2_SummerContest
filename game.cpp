@@ -32,6 +32,8 @@
 #include "boss.h"
 
 #include "boundingBoxDebug.h"
+#include "map.h"
+#include "inputManager.h"
 
 
 //*****************************************************************************
@@ -183,8 +185,15 @@ void UpdateGame(void)
 	// 地面処理の更新
 	//UpdateMeshField();
 	UpdateFBXMapModel();
+
 	// プレイヤーの更新処理
 	UpdatePlayer();
+
+	// リセット処理
+	if (g_pInputManager->IsResetTriggered())
+	{
+		ResetPlayerPosition();
+	}
 
 	// エネミーの更新処理
 	UpdateEnemy();
@@ -303,7 +312,7 @@ void DrawGame0(void)
 	DrawGameUI();
 
 	DrawOverlay2D();
-	
+
 	// UI類の描画が終わった直後（2D状態のまま）に、ポーズ時は "PAUSED" を重ねる
 	if (g_bPause) {
 		DrawPaused();
