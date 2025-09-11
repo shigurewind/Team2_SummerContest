@@ -6,7 +6,8 @@
 
 struct MapConfig {
 	int mapID;
-	char modelPath[256];          // マップのモデルパス
+	char collisionModelPath[256];       // 当たり判定マップのモデルパス
+	char decorationModelPath[256];		// 飾りマップのモデルパス
 	char itemConfigPath[256];     // Item JSON配置ファイルパス
 	char enemyConfigPath[256];    // Enemy JSON配置ファイルパス
 	XMFLOAT3 playerSpawnPos;      // Playerの初期位置

@@ -25,6 +25,12 @@ struct FBXMAPMODEL
 	BOOL				load;
 	AMODEL* model;				// FBXモデル情報
 
+	// 当たり判定と飾り分けて使う
+	AMODEL* collisionModel;         // 当たり判定と描画両方
+	AMODEL* decorationModel;        // 描画だけ
+	BOOL                            collisionLoaded;        
+	BOOL                            decorationLoaded;
+
 	SHADER* shader;				//使うShader
 
 	int					shadowIdx;			// 影のインデックス番号
@@ -51,7 +57,7 @@ struct FBXMAPMODEL
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
-HRESULT InitFBXMapModel(const char* modelPath);
+HRESULT InitFBXMapModel(const char* collisionModelPath, const char* decorationModelPath = nullptr);
 void UninitFBXMapModel(void);
 void UpdateFBXMapModel(void);
 void DrawFBXMapModel(void);

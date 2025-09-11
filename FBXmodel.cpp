@@ -29,14 +29,31 @@ const std::vector<TriangleData>& GetWallTriangles() { return g_WallTris; }
 
 
 
-HRESULT InitFBXMapModel(const char* modelPath)
+HRESULT InitFBXMapModel(const char* collisionModelPath, const char* decorationModelPath)
 {
 	g_FBXMapModel.load = TRUE;
 
-	g_FBXMapModel.model = ModelLoad(modelPath);	// FBXモデルの読み込み
-	if (!g_FBXMapModel.model) {
-		MessageBoxA(NULL, "Failed to load map", "Error", MB_OK);
+	g_FBXMapModel.collisionModel = nullptr;
+	g_FBXMapModel.decorationModel = nullptr;
+	g_FBXMapModel.collisionLoaded = FALSE;
+	g_FBXMapModel.decorationLoaded = FALSE;
+
+	// 当たり判定
+	g_FBXMapModel.collisionModel = ModelLoad(collisionModelPath);
+	if (!g_FBXMapModel.collisionModel) {
+		MessageBoxA(NULL, "Failed to load collision model", "Error", MB_OK);
 		return E_FAIL;
+	}
+	g_FBXMapModel.collisionLoaded = TRUE;
+
+	g_FBXMapModel.model = g_FBXMapModel.collisionModel;
+
+	// 装飾モデル
+	if (decorationModelPath && strlen(decorationModelPath) > 0) {
+		g_FBXMapModel.decorationModel = ModelLoad(decorationModelPath);
+		if (g_FBXMapModel.decorationModel) {
+			g_FBXMapModel.decorationLoaded = TRUE;
+		}
 	}
 
 
@@ -54,7 +71,7 @@ HRESULT InitFBXMapModel(const char* modelPath)
 
 	XMMATRIX world = mtxScl * mtxRot * mtxQuat * mtxTrans;
 
-	std::string currentMapFile = modelPath; // マップファイル名
+	std::string currentMapFile = collisionModelPath; // マップファイル名
 	bool cacheLoaded = LoadTriangleCache(currentMapFile);
 
 	if (!cacheLoaded) {
@@ -124,7 +141,22 @@ void UninitFBXMapModel(void)
 	// モデルの解放処理
 	if (g_FBXMapModel.load == TRUE)
 	{
-		ModelRelease(g_FBXMapModel.model);	// FBXモデルの解放
+		
+		if (g_FBXMapModel.collisionLoaded && g_FBXMapModel.collisionModel) {
+			ModelRelease(g_FBXMapModel.collisionModel);
+			g_FBXMapModel.collisionLoaded = FALSE;
+			g_FBXMapModel.collisionModel = nullptr;
+		}
+
+		
+		if (g_FBXMapModel.decorationLoaded && g_FBXMapModel.decorationModel) {
+			ModelRelease(g_FBXMapModel.decorationModel);
+			g_FBXMapModel.decorationLoaded = FALSE;
+			g_FBXMapModel.decorationModel = nullptr;
+		}
+
+		
+		g_FBXMapModel.model = nullptr;
 		g_FBXMapModel.load = FALSE;
 	}
 
@@ -132,9 +164,7 @@ void UninitFBXMapModel(void)
 
 void UpdateFBXMapModel(void)
 {
-	//g_FBXMapModel.rot.y += 0.01f;	// 回転させてみる
-	//g_FBXMapModel.rot.x += 0.01f;
-	//g_FBXMapModel.pos.x +=  0.1f;	// X軸方向に移動
+	
 }
 
 void DrawFBXMapModel(void)
@@ -189,7 +219,13 @@ void DrawFBXMapModel(void)
 	}
 
 	// モデル描画
-	ModelDraw(g_FBXMapModel.model);
+	if (g_FBXMapModel.collisionLoaded && g_FBXMapModel.collisionModel) {
+		ModelDraw(g_FBXMapModel.collisionModel);
+	}
+
+	if (g_FBXMapModel.decorationLoaded && g_FBXMapModel.decorationModel) {
+		ModelDraw(g_FBXMapModel.decorationModel);
+	}
 
 
 	//SetFuchi(0);

@@ -16,25 +16,28 @@ static MapConfig g_MapConfigs[] = {
 	// Tutorial Map (MODE_TUTORIAL)
 	{
 		0,                                          // mapID
-		"data/MODEL/tutorial_map.fbx",             // modelPath
+		"data/MODEL/stage1_collision.fbx",             // collision modelPath
+		"data/MODEL/stage1_Nocollision.fbx",           // Nocollision modelPath
 		"data/CONFIG/tutorial_items.json",         // itemConfigPath
 		"data/CONFIG/tutorial_enemies.json",       // enemyConfigPath
 		{0.0f, 0.0f, 0.0f},                        // playerSpawnPos
 		{0.5f, -1.0f, 0.5f},                       // lightDirection
 		{0.3f, 0.3f, 0.3f, 1.0f},                  // ambientColor
-		"data/SOUND/tutorial_bgm.wav"              // backgroundMusic
+		""              // backgroundMusic
 	},
 	// stage 1 (MODE_GAME)
 	{
-		1,                                          // mapID
-		"data/MODEL/tutorial_map.fbx",                // modelPath
+		1,                                         // mapID
+		"data/MODEL/stage2_collision.fbx",         // collision modelPath
+		"",											// Nocollision modelPath
 		"data/CONFIG/map1_items.json",             // itemConfigPath
 		"data/CONFIG/map1_enemies.json",           // enemyConfigPath
-		{20.0f, 0.0f, 30.0f},                      // playerSpawnPos
+		{0.0f, 0.0f, 0.0f},                      // playerSpawnPos
 		{0.3f, -1.0f, 0.7f},                       // lightDirection
 		{0.2f, 0.2f, 0.3f, 1.0f},                  // ambientColor		
-		"data/SOUND/game_bgm.wav"                  // backgroundMusic
+		""                  // backgroundMusic
 	}
+
 };
 
 // Mapコンフィグ数
@@ -89,7 +92,7 @@ HRESULT LoadMap(int mapID) {
 		UninitFBXMapModel();
 	}
 
-	InitFBXMapModel(config->modelPath); // 対応のFBXモデルをロード
+	InitFBXMapModel(config->collisionModelPath, config->decorationModelPath); // 対応のFBXモデルをロード
 
 	// Itemsロード
 	LoadMapItems(config->itemConfigPath);
