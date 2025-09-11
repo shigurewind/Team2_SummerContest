@@ -224,15 +224,6 @@ void UpdateGame(void)
 	UpdateBoss();
 
 
-	//プレイヤーが死んだとき
-	if (GetFade() == FADE_NONE) {
-		// プレイヤー死亡判定：HP が 0 以下ならリザルトへ
-		if (GetPlayer()->HP <= 0) {
-			SetFade(FADE_OUT, MODE_RESULT);
-		}
-	}
-
-
 
 	bool allDead = true;
 	for (auto enemy : GetEnemies())

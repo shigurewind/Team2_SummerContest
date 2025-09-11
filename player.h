@@ -39,6 +39,8 @@ public:
 
 	void EventCheck();
 
+	void CheckPlayerDeath();
+
 	void ApplySlow(float factor, int durationFrames);
 
 	//壁のノーマル取得（Slide機能ために）

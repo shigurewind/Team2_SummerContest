@@ -25,6 +25,7 @@
 #include "attackeffect.h"
 #include "blood.h"
 #include "item.h"
+#include "fade.h"
 
 //*****************************************************************************
 // マクロ定義	
@@ -325,16 +326,6 @@ void UpdatePlayer(void)
 		LoadPlayerFromFile();
 	}
 
-#ifdef _DEBUG
-
-#endif
-
-
-
-
-
-
-
 
 
 	// 影もプレイヤーの位置に合わせる
@@ -344,21 +335,6 @@ void UpdatePlayer(void)
 
 
 
-
-
-	//// ポイントライトのテスト
-	//{
-	//	LIGHT* light = GetLightData(1);
-	//	XMFLOAT3 pos = g_Player.GetPosition();
-	//	pos.y += 20.0f;
-
-	//	light->Position = pos;
-	//	light->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	//	light->Ambient = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	//	light->Type = LIGHT_TYPE_POINT;
-	//	light->Enable = TRUE;
-	//	SetLightData(1, light);
-	//}
 
 
 
@@ -400,6 +376,8 @@ void PLAYER::OnUpdate() {
 	//HandleReload();         // Rでリロード
 
 	EventCheck();          // イベントチェック
+
+	CheckPlayerDeath();	// 死亡チェック
 }
 
 //ジャンプ
@@ -746,6 +724,16 @@ void PLAYER::EventCheck()
 		tutorialTriggered = true;
 	}
 
+}
+
+
+void PLAYER::CheckPlayerDeath()
+{
+	if (HP <= 0 && alive && GetFade() == FADE_NONE) {
+		alive = false;
+		SavePlayerToFile();
+		SetFade(FADE_OUT, MODE_RESULT);
+	}
 }
 
 
