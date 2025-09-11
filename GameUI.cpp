@@ -256,13 +256,15 @@ void DrawGameUI(void)
 	}
 
 
-	//弾数表示の呼び出し
-	DrawAmmoUI();
 
 	//選択中のアイテム表示
 	DrawItemSlot();
 
 	DrawShootingHand();
+
+	//弾数表示の呼び出し
+	DrawAmmoUI();
+
 
 }
 
@@ -341,8 +343,8 @@ void DrawAmmoUI(void)
 	}
 
 	// === 武器アイコン表示（現状維持） ===
-	const float weaponIconX = 1025.0f;
-	const float weaponIconY = 610.0f;
+	const float weaponIconX = 480.0f;
+	const float weaponIconY = 640.0f;
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[weaponTexNo]);
 	SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 90, 60, 0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
@@ -386,8 +388,8 @@ void DrawAmmoUI(void)
 	// 数字だけ描画（“/”やクリップは廃止）
 	const float digitWidth = 16.0f;
 	const float digitHeight = 32.0f;
-	const float baseX = 1020.0f;
-	const float baseY = 650.0f;
+	const float baseX = 470.0f;
+	const float baseY = 680.0f;
 
 	char text[16];
 	sprintf(text, "%d", currentAmmo);
