@@ -295,7 +295,7 @@ void DrawHP()
 
 void DrawShootingHand()
 {
-	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[9]);
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[11]);
 
 	float drawY = SCREEN_HEIGHT - 385 + g_UIRecoilY;
 	SetSprite(g_VertexBuffer, SCREEN_CENTER_X + 240, drawY, 800, 800, 0.0f, 0.0f, 1.0f, 1.0f);
@@ -306,7 +306,7 @@ void DrawShootingHand()
 
 	//crosshair
 	{
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[10]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[12]);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
 		SetSprite(g_VertexBuffer, SCREEN_CENTER_X+10, SCREEN_CENTER_Y-5, 50, 50, 0.0f, 0.0f, 1.0f, 1.0f);
