@@ -42,7 +42,7 @@ void InputManager::InitializeDefaultBindings()
 
 	//ëÄçÏ---------------------------------------------------------------
 	BindAction(ACTION_LIGHT_SWITCH, InputBinding(INPUTDEVICE_KEYBOARD, DIK_T));
-	BindAction(ACTION_LIGHT_SWITCH, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_A, 0));
+	BindAction(ACTION_LIGHT_SWITCH, InputBinding(INPUTDEVICE_GAMEPAD, BUTTON_B, 0));
 
 	// çUåÇ---------------------------------------------------------------
 	//éÀåÇ

@@ -117,12 +117,12 @@ int Min(int a, int b) {
 }
 
 static bool RayAABB(
-	const DirectX::XMFLOAT3& ro,       
-	const DirectX::XMFLOAT3& rdN,      
+	const DirectX::XMFLOAT3& ro,
+	const DirectX::XMFLOAT3& rdN,
 	const DirectX::XMFLOAT3& bmin,
 	const DirectX::XMFLOAT3& bmax,
 	float& tHit,
-	DirectX::XMFLOAT3& outNormal)      
+	DirectX::XMFLOAT3& outNormal)
 {
 	using namespace DirectX;
 
@@ -135,7 +135,7 @@ static bool RayAABB(
 		float invX = inv(rdN.x);
 		float t1 = (bmin.x - ro.x) * invX;
 		float t2 = (bmax.x - ro.x) * invX;
-		float nx1 = -1.0f, nx2 = 1.0f; 
+		float nx1 = -1.0f, nx2 = 1.0f;
 
 		XMFLOAT3 n1 = { nx1,0,0 }, n2 = { nx2,0,0 };
 		if (t1 > t2) { std::swap(t1, t2); std::swap(n1, n2); }
@@ -169,7 +169,7 @@ static bool RayAABB(
 		if (tmin > tmax || tmax < 0.0f) return false;
 	}
 
-	tHit = (tmin >= 0.0f) ? tmin : tmax;  
+	tHit = (tmin >= 0.0f) ? tmin : tmax;
 	outNormal = (tmin >= 0.0f) ? nmin : nmax;
 	return (tHit >= 0.0f);
 }
@@ -236,7 +236,7 @@ void PLAYER::Init()
 			inv->AddItem(CreateItemFromID(PART_ROCKET));
 		}
 
-		 //・ノーマル弾
+		//・ノーマル弾
 		if (!inv->Has(ItemCategory::WeaponPart_Ammo, PART_NORMAL_AMMO))    // 所持確認
 		{
 			inv->AddItem(CreateItemFromID(PART_NORMAL_AMMO));              // 追加
@@ -312,7 +312,7 @@ void UpdatePlayer(void)
 		{
 			g_Player.alive = false;
 			SavePlayerToFile();
-			 /*GameOver Continue*/
+			/*GameOver Continue*/
 		}
 
 	}
@@ -346,19 +346,19 @@ void UpdatePlayer(void)
 
 
 
-	// ポイントライトのテスト
-	{
-		LIGHT* light = GetLightData(1);
-		XMFLOAT3 pos = g_Player.GetPosition();
-		pos.y += 20.0f;
+	//// ポイントライトのテスト
+	//{
+	//	LIGHT* light = GetLightData(1);
+	//	XMFLOAT3 pos = g_Player.GetPosition();
+	//	pos.y += 20.0f;
 
-		light->Position = pos;
-		light->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		light->Ambient = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		light->Type = LIGHT_TYPE_POINT;
-		light->Enable = TRUE;
-		SetLightData(1, light);
-	}
+	//	light->Position = pos;
+	//	light->Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	//	light->Ambient = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	//	light->Type = LIGHT_TYPE_POINT;
+	//	light->Enable = TRUE;
+	//	SetLightData(1, light);
+	//}
 
 
 
@@ -683,12 +683,12 @@ void PLAYER::ApplyCollision()
 
 	WallHitInfo info{};
 	if (!CheckWallCollisionLODEx(bmin, bmax, &info, this)) {
-		return; 
+		return;
 	}
 
 	XMFLOAT3 n = info.normal;
 	if (n.x == 0 && n.y == 0 && n.z == 0) {
-		
+
 		velocity.x = 0; velocity.z = 0;
 		return;
 	}
@@ -998,7 +998,7 @@ void LoadPlayerFromFile() {
 
 
 //プレイヤーのインベントリーを取得
-Inventory* GetPlayerInventory(void) 
+Inventory* GetPlayerInventory(void)
 {
 	PLAYER* player = GetPlayer();
 	return &(player->inventory);

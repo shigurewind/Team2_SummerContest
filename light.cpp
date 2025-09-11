@@ -116,7 +116,7 @@ BOOL	GetFogEnable(void)
 
 void UpdateSpotlight(void)
 {
-	if (!g_SpotlightEnabled) return;
+
 
 	CAMERA* cam = GetCamera();
 	LIGHT* light = GetLightData(1);
@@ -153,8 +153,5 @@ void SetSpotlightEnabled(BOOL enable)
 {
 	g_SpotlightEnabled = enable;
 
-	// ŒõŒ¹‚ðON/OFF
-	LIGHT* light = GetLightData(1);
-	light->Enable = enable;
-	SetLightData(1, light);
+
 }
