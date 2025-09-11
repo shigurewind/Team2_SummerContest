@@ -18,6 +18,7 @@
 #include "collision.h"
 #include "GameUI.h"
 #include "item.h"
+#include "sound.h"
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
@@ -182,6 +183,7 @@ void SpiderEnemy::Init() {
 
 	EnableGravity(true);
 	SetMaxFallSpeed(6.0f);
+
 }
 
 void SpiderEnemy::Update() {
@@ -483,6 +485,9 @@ void SpiderEnemy::NormalMovement()
 		// 範囲外に出そうなら方向を変える
 		moveChangeTimer = 0.0f; // すぐ次の方向へ変更
 	}
+
+	PlaySound(SOUND_LABEL_SE_spiderEnemyMoving);
+
 }
 void SpiderEnemy::Attack()
 {
@@ -493,6 +498,8 @@ void SpiderEnemy::Attack()
 		attackFrameTimer = 0.5f;              // 攻撃のフレームの描画の時間
 		currentFrame = 2;                     // 攻撃のフレームの描画
 		attackCooldownTimer = attackCooldown; // Reset cooldown
+
+		PlaySound(SOUND_LABEL_SE_spiderEnemySpit);
 
 		ShowWebEffect(0.5f);
 		GetPlayer()->ApplySlow(0.5f, 0.5f); //速度50％に遅くなった
