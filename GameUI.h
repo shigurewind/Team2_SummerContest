@@ -25,6 +25,7 @@ void DrawGameUI(void);
 
 void DrawHPBar();
 void DrawHP();
+void DrawShootingHand();
 
 
 void DrawAmmoUI(void);
@@ -35,6 +36,8 @@ void HideBugEffect();
 
 
 void DrawItemSlot(void);
+void AddUIRecoil();
+
 void DrawPaused(void);
 
 

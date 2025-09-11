@@ -795,6 +795,8 @@ void PLAYER::HandleShooting()
 		// 武器ごとのコストを消費（既存仕様）
 		*currentAmmo -= requiredCost;
 		if (*currentAmmo < 0) *currentAmmo = 0; // 念のため
+
+		AddUIRecoil(); // 発砲時にリコイルを発生
 	}
 }
 

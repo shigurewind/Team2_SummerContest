@@ -242,6 +242,7 @@ XMFLOAT3 GetGunMuzzlePosition()
 	XMVECTOR camPos = XMLoadFloat3(&cam->pos);
 	XMVECTOR camDir = XMVector3Normalize(XMLoadFloat3(&cam->at) - camPos);
 
+
 	// ?? 修正：正しい右ベクトルの計算（up × camDir）→ 右手系
 	XMVECTOR right = XMVector3Normalize(XMVector3Cross(XMLoadFloat3(&cam->up), camDir)); // ←ここ修正！
 	XMVECTOR down = XMVectorScale(XMLoadFloat3(&cam->up), -1.0f);
@@ -249,11 +250,13 @@ XMFLOAT3 GetGunMuzzlePosition()
 	// 右下にオフセットを加え、少し前へ
 	XMVECTOR muzzleOffset =
 		XMVectorAdd(
-			XMVectorAdd(XMVectorScale(right, 10.0f), XMVectorScale(down, 5.0f)),
+			XMVectorAdd(XMVectorScale(right, 5.0f), XMVectorScale(down, -1.0f)),
 			XMVectorScale(camDir, 10.0f)
 		);
 
 	XMVECTOR muzzlePos = camPos + muzzleOffset;
+
+
 
 	XMFLOAT3 result;
 	XMStoreFloat3(&result, muzzlePos);
