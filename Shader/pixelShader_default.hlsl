@@ -63,15 +63,25 @@ float4 PixelShaderPolygon(VertexOutput input) : SV_Target
     }
     
 
-	//フォグ
+	//フォグ//2dfog？
     if (Fog.Enable == 1)
     {
-        float z = input.Position.z * input.Position.w;
-        float f = (Fog.Distance.y - z) / (Fog.Distance.y - Fog.Distance.x);
-        f = saturate(f);
-        color = f * color + (1 - f) * Fog.FogColor;
-        color.a = color.a; 
-    }
+		float3 toP = input.WorldPos.xyz - Camera.xyz;
+
+		float distXZ = length(toP.xz);
+		float startXZ = Fog.Distance.x;
+		float endXZ = Fog.Distance.y;
+		float fogXZ = saturate((distXZ - startXZ) / max(endXZ - startXZ, 1e-5));
+
+		float distY = abs(toP.y);
+		float startY = Fog.Distance.z;
+		float endY = Fog.Distance.w;
+		float fogY = saturate((distY - startY) / max(endY - startY, 1e-5));
+
+		float f = max(fogXZ, fogY);
+
+		color.rgb = lerp(color.rgb, Fog.FogColor.rgb, f);
+	}
 
 	//縁取り
     if (fuchi == 1)

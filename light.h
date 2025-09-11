@@ -27,3 +27,7 @@ LIGHT *GetLightData(int index);
 void UpdateSpotlight(void);
 BOOL GetSpotlightEnabled(void);
 void SetSpotlightEnabled(BOOL enable);
+void SetGlobalFogXZ_Y(float startXZ, float endXZ,
+    float startY, float endY,
+    const XMFLOAT4& color,
+    BOOL enable = TRUE);
