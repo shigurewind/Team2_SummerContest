@@ -189,6 +189,9 @@ void UpdateGame(void)
 	// プレイヤーの更新処理
 	UpdatePlayer();
 
+	// トランジションゾーンのチェック
+	CheckPlayerInTransitionZones();
+
 	// リセット処理
 	if (g_pInputManager->IsResetTriggered())
 	{
@@ -225,29 +228,29 @@ void UpdateGame(void)
 
 
 
-	bool allDead = true;
-	for (auto enemy : GetEnemies())
-	{
-		if (enemy->IsUsed())
-		{
-			allDead = false;
-			break;
-		}
-	}
+	//bool allDead = true;
+	//for (auto enemy : GetEnemies())
+	//{
+	//	if (enemy->IsUsed())
+	//	{
+	//		allDead = false;
+	//		break;
+	//	}
+	//}
 
-	static bool requestFadeOut = false;
+	//static bool requestFadeOut = false;
 
-	if (allDead && !requestFadeOut)
-	{
-		requestFadeOut = true;
-	}
+	//if (allDead && !requestFadeOut)
+	//{
+	//	requestFadeOut = true;
+	//}
 
 
-	if (requestFadeOut && GetFade() == FADE_NONE)
-	{
-		SetFade(FADE_OUT, MODE_STAGE2);
-		requestFadeOut = false;
-	}
+	//if (requestFadeOut && GetFade() == FADE_NONE)
+	//{
+	//	SetFade(FADE_OUT, MODE_STAGE2);
+	//	requestFadeOut = false;
+	//}
 
 	BoundingBoxDebugRenderer::GetInstance().Update();
 }

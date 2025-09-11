@@ -543,6 +543,134 @@ void ShowDebugUI()
 	}
 
 
+	// 遷移ゾーンエディター
+	if (ImGui::CollapsingHeader(u8"遷移ゾーンエディター"))
+	{
+		BoundingBoxDebugRenderer& debugRenderer = BoundingBoxDebugRenderer::GetInstance();
+
+		// 表示するかどうか
+		bool showTransitionZone = debugRenderer.GetTransitionZoneEnable();
+		if (ImGui::Checkbox(u8"遷移ゾーン表示", &showTransitionZone)) {
+			debugRenderer.SetTransitionZoneEnable(showTransitionZone);
+		}
+
+		ImGui::Separator();
+
+		// 今のマップ情報
+		int currentMapID = GetCurrentMapID();
+		MapConfig* currentConfig = GetCurrentMapConfig();
+
+		if (currentConfig) {
+			ImGui::Text(u8"現在マップID: %d", currentMapID);
+			ImGui::Text(u8"遷移区域数: %d", currentConfig->transitionZoneCount);
+
+			ImGui::Separator();
+			ImGui::Text(u8"=== 遷移リスト ===");
+
+			// 今のマップの遷移ゾーン遍歴
+			for (int i = 0; i < currentConfig->transitionZoneCount; i++)
+			{
+				ImGui::PushID(i);
+
+				SceneTransitionZone* zone = &currentConfig->transitionZones[i];
+
+				// 名前
+				if (ImGui::CollapsingHeader(zone->name)) {
+
+					// 起用スイッチ
+					bool enabled = zone->enabled;
+					if (ImGui::Checkbox(u8"起用", &enabled)) {
+						zone->enabled = enabled;
+					}
+
+					// ターゲットマップID
+					int targetMapID = zone->targetMapID;
+					if (ImGui::InputInt(u8"ターゲットマップID", &targetMapID)) {
+						zone->targetMapID = targetMapID;
+					}
+
+					// 位置
+					XMFLOAT3 center = zone->center;
+					if (ImGui::DragFloat3(u8"中心位置", (float*)&center, 0.5f)) {
+						zone->center = center;
+					}
+
+					// サイズ
+					XMFLOAT3 size = zone->size;
+					if (ImGui::DragFloat3(u8"サイズ", (float*)&size, 0.5f, 1.0f, 200.0f)) {
+						zone->size = size;
+					}
+
+					// 色
+					XMFLOAT4 color = zone->debugColor;
+					if (ImGui::ColorEdit4(u8"色", (float*)&color)) {
+						zone->debugColor = color;
+					}
+
+					// 名前
+					char nameBuffer[64];
+					strcpy_s(nameBuffer, sizeof(nameBuffer), zone->name);
+					if (ImGui::InputText(u8"名前", nameBuffer, sizeof(nameBuffer))) {
+						strcpy_s(zone->name, sizeof(zone->name), nameBuffer);
+					}
+
+					// 調整用ボタン
+					if (ImGui::Button(u8"カメラ位置に移動")) {
+						CAMERA* cam = GetCamera();
+						zone->center = cam->pos;
+						zone->center.y += 10.0f; // ちょっと上げる
+					}
+
+					ImGui::SameLine();
+
+					if (ImGui::Button(u8"プレイヤー位置に移動")) {
+						PLAYER* player = GetPlayer();
+						zone->center = player->GetPosition();
+						zone->center.y += 10.0f; // ちょっと上げる
+					}
+
+					// 距離
+					PLAYER* player = GetPlayer();
+					XMFLOAT3 playerPos = player->GetPosition();
+					float distance = sqrtf(
+						(playerPos.x - zone->center.x) * (playerPos.x - zone->center.x) +
+						(playerPos.y - zone->center.y) * (playerPos.y - zone->center.y) +
+						(playerPos.z - zone->center.z) * (playerPos.z - zone->center.z)
+					);
+					ImGui::Text(u8"プレイヤーからの距離: %.2f", distance);
+
+					// プレイヤーが区域内にいるかどうか
+					XMFLOAT3 min = zone->GetMin();
+					XMFLOAT3 max = zone->GetMax();
+					bool playerInZone = (playerPos.x >= min.x && playerPos.x <= max.x &&
+						playerPos.y >= min.y && playerPos.y <= max.y &&
+						playerPos.z >= min.z && playerPos.z <= max.z);
+					ImGui::Text(u8"プレイヤーは区域内: %s", playerInZone ? u8"はい" : u8"いえ");
+
+					ImGui::Separator();
+				}
+
+				ImGui::PopID();
+			}
+
+			ImGui::Separator();
+			ImGui::Text(u8"=== 情報 ===");
+
+			
+			// 情報
+			PLAYER* player = GetPlayer();
+			XMFLOAT3 playerPos = player->GetPosition();
+			ImGui::Text(u8"プレイヤー位置: (%.2f, %.2f, %.2f)", playerPos.x, playerPos.y, playerPos.z);
+
+			CAMERA* cam = GetCamera();
+			ImGui::Text(u8"カメラ位置: (%.2f, %.2f, %.2f)", cam->pos.x, cam->pos.y, cam->pos.z);
+		}
+		else {
+			ImGui::Text(u8"今のマップない");
+		}
+	}
+
+
 
 	ImGui::End();
 

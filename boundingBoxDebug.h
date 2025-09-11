@@ -59,6 +59,10 @@ public:
     void SetNormalDisplayRange(float range) { m_normalDisplayRange = range; }
     float GetNormalDisplayRange() const { return m_normalDisplayRange; }
 
+	// 遷移ゾーン用
+    void SetTransitionZoneEnable(bool enable) { m_showTransitionZone = enable; }
+    bool GetTransitionZoneEnable() const { return m_showTransitionZone; }
+
 private:
     BoundingBoxDebugRenderer() = default;
     ~BoundingBoxDebugRenderer() = default;
@@ -82,6 +86,7 @@ private:
     bool m_showEnemyBox = false;
     bool m_showItemBox = false;
     bool m_showTerrainBox = false;
+    bool m_showTransitionZone = true;
 
 
 	// 法線表示用

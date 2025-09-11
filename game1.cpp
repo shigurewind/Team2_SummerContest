@@ -189,6 +189,9 @@ void UpdateGame1(void)
 	// プレイヤーの更新処理
 	UpdatePlayer();
 
+	// トランジションゾーンのチェック
+	CheckPlayerInTransitionZones();
+
 	// リセット処理
 	if (g_pInputManager->IsResetTriggered())
 	{

@@ -3,6 +3,34 @@
 #include "main.h"
 #include "renderer.h"
 
+#define MAX_TRANSITION_ZONES_PER_MAP 2 // マップあたりの最大遷移ゾーン数
+
+// 遷移ゾーン構造体
+struct SceneTransitionZone {
+	XMFLOAT3 center;        // 位置
+	XMFLOAT3 size;          // サイズ
+	int targetMapID;        // 目標マップID
+	bool enabled;           // 起用状態
+	XMFLOAT4 debugColor;    // debug表示用の色
+	char name[64];          // 名前
+
+	XMFLOAT3 GetMin() const {
+		return {
+			center.x - size.x / 2.0f,
+			center.y - size.y / 2.0f,
+			center.z - size.z / 2.0f
+		};
+	}
+
+	XMFLOAT3 GetMax() const {
+		return {
+			center.x + size.x / 2.0f,
+			center.y + size.y / 2.0f,
+			center.z + size.z / 2.0f
+		};
+	}
+};
+
 
 struct MapConfig {
 	int mapID;
@@ -16,6 +44,10 @@ struct MapConfig {
 	XMFLOAT3 lightDirection;
 	XMFLOAT4 ambientColor;
 	char backgroundMusic[128];
+
+	// 遷移ゾーン
+	SceneTransitionZone transitionZones[MAX_TRANSITION_ZONES_PER_MAP];
+	int transitionZoneCount;
 };
 
 
@@ -34,3 +66,9 @@ void SetPlayerSpawnPosition(const XMFLOAT3& pos);
 
 // Player位置リセット
 void ResetPlayerPosition(void);
+
+// 遷移ゾーン管理関数
+void CheckPlayerInTransitionZones();
+SceneTransitionZone* GetCurrentMapTransitionZones();
+int GetCurrentMapTransitionZoneCount();
+void UpdateTransitionZone(int index, const SceneTransitionZone& zone);

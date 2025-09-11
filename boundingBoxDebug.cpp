@@ -2,6 +2,7 @@
 #include "camera.h"
 #include "player.h"
 #include "FBXmodel.h"
+#include "map.h"
 
 BoundingBoxDebugRenderer* BoundingBoxDebugRenderer::s_instance = nullptr;
 
@@ -125,9 +126,23 @@ void BoundingBoxDebugRenderer::Update() {
     // if (m_showEnemyBox) {  }
     // if (m_showItemBox) { }
 
-
+	// 地形のボックスを追加
     if (m_showTerrainBox) {
         AddTerrainBoxes();
+    }
+
+	// シーン遷移ゾーンのボックスを追加
+    if (m_showTransitionZone && m_globalEnable) {
+        SceneTransitionZone* zones = GetCurrentMapTransitionZones();
+        int zoneCount = GetCurrentMapTransitionZoneCount();
+
+        for (int i = 0; i < zoneCount; i++) {
+            if (zones[i].enabled) {
+                XMFLOAT3 min = zones[i].GetMin();
+                XMFLOAT3 max = zones[i].GetMax();
+                AddBox(min, max, zones[i].debugColor);
+            }
+        }
     }
 
 }
