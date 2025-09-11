@@ -13,7 +13,7 @@ static MapConfig* g_CurrentMapConfig = nullptr;
 
 // マップ設定データ
 static MapConfig g_MapConfigs[] = {
-	// Tutorial Map (MODE_TUTORIAL)
+	// stage 1 (MODE_TUTORIAL)
 	{
 		0,                                          // mapID
 		"data/MODEL/stage1_collision.fbx",             // collision modelPath
@@ -25,7 +25,7 @@ static MapConfig g_MapConfigs[] = {
 		{0.3f, 0.3f, 0.3f, 1.0f},                  // ambientColor
 		""              // backgroundMusic
 	},
-	// stage 1 (MODE_GAME)
+	// stage 2 (MODE_GAME)
 	{
 		1,                                         // mapID
 		"data/MODEL/stage2_collision.fbx",         // collision modelPath
@@ -36,7 +36,19 @@ static MapConfig g_MapConfigs[] = {
 		{0.3f, -1.0f, 0.7f},                       // lightDirection
 		{0.2f, 0.2f, 0.3f, 1.0f},                  // ambientColor		
 		""                  // backgroundMusic
-	}
+	},
+	// stage 3 ()
+  {
+	  3,                                          // mapID
+	  "data/MODEL/stage3_collision.fbx",         // collisionModelPath
+	  "data/MODEL/stage3_Nocollision.fbx",       // decorationModelPath
+	  "data/CONFIG/map3_items.json",             // itemConfigPath
+	  "data/CONFIG/map3_enemies.json",           // enemyConfigPath
+	  {0.0f, 0.0f, 0.0f},                        // playerSpawnPos
+	  {0.3f, -1.0f, 0.7f},                       // lightDirection
+	  {0.2f, 0.2f, 0.3f, 1.0f},                  // ambientColor
+	  ""                                          // backgroundMusic
+  }
 
 };
 

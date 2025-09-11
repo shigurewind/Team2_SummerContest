@@ -208,7 +208,7 @@ void UpdateResult(void)
 	if (confirm) {
 		switch (g_ResultFocus) {
 		case RESULT_FOCUS_RESTART:
-			SetFade(FADE_OUT, MODE_GAME); // 必要なら MODE_GAME1 / MODE_TUTORIAL 等に変更
+			SetFade(FADE_OUT, MODE_STAGE2); // 必要なら MODE_GAME1 / MODE_TUTORIAL 等に変更
 			break;
 		case RESULT_FOCUS_TITLE:
 		case RESULT_FOCUS_NONE:
@@ -281,7 +281,7 @@ void UpdateResult(void)
 		g_RestartBtnScale += (targetScale - g_RestartBtnScale) * 0.2f;
 
 		if (g_RestartBtnHover && IsMouseLeftTriggered()) {
-			SetFade(FADE_OUT, MODE_GAME); // 必要なら置換
+			SetFade(FADE_OUT, MODE_STAGE2); // 必要なら置換
 		}
 	}
 

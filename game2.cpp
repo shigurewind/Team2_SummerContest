@@ -7,7 +7,7 @@
 #include "main.h"
 #include "renderer.h"
 #include "model.h"
-#include "game1.h"
+#include "game2.h"
 #include "camera.h"
 #include "input.h"
 #include "sound.h"
@@ -56,13 +56,13 @@ void CheckHit(void);
 //*****************************************************************************
 static int	g_ViewPortType_Game = TYPE_FULL_SCREEN;
 
-BOOL	g_bPause1 = FALSE;	// ポーズON/OFF
+BOOL	g_bPause2 = FALSE;	// ポーズON/OFF
 
 
 //=============================================================================
 // 初期化処理
 //=============================================================================
-HRESULT InitGame1(void)
+HRESULT InitGame2(void)
 {
 	g_ViewPortType_Game = TYPE_FULL_SCREEN;
 
@@ -110,7 +110,7 @@ HRESULT InitGame1(void)
 //=============================================================================
 // 終了処理
 //=============================================================================
-void UninitGame1(void)
+void UninitGame2(void)
 {
 	// パーティクルの終了処理
 	UninitParticle();
@@ -149,7 +149,7 @@ void UninitGame1(void)
 //=============================================================================
 // 更新処理
 //=============================================================================
-void UpdateGame1(void)
+void UpdateGame2(void)
 {
 #ifdef _DEBUG
 	if (GetKeyboardTrigger(DIK_V))
@@ -161,7 +161,7 @@ void UpdateGame1(void)
 	// 時間を止める
 	if (GetKeyboardTrigger(DIK_P))
 	{
-		g_bPause1 = g_bPause1 ? FALSE : TRUE;
+		g_bPause2 = g_bPause2 ? FALSE : TRUE;
 	}
 
 
@@ -171,7 +171,7 @@ void UpdateGame1(void)
 		return;
 	}
 
-	if (g_bPause1 == TRUE)
+	if (g_bPause2 == TRUE)
 		return;
 
 	if (IsTutorialShowing())
@@ -222,15 +222,12 @@ void UpdateGame1(void)
 	UpdateItem();
 
 
-
-
-
 }
 
 //=============================================================================
 // 描画処理
 //=============================================================================
-void DrawGame01(void)
+void DrawGame02(void)
 {
 	if (GetFade() == FADE_OUT) {
 		return;
@@ -287,7 +284,7 @@ void DrawGame01(void)
 }
 
 
-void DrawGame1(void)
+void DrawGame2(void)
 {
 	XMFLOAT3 pos;
 
@@ -311,13 +308,13 @@ void DrawGame1(void)
 	{
 	case TYPE_FULL_SCREEN:
 		SetViewPort(TYPE_FULL_SCREEN);
-		DrawGame01();
+		DrawGame02();
 		break;
 
 	case TYPE_LEFT_HALF_SCREEN:
 	case TYPE_RIGHT_HALF_SCREEN:
 		SetViewPort(TYPE_LEFT_HALF_SCREEN);
-		DrawGame01();
+		DrawGame02();
 
 		// エネミー視点
 		//pos = GetEnemy()->pos;
@@ -331,7 +328,7 @@ void DrawGame1(void)
 	case TYPE_UP_HALF_SCREEN:
 	case TYPE_DOWN_HALF_SCREEN:
 		SetViewPort(TYPE_UP_HALF_SCREEN);
-		DrawGame01();
+		DrawGame02();
 
 		// エネミー視点
 		//pos = GetEnemy()->pos;

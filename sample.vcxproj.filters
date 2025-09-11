@@ -46,6 +46,9 @@
     <ClCompile Include="game1.cpp" />
     <ClCompile Include="blood.cpp" />
     <ClCompile Include="boss.cpp" />
+    <ClCompile Include="attackeffect.cpp" />
+    <ClCompile Include="map.cpp" />
+    <ClCompile Include="game2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bullet.h" />
@@ -381,5 +384,8 @@
     <ClInclude Include="game1.h" />
     <ClInclude Include="blood.h" />
     <ClInclude Include="boss.h" />
+    <ClInclude Include="attackeffect.h" />
+    <ClInclude Include="map.h" />
+    <ClInclude Include="game2.h" />
   </ItemGroup>
 </Project>

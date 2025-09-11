@@ -15,6 +15,7 @@
 #include "enemy.h"
 #include "game.h"
 #include "game1.h"
+#include "game2.h"
 #include "fade.h"
 #include "title.h"
 #include "result.h"
@@ -401,8 +402,12 @@ void Update(void)
 		UpdateGame();
 		break;
 
-	case MODE_GAME:			// ゲーム画面の更新
+	case MODE_STAGE2:			// ゲーム画面の更新
 		UpdateGame1();
+		break;
+
+	case MODE_STAGE3:			// ゲーム画面の更新
+		UpdateGame2();
 		break;
 
 	case MODE_RESULT:		// リザルト画面の更新
@@ -452,8 +457,12 @@ void Draw(void)
 		DrawGame();
 		break;
 
-	case MODE_GAME:			// ゲーム画面の描画
+	case MODE_STAGE2:			// ゲーム画面の描画
 		DrawGame1();
+		break;
+
+	case MODE_STAGE3:			// ゲーム画面の描画
+		DrawGame2();
 		break;
 
 	case MODE_RESULT:		// リザルト画面の描画
@@ -576,7 +585,7 @@ void SetMode(int mode)
 
 		break;
 
-	case MODE_GAME:
+	case MODE_STAGE2:
 		// カメラもここで初期化しておく事にした
 		UninitCamera();
 		InitCamera();
@@ -584,6 +593,14 @@ void SetMode(int mode)
 		// ゲーム画面の初期化
 		InitGame1();
 		LoadMap(1);
+
+		break;
+
+	case MODE_STAGE3:
+		// カメラもここで初期化しておく事にした
+		UninitCamera();
+		InitCamera();
+
 
 		break;
 

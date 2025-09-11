@@ -254,7 +254,7 @@ void UpdateGame(void)
 
 	if (requestFadeOut && GetFade() == FADE_NONE)
 	{
-		SetFade(FADE_OUT, MODE_GAME);
+		SetFade(FADE_OUT, MODE_STAGE2);
 		requestFadeOut = false;
 	}
 
