@@ -113,12 +113,12 @@ HRESULT InitFBXMapModel(const char* modelPath)
 		};
 
 	for (const auto& tri : g_FloorTris) updateBounds(tri);
-	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 6, 50);
+	g_FloorTree = BuildOctree(g_FloorTris, minBound, maxBound, 0, 7, 20);
 
 	minBound = { FLT_MAX, FLT_MAX, FLT_MAX };
 	maxBound = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 	for (const auto& tri : g_WallTris) updateBounds(tri);
-	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 6, 50);
+	g_WallTree = BuildOctree(g_WallTris, minBound, maxBound, 0, 7, 20);
 
 
 
@@ -396,8 +396,15 @@ bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax, Objec
 	XMFLOAT3 velocity = obj ? obj->GetVelocity() : XMFLOAT3(0, 0, 0);
 	float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
 
+	float sx = boxMax.x - boxMin.x;
+	float sy = boxMax.y - boxMin.y;
+	float sz = boxMax.z - boxMin.z;
 	int lodLevel = 1;
-	if (speed > 3.0f) lodLevel = 2; // ˆÚ“®‘¬“x‚É‚æ‚Á‚ÄLODƒŒƒxƒ‹‚ðã‚°‚é
+	
+	if (sx > 40.0f && sz > 40.0f) {            
+		float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
+		lodLevel = (speed > 6.0f) ? 3 : (speed > 3.0f ? 2 : 1);
+	}
 
 	return AABBHitOctreeLOD(g_WallTree, g_WallTris, boxMin, boxMax, 0, 6, 1, lodLevel);
 }

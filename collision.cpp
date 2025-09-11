@@ -27,7 +27,42 @@
 //*****************************************************************************
 // ÉOÉçÅ[ÉoÉãïœêî
 //*****************************************************************************
+static inline bool OverlapAABB(const XMFLOAT3& aMin, const XMFLOAT3& aMax,
+	const XMFLOAT3& bMin, const XMFLOAT3& bMax)
+{
+	return !(aMax.x < bMin.x || aMin.x > bMax.x ||
+		aMax.y < bMin.y || aMin.y > bMax.y ||
+		aMax.z < bMin.z || aMin.z > bMax.z);
+}
 
+
+static void CollectTriIndicesLOD(OctreeNode* node,
+	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
+	std::vector<int>& out, int lodLevel)
+{
+	if (!node) return;
+	if (!OverlapAABB(node->minBound, node->maxBound, boxMin, boxMax)) return;
+
+	if (lodLevel <= 1) {
+		out.insert(out.end(), node->triangleIndices.begin(), node->triangleIndices.end());
+	}
+	else {
+		for (int i = 0; i < (int)node->triangleIndices.size(); i += lodLevel) {
+			out.push_back(node->triangleIndices[i]);
+		}
+	}
+
+	if (node->isSubdivided) {
+		for (int i = 0; i < 8; ++i) {
+			if (node->children[i]) {
+				CollectTriIndicesLOD(node->children[i], boxMin, boxMax, out, lodLevel);
+			}
+		}
+	}
+}
+
+static constexpr float kContactSkin = 2.0f;  //
+static constexpr float kEpsPush = 0.01f; 
 
 //=============================================================================
 // BBÇ…ÇÊÇÈìñÇΩÇËîªíËèàóù
@@ -231,31 +266,79 @@ bool CheckWallCollisionLODEx(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
 	if (obj) {
 		XMFLOAT3 vel = obj->GetVelocity();
 		float speed = sqrtf(vel.x * vel.x + vel.z * vel.z);
-		if (speed > 4.0f) lodLevel = 2;
-		if (speed > 7.5f) lodLevel = 3;
+		if (speed > 4.0f)  lodLevel = 2;
+		if (speed > 7.5f)  lodLevel = 3;
 	}
 
-	bool hit = AABBHitOctreeLOD(GetWallTree(), GetWallTriangles(),
-		boxMin, boxMax, 0, 6, 1, lodLevel);
+	OctreeNode* root = GetWallTree(); 
+	const auto& tris = GetWallTriangles(); 
+	if (!root) return false;
 
-	if (!hit) return false;
+	XMFLOAT3 qMin = { boxMin.x - kContactSkin, boxMin.y - kContactSkin, boxMin.z - kContactSkin };
+	XMFLOAT3 qMax = { boxMax.x + kContactSkin, boxMax.y + kContactSkin, boxMax.z + kContactSkin };
+
+	std::vector<int> candidates;
+	candidates.reserve(128);
+	CollectTriIndicesLOD(root, qMin, qMax, candidates, lodLevel);
+	if (candidates.empty()) return false;
+
+	bool anyHit = false;
+
+	float bestScore = -1e9f;
+	float bestDepth = 0.0f;
+	XMFLOAT3 bestN = { 0,0,0 };
+
+	XMFLOAT3 vel = obj ? obj->GetVelocity() : XMFLOAT3{ 0,0,0 };
+	XMFLOAT2 velXZ = { vel.x, vel.z };
+	float velLen = sqrtf(velXZ.x * velXZ.x + velXZ.y * velXZ.y);
+	XMFLOAT2 velDir = { 0,0 };
+	if (velLen > 1e-6f) { velDir.x = velXZ.x / velLen; velDir.y = velXZ.y / velLen; }
+
+	for (int idx : candidates) {
+		if (idx < 0 || idx >= (int)tris.size()) continue;
+		const TriangleData& tri = tris[idx];
+
+		if (tri.type != TYPE_WALL && tri.type != TYPE_UNKNOWN) {
+			continue;
+		}
+
+		if (AABBvsTriangle(qMin, qMax, tri.v0, tri.v1, tri.v2)) {
+			anyHit = true;
+
+			float penN = GetAABBvsTriangleLastDepth();
+			XMFLOAT3 triN = GetAABBvsTriangleLastNormal();
+
+			XMFLOAT2 nXZ = { triN.x, triN.z };
+			float nLen = sqrtf(nXZ.x * nXZ.x + nXZ.y * nXZ.y);
+			if (nLen < 1e-6f) {
+				continue;
+			}
+			nXZ.x /= nLen; nXZ.y /= nLen;
+
+			if (velLen > 1e-6f) {
+				float d = nXZ.x * velDir.x + nXZ.y * velDir.y;  
+				if (d > 0.0f) { nXZ.x = -nXZ.x; nXZ.y = -nXZ.y; }
+			}
+			float faceScore = 0.0f;
+			if (velLen > 1e-6f) {
+				faceScore = -(velDir.x * nXZ.x + velDir.y * nXZ.y);
+			}
+			float score = faceScore * 1000.0f + penN;   
+
+			if (score > bestScore) {
+				bestScore = score;
+				bestDepth = penN;
+				bestN = XMFLOAT3{ nXZ.x, 0.0f, nXZ.y };
+			}
+		}
+	}
+
+	if (!anyHit) return false;
 
 	if (outInfo) {
 		outInfo->hit = true;
-
-		float dxMin = fabs(boxMax.x - boxMin.x);
-		float dzMin = fabs(boxMax.z - boxMin.z);
-
-		if (dxMin < dzMin) {
-			if (boxMin.x < 0) outInfo->normal = { 1,0,0 };
-			else              outInfo->normal = { -1,0,0 };
-		}
-		else {
-			if (boxMin.z < 0) outInfo->normal = { 0,0,1 };
-			else              outInfo->normal = { 0,0,-1 };
-		}
-
-		outInfo->penetration = 0.0f;
+		outInfo->normal = bestN;         
+		outInfo->penetration = bestDepth;
 	}
 
 	return true;
