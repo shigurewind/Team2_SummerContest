@@ -33,6 +33,8 @@
 
 
 #include "boundingBoxDebug.h"
+#include "map.h"
+#include "inputManager.h"
 
 
 
@@ -183,8 +185,15 @@ void UpdateGame1(void)
 	// 地面処理の更新
 	//UpdateMeshField();
 	UpdateFBXMapModel();
+
 	// プレイヤーの更新処理
 	UpdatePlayer();
+
+	// リセット処理
+	if (g_pInputManager->IsResetTriggered())
+	{
+		ResetPlayerPosition();
+	}
 
 	//// エネミーの更新処理
 	UpdateEnemy();

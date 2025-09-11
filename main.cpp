@@ -376,37 +376,13 @@ void Update(void)
 	//debugUI
 	ShowDebugUI();
 
-	//新しいImGuiを作る
-	//ImGui::SetWindowSize(ImVec2(300, 200));//次のImGuiサイズ
-
-	//if (ImGui::Begin("Test"),NULL,ImGuiWindowFlags_NoResize) 
-	//{
-	//	ImGui::Text(u8"これはテスト用の文書");
-
-	//	ImGui::Checkbox("TestBool", &testBool);
-
-	//	if (ImGui::Button(u8"こっち!",ImVec2(80,30)))
-	//	{
-	//		testBool = true;
-	//	}
-
-	//	ImGui::SliderInt("TestInt", &testInt, 0, 20 );
-
-	//	ImGui::SliderFloat("TestFloat", &testFloat, 0, 10.0f);
-
-	//	//ImGui::SetCursorPos(ImVec2(400, 100));
-	//	if (ImGui::Button("Click me2!", ImVec2(80, 30)))
-	//	{
-	//		
-	//	}
-
-	//	ImGui::InputInt("InputInt", &testInt, 1, 10);	// 数値入力欄
-
-	//}ImGui::End();
 
 
 	// 入力の更新処理
 	UpdateInput();
+
+	// inputManager的更新処理
+	g_pInputManager->Update(1.0f / 60.0f);
 
 	// ライトの更新処理
 	UpdateLight();

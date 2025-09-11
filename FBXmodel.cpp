@@ -33,18 +33,11 @@ HRESULT InitFBXMapModel(const char* modelPath)
 {
 	g_FBXMapModel.load = TRUE;
 
-	//g_FBXMapModel.model = ModelLoad("data/MODEL/model.fbx");	// FBXƒ‚ƒfƒ‹‚Ì“Ç‚Ýž‚Ý
 	g_FBXMapModel.model = ModelLoad(modelPath);	// FBXƒ‚ƒfƒ‹‚Ì“Ç‚Ýž‚Ý
 	if (!g_FBXMapModel.model) {
 		MessageBoxA(NULL, "Failed to load map", "Error", MB_OK);
 		return E_FAIL;
 	}
-
-	/*char debugPos[128];
-	sprintf_s(debugPos, "FBX pos.y = %.2f\n", g_FBXMapModel.pos.y);
-	OutputDebugStringA(debugPos);*/
-
-
 
 
 	g_FBXMapModel.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -400,8 +393,8 @@ bool CheckWallCollisionLOD(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax, Objec
 	float sy = boxMax.y - boxMin.y;
 	float sz = boxMax.z - boxMin.z;
 	int lodLevel = 1;
-	
-	if (sx > 40.0f && sz > 40.0f) {            
+
+	if (sx > 40.0f && sz > 40.0f) {
 		float speed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
 		lodLevel = (speed > 6.0f) ? 3 : (speed > 3.0f ? 2 : 1);
 	}
