@@ -181,6 +181,15 @@ void UpdateGame(void)
 		}
 		return;
 	}
+
+		// プレイヤー死亡判定：HP が 0 以下ならリザルトへ
+		if (GetPlayer()->HP <= 0) 
+		{
+			SetFade(FADE_OUT, MODE_RESULT);
+		}
+	
+
+
 	// 地面処理の更新
 	//UpdateMeshField();
 	UpdateFBXMapModel();

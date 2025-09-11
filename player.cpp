@@ -545,7 +545,7 @@ void PLAYER::HandleInput()
 
 
 	// --- 武器の切り替え（UIの選択だけ。ロック判定はしない） ---
-	if (GetKeyboardTrigger(DIK_1))
+	if (GetKeyboardTrigger(DIK_1) || g_pInputManager->IsActionTriggered(ACTION_WEAPON_CHANGE))
 	{
 		switch (currentWeapon)
 		{
@@ -555,7 +555,7 @@ void PLAYER::HandleInput()
 		}
 	}
 	// --- 弾の切り替え（UIの選択だけ。ロック判定はしない） ---
-	if (GetKeyboardTrigger(DIK_2))
+	if (GetKeyboardTrigger(DIK_2) || g_pInputManager->IsActionTriggered(ACTION_BULLET_CHANGE))
 	{
 		currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
 	}

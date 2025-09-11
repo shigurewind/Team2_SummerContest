@@ -53,7 +53,7 @@ float	alpha;
 BOOL	flag_alpha;
 
 // --- 当たり判定の手動調整用パラメータ ---
-static float g_HitOffsetX  = +55.0f;   // +で右へ、-で左へ
+static float g_HitOffsetX  = +65.0f;   // +で右へ、-で左へ
 static float g_HitOffsetY  = +85.0f;   // +で下へ、-で上へ
 static float g_HitInflateW = -190.0f;   // +で幅を広げる（全体）。-で狭める
 static float g_HitInflateH = -215.0f;   // +で高さを広げる（全体）。-で狭める
