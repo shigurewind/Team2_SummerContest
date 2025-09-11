@@ -59,3 +59,10 @@ bool RayHitOctreeLOD(OctreeNode* node, const std::vector<TriangleData>& triangle
 bool AABBHitOctreeLOD(OctreeNode* node, const std::vector<TriangleData>& triangleList,
 	const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
 	int depth, int maxDepth, int minTri, int lodLevel);
+
+bool AABBvsTriangle(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
+	const XMFLOAT3& v0, const XMFLOAT3& v1, const XMFLOAT3& v2);
+
+
+float GetAABBvsTriangleLastDepth();
+DirectX::XMFLOAT3 GetAABBvsTriangleLastNormal();

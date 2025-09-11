@@ -651,9 +651,12 @@ void PLAYER::HandleInput()
 void PLAYER::ApplyCollision()
 {
 	const float half = size;
+	const float halfHeight = 7.0f;
+
+
 	XMFLOAT3 nextPos = { pos.x + velocity.x, pos.y, pos.z + velocity.z };
-	XMFLOAT3 bmin = { nextPos.x - half, pos.y - 0.1f, nextPos.z - half };
-	XMFLOAT3 bmax = { nextPos.x + half, pos.y + 0.1f, nextPos.z + half };
+	XMFLOAT3 bmin = { nextPos.x - half, pos.y - halfHeight, nextPos.z - half };
+	XMFLOAT3 bmax = { nextPos.x + half, pos.y + halfHeight, nextPos.z + half };
 
 	WallHitInfo info{};
 	if (!CheckWallCollisionLODEx(bmin, bmax, &info, this)) {
