@@ -159,7 +159,7 @@ void UpdateGame(void)
 		SetViewPort(g_ViewPortType_Game);
 	}
 
-	if (GetKeyboardTrigger(DIK_P))
+	if (GetKeyboardTrigger(DIK_P) || g_pInputManager->IsActionPressed(ACTION_MENU))
 	{
 		g_bPause = g_bPause ? FALSE : TRUE;
 	}

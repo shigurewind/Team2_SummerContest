@@ -565,7 +565,7 @@ void PLAYER::HandleInput()
 
 
 	// --- 武器の切り替え（UIの選択だけ。ロック判定はしない） ---
-	if (GetKeyboardTrigger(DIK_1))
+	if (GetKeyboardTrigger(DIK_1) || g_pInputManager->IsActionTriggered(ACTION_WEAPON_CHANGE))
 	{
 		PlaySound(SOUND_LABEL_SE_changeGun);
 
@@ -577,7 +577,7 @@ void PLAYER::HandleInput()
 		}
 	}
 	// --- 弾の切り替え（UIの選択だけ。ロック判定はしない） ---
-	if (GetKeyboardTrigger(DIK_2))
+	if (GetKeyboardTrigger(DIK_2) || g_pInputManager->IsActionTriggered(ACTION_BULLET_CHANGE))
 	{
 		currentBullet = (currentBullet == BULLET_NORMAL) ? BULLET_FIRE : BULLET_NORMAL;
 		PlaySound(SOUND_LABEL_SE_changeGun);
@@ -800,7 +800,7 @@ void PLAYER::HandleShooting()
 	}
 
 	// クリックトリガ & 弾が足りる場合のみ発射（既存仕様）
-	if (IsMouseLeftTriggered() && *currentAmmo >= requiredCost)
+	if ((IsMouseLeftTriggered() && *currentAmmo >= requiredCost) || g_pInputManager->IsActionTriggered(ACTION_SHOOT) && *currentAmmo >= requiredCost)
 	{
 		XMFLOAT3 pos = GetGunMuzzlePosition();
 		XMFLOAT3 rot = GetGunMuzzleRotation();
