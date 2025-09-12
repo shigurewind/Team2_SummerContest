@@ -277,10 +277,10 @@ void DrawGame01(void)
 	SetLightEnable(FALSE);
 
 	// UI‚Ì•`‰æˆ—
-	DrawOverlay2D();
 
 	DrawGameUI();
 
+	DrawOverlay2D();
 
 
 

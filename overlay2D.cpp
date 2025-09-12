@@ -167,7 +167,6 @@ void UpdateOverlay2D()
 void DrawOverlay2D()
 {
     if (g_TexExplosion) {
-
         CAMERA* cam = GetCamera();
         XMMATRIX viewM = XMLoadFloat4x4(&cam->mtxView);
         XMMATRIX projM = XMLoadFloat4x4(&cam->mtxProjection);
@@ -193,35 +192,43 @@ void DrawOverlay2D()
             XMMATRIX world = MakeBillboardWorld_EnemyStyle(e.pos, e.size);
             SetWorldMatrix(&world);
 
-
             GetDeviceContext()->Draw(4, 0);
         }
         SetBlendState(BLEND_MODE_ALPHABLEND);
     }
 
+    BOOL fogWas = GetFogEnable();
     SetFogEnable(FALSE);
+    SetLightEnable(FALSE);
     SetDepthEnable(FALSE);
+
     SetWorldViewProjection2D();
+    SetAlphaTestEnable(FALSE);
+    SetBlendState(BLEND_MODE_ALPHABLEND);
+
+    UINT stride = sizeof(VERTEX_3D);
+    UINT offset = 0;
+    GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferOverlay, &stride, &offset);
+    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+    MATERIAL uiMat = {};
+    uiMat.Diffuse = XMFLOAT4(1, 1, 1, 1);
+    SetMaterial(uiMat);
 
     if (g_IsMeleePlaying)
     {
-        UINT stride = sizeof(VERTEX_3D);
-        UINT offset = 0;
-        GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferOverlay, &stride, &offset);
-        SetWorldViewProjection2D();
-        GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
         float u = g_MeleeFrame / (float)MELEE_FRAME_COUNT;
         float v = 0.0f;
         float tw = 1.0f / MELEE_FRAME_COUNT;
         float th = 1.0f;
 
-        float px = SCREEN_WIDTH / 2.0f-30.0f;
+        float px = SCREEN_WIDTH / 2.0f - 30.0f;
         float py = SCREEN_HEIGHT - 290;
         float pw = 1200;
         float ph = 900;
 
-        SetSpriteColor(g_VertexBufferOverlay, px, py, pw, ph, u, v, tw, th, XMFLOAT4(1, 1, 1, 1));
+        SetSpriteColor(g_VertexBufferOverlay, px, py, pw, ph, u, v, tw, th,
+            XMFLOAT4(1, 1, 1, 1));
 
         GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexMelee);
         GetDeviceContext()->Draw(4, 0);
@@ -229,47 +236,21 @@ void DrawOverlay2D()
 
     if (g_IsTutorialShowing)
     {
-        UINT stride = sizeof(VERTEX_3D);
-        UINT offset = 0;
-        GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferOverlay, &stride, &offset);
-        SetWorldViewProjection2D();
-        GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
         float px = SCREEN_WIDTH / 2.0f;
         float py = SCREEN_HEIGHT / 2.0f;
         float pw = 800;
         float ph = 600;
 
-        SetSpriteColor(g_VertexBufferOverlay, px, py, pw, ph, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, 1));
+        SetSpriteColor(g_VertexBufferOverlay, px, py, pw, ph, 0, 0, 1, 1,
+            XMFLOAT4(1, 1, 1, 1));
+
         GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexTutorial);
         GetDeviceContext()->Draw(4, 0);
-
-        SetDepthEnable(TRUE);
-        SetFogEnable(TRUE);
-        return; 
     }
 
-    //if (!GetPlayer()->alive) {
-    //    UINT stride = sizeof(VERTEX_3D);
-    //    UINT offset = 0;
-    //    GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferOverlay, &stride, &offset);
-    //    SetWorldViewProjection2D();
-    //    GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-    //    float px = SCREEN_WIDTH / 2.0f;
-    //    float py = SCREEN_HEIGHT / 2.0f;
-    //    float pw = SCREEN_WIDTH;
-    //    float ph = SCREEN_HEIGHT;
-
-    //    SetSpriteColor(g_VertexBufferOverlay, px, py, pw, ph, 0, 0, 1, 1, XMFLOAT4(1, 1, 1, 1));
-
-    //    GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexTutorial);
-    //    GetDeviceContext()->Draw(4, 0);
-    //}
-
-   
-
-   
+    SetDepthEnable(TRUE);
+    SetFogEnable(fogWas);
+    SetLightEnable(TRUE);
 }
 
 void PlayMeleeAnimation()
