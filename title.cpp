@@ -13,6 +13,7 @@
 #include "title.h"
 #include "inputManager.h"
 
+
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -233,6 +234,16 @@ void UpdateTitle(void)
 //=============================================================================
 void DrawTitle(void)
 {
+
+	BOOL fogWas = GetFogEnable();
+	SetFogEnable(FALSE);
+	SetLightEnable(FALSE);
+	SetDepthEnable(FALSE);
+
+	SetWorldViewProjection2D();
+	SetAlphaTestEnable(FALSE);
+	SetBlendState(BLEND_MODE_ALPHABLEND);
+
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
@@ -315,6 +326,10 @@ void DrawTitle(void)
 //	}
 //	SetBlendState(BLEND_MODE_ALPHABLEND);	// 半透明処理を元に戻す
 
+
+	SetDepthEnable(TRUE);
+	SetFogEnable(fogWas);
+	SetLightEnable(TRUE);
 }
 
 
