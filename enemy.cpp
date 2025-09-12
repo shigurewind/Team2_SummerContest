@@ -1125,17 +1125,19 @@ void BugEnemy::Update()
 
 	}
 
-	BULLET* bullet = GetBullet();
-	//弾と当たり判定？
-	for (int i = 0; i < MAX_BULLET; i++)
+	const auto& active = GetActiveBullets();
+	for (BULLET* b : active)
 	{
-		if (!bullet[i].use) continue;
 
 		XMFLOAT3 enemyHalfSize = { width / 2, height, 50.f }; //エネミーの当たり判定のサイズ
+		float rx = fabsf(b->pos.x - pos.x) - (enemyHalfSize.x + b->size);
+		float ry = fabsf(b->pos.y - pos.y) - (enemyHalfSize.y + b->size);
+		float rz = fabsf(b->pos.z - pos.z) - (enemyHalfSize.z + b->size);
+		if (rx > 0 || ry > 0 || rz > 0) continue;
 
-		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+		if (CheckSphereAABBCollision(b->pos, b->size, pos, enemyHalfSize))
 		{
-			bullet[i].use = false;
+			b->use = false;
 			HP -= 1;
 			if (HP <= 0)
 			{
