@@ -294,13 +294,32 @@ bool CheckWallCollisionLODEx(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
 	XMFLOAT2 velDir = { 0,0 };
 	if (velLen > 1e-6f) { velDir.x = velXZ.x / velLen; velDir.y = velXZ.y / velLen; }
 
+
+	const int kMaxTriTests = 64; 
+	int triTests = 0;
+	int hitCount = 0;
+
 	for (int idx : candidates) {
 		if (idx < 0 || idx >= (int)tris.size()) continue;
 		const TriangleData& tri = tris[idx];
 
-		if (tri.type != TYPE_WALL && tri.type != TYPE_UNKNOWN) {
-			continue;
+		if (tri.type != TYPE_WALL && tri.type != TYPE_UNKNOWN) continue;
+
+		XMFLOAT3 tmin = {
+			min(min(tri.v0.x, tri.v1.x), tri.v2.x),
+			min(min(tri.v0.y, tri.v1.y), tri.v2.y),
+			min(min(tri.v0.z, tri.v1.z), tri.v2.z)
+		};
+		XMFLOAT3 tmax = {
+			max(max(tri.v0.x, tri.v1.x), tri.v2.x),
+			max(max(tri.v0.y, tri.v1.y), tri.v2.y),
+			max(max(tri.v0.z, tri.v1.z), tri.v2.z)
+		};
+		if (!OverlapAABB(qMin, qMax, tmin, tmax)) {
+			continue; 
 		}
+
+		if (triTests++ > kMaxTriTests) break;
 
 		if (AABBvsTriangle(qMin, qMax, tri.v0, tri.v1, tri.v2)) {
 			anyHit = true;
@@ -319,17 +338,16 @@ bool CheckWallCollisionLODEx(const XMFLOAT3& boxMin, const XMFLOAT3& boxMax,
 				float d = nXZ.x * velDir.x + nXZ.y * velDir.y;  
 				if (d > 0.0f) { nXZ.x = -nXZ.x; nXZ.y = -nXZ.y; }
 			}
-			float faceScore = 0.0f;
-			if (velLen > 1e-6f) {
-				faceScore = -(velDir.x * nXZ.x + velDir.y * nXZ.y);
-			}
-			float score = faceScore * 1000.0f + penN;   
+			float faceScore = (velLen > 1e-6f) ? (-(velDir.x * nXZ.x + velDir.y * nXZ.y)) : 0.0f;
+			float score = faceScore * 1000.0f + penN;
 
 			if (score > bestScore) {
 				bestScore = score;
 				bestDepth = penN;
 				bestN = XMFLOAT3{ nXZ.x, 0.0f, nXZ.y };
 			}
+
+			if (++hitCount >= 6) break;
 		}
 	}
 

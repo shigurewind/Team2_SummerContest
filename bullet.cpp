@@ -36,6 +36,22 @@ Weapon g_RocketLauncher;
 // 弾のインスタンス配列
 BULLET g_Bullet[MAX_BULLET];
 
+static std::vector<BULLET*> s_activeBullets;
+
+
+
+int GetBulletCount() {
+    return MAX_BULLET;
+}
+
+std::vector<BULLET*> GetActiveBullets() {
+    std::vector<BULLET*> out;
+    out.reserve(MAX_BULLET);
+    for (int i = 0; i < MAX_BULLET; ++i) {
+        if (g_Bullet[i].use) out.push_back(&g_Bullet[i]);
+    }
+    return out; 
+}
 //==========================================================================
 // 爆風
 //==========================================================================
@@ -140,7 +156,55 @@ void ApplyExplosionAt(const XMFLOAT3& center, float radius, float force) {
     ApplyExplosionImpulse(center, radius, force);
 }
 
+static inline bool RaycastMap(
+    const XMFLOAT3& start,
+    const XMFLOAT3& step,  
+    int lod,
+    float& outHitDist,
+    XMFLOAT3& outHitPos,
+    XMFLOAT3& outHitNor)
+{
+    outHitDist = std::sqrt(step.x * step.x + step.y * step.y + step.z * step.z);
+    if (outHitDist <= 1e-6f) return false;
 
+    OctreeNode* wallTree = GetWallTree();
+    OctreeNode* floorTree = GetFloorTree();
+    const auto& wallTris = GetWallTriangles();
+    const auto& floorTris = GetFloorTriangles();
+
+    bool hit = false;
+    float hitDistW = outHitDist, hitDistF = outHitDist;
+    XMFLOAT3 hitPosW, hitNorW;
+    XMFLOAT3 hitPosF, hitNorF;
+
+    if (wallTree && !wallTris.empty()) {
+        if (RayHitOctreeLOD(wallTree, wallTris, start, step,
+            &hitDistW, &hitPosW, &hitNorW,
+            0, 6, 1, lod)) {
+            hit = true;
+        }
+    }
+
+    if (floorTree && !floorTris.empty()) {
+        if (RayHitOctreeLOD(floorTree, floorTris, start, step,
+            &hitDistF, &hitPosF, &hitNorF,
+            0, 6,1, lod)) {
+            if (!hit || hitDistF < hitDistW) {
+                hit = true;
+            }
+        }
+    }
+
+    if (!hit) return false;
+
+    if (hitDistW <= hitDistF) {
+        outHitDist = hitDistW; outHitPos = hitPosW; outHitNor = hitNorW;
+    }
+    else {
+        outHitDist = hitDistF; outHitPos = hitPosF; outHitNor = hitNorF;
+    }
+    return true;
+}
 //=============================================================================
 // 初期化
 //=============================================================================
@@ -268,133 +332,95 @@ void SetRocketLauncherBullet(BulletType type, XMFLOAT3 pos, XMFLOAT3 rot)
 //=============================================================================
 void UpdateBullet(void)
 {
+    constexpr float backEps = 0.1f;
 
-    const float rocketGravity = -0.1f;
-    const float backEps = 0.1f;
-    const int   maxDepth = 6;
-    const int   minTris = 1;
-    const int   lod = 1;
+    OctreeNode* wallTree = GetWallTree();
+    OctreeNode* floorTree = GetFloorTree();
+    const auto& wallTris = GetWallTriangles();
+    const auto& floorTris = GetFloorTriangles();
 
     for (int i = 0; i < MAX_BULLET; i++)
     {
+        BULLET& b = g_Bullet[i];
+        if (!b.use) continue;
 
-
-        if (!g_Bullet[i].use) continue;
         // ロケットランチャーの弾だけ重力をかける
         if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER)
         {
             // 速度に比例して落下を強める（速いほど強く落ちる）
-            const float speed = sqrtf(
-                g_Bullet[i].vel.x * g_Bullet[i].vel.x +
-                g_Bullet[i].vel.y * g_Bullet[i].vel.y +
-                g_Bullet[i].vel.z * g_Bullet[i].vel.z
-            );
+            const float speed = std::sqrt(b.vel.x * b.vel.x + b.vel.y * b.vel.y + b.vel.z * b.vel.z);
 
             // 例）基準速度に対する比で落下量をスケール
             const float drop = kRocketBaseDrop * (speed / (kRocketRefSpeed + 1e-6f)); // kRocketBaseDrop は負の値
-            g_Bullet[i].vel.y += drop;  // 重力（強め）
+            b.vel.y += drop;  // 重力（強め）
 
             // 水平ドラッグで前進を少しずつ減速（横方向のみ）
-            g_Bullet[i].vel.x *= (1.0f - kRocketDragXY);
-            g_Bullet[i].vel.z *= (1.0f - kRocketDragXY);
+            b.vel.x *= (1.0f - kRocketDragXY);       
+            b.vel.z *= (1.0f - kRocketDragXY);
 
             // 見た目を速度方向に向ける（ロケットが進行方向を向く）
             if (kRocketFaceVelocity && speed > 1e-6f) {
-                const float yaw = atan2f(g_Bullet[i].vel.x, g_Bullet[i].vel.z);
-                const float pitch = atan2f(g_Bullet[i].vel.y, sqrtf(g_Bullet[i].vel.x * g_Bullet[i].vel.x + g_Bullet[i].vel.z * g_Bullet[i].vel.z));
-                g_Bullet[i].rot.y = yaw;
-                g_Bullet[i].rot.x = pitch;
+                const float yaw = atan2f(b.vel.x, b.vel.z);
+                const float pitch = atan2f(b.vel.y, std::sqrt(b.vel.x * b.vel.x + b.vel.z * b.vel.z));
+                b.rot.y = yaw;
+                b.rot.x = pitch;
             }
         }
 
-        const XMFLOAT3 start = g_Bullet[i].pos;
-        const XMFLOAT3 step = g_Bullet[i].vel;
-        float tmax = Length3(step);
+        const XMFLOAT3 start = b.pos;
+        const XMFLOAT3 step = b.vel;                
+        const float    tmax = std::sqrt(step.x * step.x + step.y * step.y + step.z * step.z);
 
 
         //speed=0=dead
 
-        if (tmax < 1e-6f) {
-            g_Bullet[i].lifetime -= 1.0f;
-            if (g_Bullet[i].lifetime <= 0) 
-            {
-                g_Bullet[i].use = FALSE;
-                if (g_Bullet[i].isLoaded) { UnloadModel(&g_Bullet[i].model); g_Bullet[i].isLoaded = FALSE; }
+        if (tmax <= 1e-6f) {
+            b.lifetime -= 1.0f;
+            if (b.lifetime <= 0.0f) {
+                b.use = FALSE;
+                if (b.isLoaded) { UnloadModel(&b.model); b.isLoaded = FALSE; }
             }
             continue;
         }
 
-        const XMFLOAT3 dirN = Normalize(step);
-
-        float hitDistWall = tmax;
-        float hitDistFloor = tmax;
-        XMFLOAT3 hitPosW, hitNorW;
-        XMFLOAT3 hitPosF, hitNorF;
+        const float speedXZ = std::sqrt(b.vel.x * b.vel.x + b.vel.z * b.vel.z);
+        int lod = 1;                 
+        if (speedXZ > 6.0f) lod = 2; 
+        if (speedXZ > 12.0f) lod = 3;
 
 
-        bool hitWall = RayHitOctreeLOD(GetWallTree(), GetWallTriangles(),
-            start, step, &hitDistWall, &hitPosW, &hitNorW,
-            0, maxDepth, minTris, lod);
-
-        bool hitFloor = RayHitOctreeLOD(GetFloorTree(), GetFloorTriangles(),
-            start, step, &hitDistFloor, &hitPosF, &hitNorF,
-            0, maxDepth, minTris, lod);
-
-        bool hit = false;
-        float    hitDist = tmax;
+        float    hitDist;
         XMFLOAT3 hitPos, hitNor;
+        const bool hit = RaycastMap(start, step, lod, hitDist, hitPos, hitNor);
 
-        if (hitWall && hitFloor) 
-        {
-
-            if (hitDistWall <= hitDistFloor) { hit = true; hitDist = hitDistWall;  hitPos = hitPosW; hitNor = hitNorW; }
-            else { hit = true; hitDist = hitDistFloor; hitPos = hitPosF; hitNor = hitNorF; }
+        if (!hit) {
+            b.pos.x += step.x;
+            b.pos.y += step.y;
+            b.pos.z += step.z;
         }
-        else if (hitWall) 
-        {
-            hit = true; hitDist = hitDistWall;  hitPos = hitPosW; hitNor = hitNorW;
-        }
-        else if (hitFloor) 
-        {
-            hit = true; hitDist = hitDistFloor; hitPos = hitPosF; hitNor = hitNorF;
-        }
+        else {
+            const float invLen = 1.0f / tmax;
+            const XMFLOAT3 dirN = { step.x * invLen, step.y * invLen, step.z * invLen };
 
+            b.pos.x = hitPos.x - dirN.x * backEps;
+            b.pos.y = hitPos.y - dirN.y * backEps;
+            b.pos.z = hitPos.z - dirN.z * backEps;
 
-        if (!hit) 
-        {
-            g_Bullet[i].pos.x += step.x;
-            g_Bullet[i].pos.y += step.y;
-            g_Bullet[i].pos.z += step.z;
-        }
-        else 
-        {
-            g_Bullet[i].pos = XMFLOAT3(
-                hitPos.x - dirN.x * backEps,
-                hitPos.y - dirN.y * backEps,
-                hitPos.z - dirN.z * backEps
-            );
-
-
-            if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+            if (b.firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
                 SpawnRocketExplosion(hitPos, 160.0f);
-                ApplyExplosionAt(hitPos);
-
+                ApplyExplosionAt(hitPos); 
             }
-            g_Bullet[i].use = FALSE;
 
-            if (g_Bullet[i].isLoaded) { UnloadModel(&g_Bullet[i].model); g_Bullet[i].isLoaded = FALSE; }
+            b.use = FALSE;
+            if (b.isLoaded) { UnloadModel(&b.model); b.isLoaded = FALSE; }
             continue;
         }
 
-        g_Bullet[i].lifetime -= 1.0f;
 
-        if (g_Bullet[i].lifetime <= 0)
-        {
-            g_Bullet[i].use = FALSE;
-            if (g_Bullet[i].isLoaded) {
-                UnloadModel(&g_Bullet[i].model);
-                g_Bullet[i].isLoaded = FALSE;
-            }
+        b.lifetime -= 1.0f;
+        if (b.lifetime <= 0.0f) {
+            b.use = FALSE;
+            if (b.isLoaded) { UnloadModel(&b.model); b.isLoaded = FALSE; }
         }
         
     }
@@ -457,3 +483,13 @@ Weapon* GetRocket_Launcher()
 //=================================================================
 //
 //==============================================================
+void RebuildActiveBulletList() {
+    s_activeBullets.clear();
+
+    BULLET* bullets = GetBullet(); 
+    for (int i = 0; i < MAX_BULLET; ++i) {
+        if (bullets[i].use) {
+            s_activeBullets.push_back(&bullets[i]);
+        }
+    }
+}

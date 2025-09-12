@@ -71,6 +71,7 @@ struct BULLET {
 
 extern BulletData bulletData_Normal;
 extern BulletData bulletData_Fire;
+
 //=============================================================================
 // 関数プロトタイプ宣言
 //=============================================================================
@@ -90,5 +91,11 @@ Weapon* GetRevolver(void);
 Weapon* GetShotgun(void);
 Weapon* GetRocket_Launcher(void);
 
+int GetBulletCount();
+std::vector<BULLET*> GetActiveBullets();
+
+
 // 弾着弾点(center)で爆風を発生させる（再利用用API）
 void ApplyExplosionAt(const DirectX::XMFLOAT3& center, float radius = 200.0f, float force = 20.0f);
+
+void RebuildActiveBulletList();

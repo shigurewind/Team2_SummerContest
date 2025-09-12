@@ -720,8 +720,8 @@ void PLAYER::EventCheck()
 {
 	//“Á’è‚Ì’nˆæ“ü‚é‚ÆƒQ[ƒ€‚ð’âŽ~
 	if (!tutorialTriggered &&
-		pos.x > 50.0f && pos.x < 100.0f &&
-		pos.z > 50.0f && pos.z < 100.0f)
+		pos.x > -50.0f && pos.x < 50.0f &&
+		pos.z > -50.0f && pos.z < 50.0f)
 	{
 		SetTutorialShowing(true);
 		tutorialTriggered = true;

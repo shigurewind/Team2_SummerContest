@@ -268,31 +268,33 @@ void SpiderEnemy::Update() {
 		NormalMovement();
 	}
 
-	BULLET* bullet = GetBullet();
+	const auto& active = GetActiveBullets();
 
 	//弾と当たり判定？
-	for (int i = 0; i < MAX_BULLET; i++)
+	for (BULLET* b : active)
 	{
-		if (!bullet[i].use) continue;
+		XMFLOAT3 enemyHalfSize = { width, height - 20.0f, 50.f }; 
+		float rx = fabsf(b->pos.x - pos.x) - (enemyHalfSize.x + b->size);
+		float ry = fabsf(b->pos.y - pos.y) - (enemyHalfSize.y + b->size);
+		float rz = fabsf(b->pos.z - pos.z) - (enemyHalfSize.z + b->size);
+		if (rx > 0 || ry > 0 || rz > 0) continue;
 
-		XMFLOAT3 enemyHalfSize = { width, height - 20.0f, 50.f }; //エネミーの当たり判定のサイズ
-
-		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+		if (CheckSphereAABBCollision(b->pos, b->size, pos, enemyHalfSize))
 		{
-			if (bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
-				ApplyExplosionAt(bullet[i].pos);
+			if (b->firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+				ApplyExplosionAt(b->pos);
 			}
 
 
-			bullet[i].use = false;
+			b->use = false;
 			HP -= 1;
 
 
 			//血痕エフェクト
 			XMFLOAT3 bulletDirection = {
-		  bullet[i].vel.x,
-		  bullet[i].vel.y,
-		  bullet[i].vel.z
+		  b->vel.x,
+		  b->vel.y,
+		  b->vel.z
 			};// 弾のベクトルを使用
 
 			XMVECTOR bulletDir = XMVector3Normalize(XMLoadFloat3(&bulletDirection));
@@ -307,11 +309,11 @@ void SpiderEnemy::Update() {
 
 
 			XMFLOAT3 closestPoint;
-			closestPoint.x = max(pos.x - enemyHalfSize.x, min(bullet[i].pos.x, pos.x + enemyHalfSize.x));
-			closestPoint.y = max(pos.y - enemyHalfSize.y, min(bullet[i].pos.y, pos.y + enemyHalfSize.y));
-			closestPoint.z = max(pos.z - enemyHalfSize.z, min(bullet[i].pos.z, pos.z + enemyHalfSize.z));
+			closestPoint.x = max(pos.x - enemyHalfSize.x, min(b->pos.x, pos.x + enemyHalfSize.x));
+			closestPoint.y = max(pos.y - enemyHalfSize.y, min(b->pos.y, pos.y + enemyHalfSize.y));
+			closestPoint.z = max(pos.z - enemyHalfSize.z, min(b->pos.z, pos.z + enemyHalfSize.z));
 
-			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&bullet[i].vel));
+			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&b->vel));
 			XMFLOAT3 hitNormal;
 			XMStoreFloat3(&hitNormal, v);
 			SpawnBlood(closestPoint, 8, hitNormal);
@@ -859,31 +861,34 @@ void GhostEnemy::Update()
 
 	}
 
-	BULLET* bullet = GetBullet();
+	const auto& active = GetActiveBullets();
 	//弾と当たり判定？
-	for (int i = 0; i < MAX_BULLET; i++)
+	for (BULLET* b : active)
 	{
-		if (!bullet[i].use) continue;
-
 		XMFLOAT3 enemyHalfSize = { width / 2, height, 50.f }; //エネミーの当たり判定のサイズ
 
-		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+		float rx = fabsf(b->pos.x - pos.x) - (enemyHalfSize.x + b->size);
+		float ry = fabsf(b->pos.y - pos.y) - (enemyHalfSize.y + b->size);
+		float rz = fabsf(b->pos.z - pos.z) - (enemyHalfSize.z + b->size);
+		if (rx > 0 || ry > 0 || rz > 0) continue;
+
+		if (CheckSphereAABBCollision(b->pos, b->size, pos, enemyHalfSize))
 		{
-			if (bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
-				ApplyExplosionAt(bullet[i].pos);
+			if (b->firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+				ApplyExplosionAt(b->pos);
 			}
 
-
-			bullet[i].use = false;
+			b->use = false;
 			HP -= 1;
 
+
 			XMFLOAT3 closestPoint;
-			closestPoint.x = max(pos.x - enemyHalfSize.x, min(bullet[i].pos.x, pos.x + enemyHalfSize.x));
-			closestPoint.y = max(pos.y - enemyHalfSize.y, min(bullet[i].pos.y, pos.y + enemyHalfSize.y));
-			closestPoint.z = max(pos.z - enemyHalfSize.z, min(bullet[i].pos.z, pos.z + enemyHalfSize.z));
+			closestPoint.x = max(pos.x - enemyHalfSize.x, min(b->pos.x, pos.x + enemyHalfSize.x));
+			closestPoint.y = max(pos.y - enemyHalfSize.y, min(b->pos.y, pos.y + enemyHalfSize.y));
+			closestPoint.z = max(pos.z - enemyHalfSize.z, min(b->pos.z, pos.z + enemyHalfSize.z));
 
 
-			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&bullet[i].vel));
+			XMVECTOR v = XMVector3Normalize(XMLoadFloat3(&b->vel));
 			XMFLOAT3 hitNormal;
 			XMStoreFloat3(&hitNormal, v);
 			SpawnBlood(closestPoint, 8, hitNormal);
@@ -893,6 +898,7 @@ void GhostEnemy::Update()
 				use = false;
 				DropItems(pos, GHOST);
 			}
+
 		}
 
 	}
@@ -1119,17 +1125,19 @@ void BugEnemy::Update()
 
 	}
 
-	BULLET* bullet = GetBullet();
-	//弾と当たり判定？
-	for (int i = 0; i < MAX_BULLET; i++)
+	const auto& active = GetActiveBullets();
+	for (BULLET* b : active)
 	{
-		if (!bullet[i].use) continue;
 
 		XMFLOAT3 enemyHalfSize = { width / 2, height, 50.f }; //エネミーの当たり判定のサイズ
+		float rx = fabsf(b->pos.x - pos.x) - (enemyHalfSize.x + b->size);
+		float ry = fabsf(b->pos.y - pos.y) - (enemyHalfSize.y + b->size);
+		float rz = fabsf(b->pos.z - pos.z) - (enemyHalfSize.z + b->size);
+		if (rx > 0 || ry > 0 || rz > 0) continue;
 
-		if (CheckSphereAABBCollision(bullet[i].pos, bullet[i].size, pos, enemyHalfSize))
+		if (CheckSphereAABBCollision(b->pos, b->size, pos, enemyHalfSize))
 		{
-			bullet[i].use = false;
+			b->use = false;
 			HP -= 1;
 			if (HP <= 0)
 			{
