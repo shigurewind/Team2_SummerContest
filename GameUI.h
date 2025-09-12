@@ -39,5 +39,5 @@ void DrawItemSlot(void);
 void AddUIRecoil();
 
 void DrawPaused(void);
-
+void DrawWeponBG(void);
 
