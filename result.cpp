@@ -294,6 +294,15 @@ void UpdateResult(void)
 //=============================================================================
 void DrawResult(void)
 {
+
+	BOOL fogWas = GetFogEnable();
+	SetFogEnable(FALSE);
+	SetLightEnable(FALSE);
+	SetDepthEnable(FALSE);
+
+	SetWorldViewProjection2D();
+	SetAlphaTestEnable(FALSE);
+	SetBlendState(BLEND_MODE_ALPHABLEND);
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
@@ -380,7 +389,9 @@ void DrawResult(void)
 	//}
 
 
-	
+	SetDepthEnable(TRUE);
+	SetFogEnable(fogWas);
+	SetLightEnable(TRUE);
 
 
 
