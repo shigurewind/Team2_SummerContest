@@ -600,8 +600,7 @@ void SetMode(int mode)
 		// ƒ^ƒCƒgƒ‹‰æ–Ê‚Ì‰Šú‰»
 		InitTitle();
 
-		isFirstPersonMode = false;
-		ShowCursor(TRUE);
+		
 
 		break;
 
