@@ -35,6 +35,22 @@ Weapon g_RocketLauncher;
 // 弾のインスタンス配列
 BULLET g_Bullet[MAX_BULLET];
 
+static std::vector<BULLET*> s_activeBullets;
+
+
+
+int GetBulletCount() {
+    return MAX_BULLET;
+}
+
+std::vector<BULLET*> GetActiveBullets() {
+    std::vector<BULLET*> out;
+    out.reserve(MAX_BULLET);
+    for (int i = 0; i < MAX_BULLET; ++i) {
+        if (g_Bullet[i].use) out.push_back(&g_Bullet[i]);
+    }
+    return out; 
+}
 //==========================================================================
 // 爆風
 //==========================================================================
@@ -455,3 +471,13 @@ Weapon* GetRocket_Launcher()
 //=================================================================
 //
 //==============================================================
+void RebuildActiveBulletList() {
+    s_activeBullets.clear();
+
+    BULLET* bullets = GetBullet(); 
+    for (int i = 0; i < MAX_BULLET; ++i) {
+        if (bullets[i].use) {
+            s_activeBullets.push_back(&bullets[i]);
+        }
+    }
+}
