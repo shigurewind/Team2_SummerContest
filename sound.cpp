@@ -36,6 +36,7 @@ SOUNDPARAM g_aParam[SOUND_LABEL_MAX] =
 	{ (char*)"data/BGM/bgm.wav", 1 },				// タイトルのBGM
 	{ (char*)"data/BGM/bgm_title.wav", 1 },			// in-gameのBGM
 	{ (char*)"data/BGM/bgm_gameOver.wav", 1 },		// ゲームオーバーのBGM
+	{ (char*)"data/BGM/victoryBGM.wav", 1 },		// ゲームクリアのBGM
 	//プレイヤー
 	{ (char*)"data/SE/maou_se_battle_gun01.wav", 0 },// 弾発射音
 	{ (char*)"data/SE/maou_se_battle_gun02.wav", 0 },// 弾発射音

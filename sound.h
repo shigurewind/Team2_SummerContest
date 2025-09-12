@@ -17,6 +17,7 @@ enum
 	SOUND_LABEL_BGM_sample000,	// タイトルのBGM
 	SOUND_LABEL_BGM_sample001,	// in-gameのBGM
 	SOUND_LABEL_BGM_sample002,	// ゲームオーバーのBGM
+	SOUND_LABEL_BGM_Victory,	// ゲームクリアのBGM
 	//プレイヤー
 	SOUND_LABEL_SE_shot001,		// 弾発射音
 	SOUND_LABEL_SE_shot002,	// 弾発射音

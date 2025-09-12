@@ -117,9 +117,18 @@ static MapConfig g_MapConfigs[] = {
 				  true,                               // enabled
 				  {0.5f, 0.0f, 0.5f, 0.5f},          // debugColor (紫色)
 				  "To Stage2"                         // name
+			  },
+			  {
+				  {-1424.0f, -42.0f, -656.0f},
+				   {40.0f, 40.0f, 40.0f},
+				   -1,//ゲームクリア
+				   true,
+				   {1.0f, 0.0f, 0.0f, 0.5f},//赤色
+				   "Victory"
 			  }
 		  },
-		  1
+
+		  2
   }
 
 };
@@ -298,6 +307,8 @@ void CheckPlayerInTransitionZones()
 			case 0: targetMode = MODE_TUTORIAL; break;     // Stage1
 			case 1: targetMode = MODE_STAGE2; break;   // Stage2
 			case 2: targetMode = MODE_STAGE3; break;   // Stage3
+
+			case -1: targetMode = MODE_VICTORY; break; // ゲームクリア
 			default: continue;
 			}
 

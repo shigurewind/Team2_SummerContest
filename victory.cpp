@@ -60,7 +60,7 @@ HRESULT InitVictory(void)
     g_TexNo = 0;
 
 	// ÉTÉEÉìÉhçƒê∂
-
+    PlaySound(SOUND_LABEL_BGM_Victory);
 
     return S_OK;
 }
