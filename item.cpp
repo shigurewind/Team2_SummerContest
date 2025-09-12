@@ -800,6 +800,9 @@ void ApplyConsumableItemEffect(int itemID) {
 		XMFLOAT3 rot = GetGunMuzzleRotation();     // ƒJƒƒ‰‚ÌŒ»İ‚Ì‰ñ“]‚ğg—p
 
 		SetBulletWithData(data, pos, rot, WEAPON_ROCKET_LAUNCHER);
+
+		PlaySound(SOUND_LABEL_SE_shot0);
+
 		break;
 	}
 
