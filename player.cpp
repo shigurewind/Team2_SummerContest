@@ -220,7 +220,7 @@ void PLAYER::Init()
 	meleeCDTime = 0.8f;
 
 
-	//試しにリボルバーとノーマル弾だけ持っている状態
+	//最初から持っている状態
 
 	Inventory* inv = GetPlayerInventory();
 	if (inv)
@@ -242,6 +242,9 @@ void PLAYER::Init()
 		{
 			inv->AddItem(CreateItemFromID(PART_NORMAL_AMMO));              // 追加
 		}
+
+		// グレネードを最初から3つ所持
+		inv->AddItem(Item(ITEM_GRENADE, "Grenade", 3, ItemCategory::Consumable));
 	}
 
 

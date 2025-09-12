@@ -83,12 +83,15 @@ struct LIGHT {
 };
 
 // フォグ構造体
-struct FOG {
-	float		FogStart;	// フォグの開始距離
-	float		FogEnd;		// フォグの最大距離
-	XMFLOAT4	FogColor;	// フォグの色
-};
+typedef struct FOG
+{
+	float FogStartXZ;
+	float FogEndXZ;
+	float FogStartY;
+	float FogEndY;
 
+	XMFLOAT4 FogColor;
+} FOG;
 
 //*****************************************************************************
 // プロトタイプ宣言

@@ -11,6 +11,7 @@
 #include "player.h"
 #include "bullet.h"
 #include "item.h"
+#include "light.h"
 #include "overlay2D.h"
 
 //*****************************************************************************
@@ -18,7 +19,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(13)		// テクスチャの数
+#define TEXTURE_MAX					(16)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -33,7 +34,7 @@ static ID3D11Buffer* g_VertexBuffer = NULL;		// 頂点情報
 static ID3D11ShaderResourceView* g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
 
 static char* g_TexturName[TEXTURE_MAX] = {
-	"data/TEXTURE/number16x32.png",
+	"data/TEXTURE/number16x32_2.png",
 	"data/TEXTURE/HP00.png",
 	"data/TEXTURE/HP01.png",
 	"data/TEXTURE/revolver.png",
@@ -47,6 +48,10 @@ static char* g_TexturName[TEXTURE_MAX] = {
 
 	"data/2Dpicture/UI/shooting.png",
 	"data/2Dpicture/UI/crosshair.png",
+	"data/2Dpicture/UI/magazine1.png",
+	"data/2Dpicture/UI/magazine2.png",
+	"data/2Dpicture/UI/wepon_bg.png",
+
 };
 
 
@@ -192,6 +197,16 @@ void UpdateGameUI(void)
 //=============================================================================
 void DrawGameUI(void)
 {
+
+	BOOL fogWas = GetFogEnable();
+	SetFogEnable(FALSE);
+	SetLightEnable(FALSE);
+	SetDepthEnable(FALSE);
+
+	SetWorldViewProjection2D();
+	SetAlphaTestEnable(FALSE);
+	SetBlendState(BLEND_MODE_ALPHABLEND);
+
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
@@ -270,10 +285,15 @@ void DrawGameUI(void)
 
 	DrawShootingHand();
 
+	DrawWeponBG();
+
 	//弾数表示の呼び出し
 	DrawAmmoUI();
 
 
+	SetDepthEnable(TRUE);
+	SetFogEnable(fogWas);
+	SetLightEnable(TRUE);
 }
 
 
@@ -360,10 +380,10 @@ void DrawAmmoUI(void)
 	}
 
 	// === 武器アイコン表示（現状維持） ===
-	const float weaponIconX = 480.0f;
-	const float weaponIconY = 630.0f;
+	const float weaponIconX = 945.0f;
+	const float weaponIconY = 700.0f;
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[weaponTexNo]);
-	SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 90, 60, 0.0f, 0.0f, 1.0f, 1.0f);
+	SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 60, 45, 0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
 	// === 追加：未所持なら「武器アイコン」に × を重ねる ===
@@ -382,32 +402,53 @@ void DrawAmmoUI(void)
 		}
 	}
 
-	// === 弾数表示：総弾数のみ（現状維持） ===
+	// === 弾数表示：総弾数のみ（＋マガジンアイコンを左に追加） ===
 	int currentAmmo = (GetCurrentBulletType() == BULLET_NORMAL)
 		? player->ammoNormal
 		: player->ammoFire;
 
-	// その弾種を未所持なら表示は 0 にする
+	// その弾種を未所持なら表示は 0 にする（現状仕様のまま）
 	if (!player->IsBulletUnlocked((int)GetCurrentBulletType())) {
 		currentAmmo = 0;
 	}
 
-	// 弾種の色（既存のまま）
+	// 数字レイアウト（既存と同値）
+	const float digitWidth = 14.0f;
+	const float digitHeight = 28.0f;
+	const float baseX = 1050.0f;
+	const float baseY = 685.0f;
+
+	// --- 追加：マガジンアイコン（弾種に応じて切替／数字の左側に表示） ---
+	{
+		// ノーマル弾: magazine2、ファイア弾: magazine1
+		const int magTexNo = (GetCurrentBulletType() == BULLET_NORMAL) ? 14 : 13;
+
+		MATERIAL m = {};
+		m.Diffuse = XMFLOAT4(1, 1, 1, 1);
+		SetMaterial(m);
+
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[magTexNo]);
+
+		const float magSize = 50.0f;      // アイコンサイズ
+		const float magOffsetX = 40.0f;      // 数字の左に寄せる量（好みで調整可）
+		const float magX = baseX - magOffsetX;
+		const float magY = baseY + digitHeight * 0.5f; // 中央合わせ（SetSpriteは中心指定）
+
+		SetSprite(g_VertexBuffer, magX, magY, magSize, magSize, 0, 0, 1, 1);
+		GetDeviceContext()->Draw(4, 0);
+	}
+
+	// --- 数字（弾種で色分け：既存通り） ---
 	MATERIAL material = {};
 	if (GetCurrentBulletType() == BULLET_FIRE) {
 		material.Diffuse = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);  // 赤
 	}
 	else {
-		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // 白
+		material.Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);  // 黒
 	}
 	SetMaterial(material);
 
-	// 数字だけ描画（“/”やクリップは廃止）
-	const float digitWidth = 16.0f;
-	const float digitHeight = 32.0f;
-	const float baseX = 470.0f;
-	const float baseY = 670.0f;
-
+	// 数字を描画（既存処理）
 	char text[16];
 	sprintf(text, "%d", currentAmmo);
 
@@ -430,8 +471,20 @@ void DrawAmmoUI(void)
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[0]); // number16x32.png
 		GetDeviceContext()->Draw(4, 0);
 	}
-
 }
+
+
+void DrawWeponBG()
+{
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[15]);
+
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSprite(g_VertexBuffer, 1000.0f, 700.0f, 200, 50, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+}
+
 
 // 画面中央に "PAUSED" 画像を出す
 void DrawPaused(void)

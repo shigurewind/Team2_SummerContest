@@ -62,11 +62,12 @@ void InitLight(void)
 
 
 	// フォグの初期化（霧の効果）
-	g_Fog.FogStart = 1000.0f;									// 視点からこの距離離れるとフォグがかかり始める
-	g_Fog.FogEnd = 1000.0f;									// ここまで離れるとフォグの色で見えなくなる
-	g_Fog.FogColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);		// フォグの色
-	SetFog(&g_Fog);
-	SetFogEnable(g_FogEnable);				// 他の場所もチェックする shadow
+	FOG fog{};
+	fog.FogStartXZ = 1e6f; fog.FogEndXZ = 1e6f;
+	fog.FogStartY = 1e6f; fog.FogEndY = 1e6f;
+	fog.FogColor = XMFLOAT4(0, 0, 0, 1);
+	SetFog(&fog);
+	SetFogEnable(FALSE);
 
 	SetLightEnable(TRUE);
 }
@@ -154,4 +155,20 @@ void SetSpotlightEnabled(BOOL enable)
 	g_SpotlightEnabled = enable;
 
 
+}
+
+void SetGlobalFogXZ_Y(float startXZ, float endXZ,
+	float startY, float endY,
+	const XMFLOAT4& color,
+	BOOL enable)
+{
+	FOG fog{};
+	fog.FogStartXZ = startXZ;
+	fog.FogEndXZ = endXZ;
+	fog.FogStartY = startY;
+	fog.FogEndY = endY;
+	fog.FogColor = color;
+
+	SetFog(&fog);
+	SetFogEnable(enable);
 }

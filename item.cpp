@@ -5,6 +5,7 @@
 #include "collision.h"
 #include "player.h"
 #include "FBXmodel.h"
+#include "bullet.h"
 
 #include <cstdlib> // for rand()
 #include <ctime>   // for time()
@@ -116,8 +117,22 @@ void ITEM_OBJ::Update()
 				case ItemCategory::WeaponPart_Ammo:
 				case ItemCategory::WeaponPart_FireType:
 				case ItemCategory::Consumable:
+				{
+					PLAYER* player = GetPlayer();
+					int* currentAmmo = (player->currentBullet == BULLET_NORMAL) ? &player->ammoNormal : &player->ammoFire;
+					int maxAmmo = (player->currentBullet == BULLET_NORMAL) ? player->maxAmmoNormal : player->maxAmmoFire;
+
+					if (*currentAmmo < maxAmmo) {
+						(*currentAmmo) += 5;
+						if (*currentAmmo > maxAmmo)
+							*currentAmmo = maxAmmo;
+						use = false;
+					}
+				}
+
 					if (inv->AddItem(item)) use = false;
 					break;
+
 				case ItemCategory::InstantEffect:
 					ApplyInstantItemEffect(item.GetID());
 					use = false;
@@ -189,34 +204,39 @@ void ITEM_OBJ::Update()
 		}
 	}
 
-	// 当たり判定
-	if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
+	//// 当たり判定
+	//if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
 
-		Inventory* playerInventory = GetPlayerInventory();
+	//	Inventory* playerInventory = GetPlayerInventory();
 
-		PlaySound(SOUND_LABEL_SE_pickItem);
+	//	PlaySound(SOUND_LABEL_SE_pickItem);
 
-		switch (item.GetCategory())
-		{
-		case ItemCategory::WeaponPart_Ammo:
-		case ItemCategory::WeaponPart_FireType:
-		case ItemCategory::Consumable:
-			//インベントリーに入れる
-			if (playerInventory->AddItem(item)) {
+	//	switch (item.GetCategory())
+	//	{
+	//	case ItemCategory::WeaponPart_Ammo:
+	//	case ItemCategory::WeaponPart_FireType:
+	//	case ItemCategory::Consumable:
+	//		// 弾数補充
+	//		PLAYER* player = GetPlayer();
+	//		int* currentAmmo = (player->currentBullet == BULLET_NORMAL) ? &player->ammoNormal : &player->ammoFire;
+	//		int maxAmmo = (player->currentBullet == BULLET_NORMAL) ? player->maxAmmoNormal : player->maxAmmoFire;
 
-
-				use = false;  // アイテムを消す
-			}
-			break;
-		case ItemCategory::InstantEffect:
-			//相応の効果
-			ApplyInstantItemEffect(item.GetID());
-			use = false;
-			break;
-		default:
-			break;
-		}
-	}
+	//		if (*currentAmmo < maxAmmo) {
+	//			(*currentAmmo) += 5;
+	//			if (*currentAmmo > maxAmmo)
+	//				*currentAmmo = maxAmmo;
+	//			use = false;
+	//		}
+	//		break;
+	//	case ItemCategory::InstantEffect:
+	//		//相応の効果
+	//		ApplyInstantItemEffect(item.GetID());
+	//		use = false;
+	//		break;
+	//	default:
+	//		break;
+	//	}
+	//}
 
 	if (isGround) {
 		float sp2 = velocity.x * velocity.x + velocity.z * velocity.z;
@@ -664,6 +684,9 @@ Item CreateItemFromID(int id) {
 	case ITEM_BUG:
 		return Item(id, "Bug", 10, ItemCategory::Consumable);
 
+	case ITEM_GRENADE:
+		return Item(id, "Grenade", 1, ItemCategory::Consumable);
+
 	default:
 		return Item(id, "Unknown", 1, ItemCategory::Consumable);
 	}
@@ -782,6 +805,25 @@ void ApplyConsumableItemEffect(int itemID) {
 		// Speed Up
 		player->speed += 1.0f;  // TODO：数値調整(永久？)
 		break;
+
+	case ITEM_GRENADE:
+	{
+		// 弾データ：ノーマル弾をベースに少し大きく・投擲速度を設定（お好みで調整可）
+		BulletData data = bulletData_Normal;
+		data.size = bulletData_Normal.size * 2.00f;
+		data.speed = 10.0f;
+		data.lifetime = (std::max)(data.lifetime, 2.0f);
+
+		// ★ロケランと同じ銃口から発射★
+		XMFLOAT3 pos = GetGunMuzzlePosition();     // camera.cpp 実装あり
+		XMFLOAT3 rot = GetGunMuzzleRotation();     // カメラの現在の回転を使用
+
+		SetBulletWithData(data, pos, rot, WEAPON_ROCKET_LAUNCHER);
+
+		PlaySound(SOUND_LABEL_SE_shot0);
+
+		break;
+	}
 
 	default:
 		break;
