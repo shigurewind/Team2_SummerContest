@@ -50,7 +50,7 @@ static MapConfig g_MapConfigs[] = {
 		"",                  // backgroundMusic
 		{
 			  { // Zone 0: Stage2 -> Stage1
-				  {0.0f, 10.0f, 0.0f},               // center
+				  {0.0f, 80.0f, 0.0f},               // center
 				  {20.0f, 20.0f, 20.0f},             // size
 				  0,                                  // targetMapID (stage1)
 				  true,                               // enabled
@@ -58,9 +58,9 @@ static MapConfig g_MapConfigs[] = {
 				  "To Stage1"                         // name
 			  },
 			  { // Zone 1: Stage2 -> Stage3
-				  {200.0f, 10.0f, 200.0f},           // center
-				  {20.0f, 20.0f, 20.0f},             // size
-				  3,                                  // targetMapID (stage3)
+				  {-976.0f, -65.0f, 336.0f},           // center
+				  {30.0f, 30.0f, 30.0f},             // size
+				  2,                                  // targetMapID (stage3)
 				  true,                               // enabled
 				  {0.0f, 0.0f, 1.0f, 0.5f},          // debugColor (ÂF)
 				  "To Stage3"                         // name
@@ -70,7 +70,7 @@ static MapConfig g_MapConfigs[] = {
 	},
 	// stage 3 ()
   {
-	  3,                                          // mapID
+	  2,                                          // mapID
 	  "data/MODEL/stage3_collision.fbx",         // collisionModelPath
 	  "data/MODEL/stage3_Nocollision.fbx",       // decorationModelPath
 	  "data/CONFIG/map3_items.json",             // itemConfigPath
@@ -81,8 +81,8 @@ static MapConfig g_MapConfigs[] = {
 	  "",                                          // backgroundMusic
 	  {
 			  { // Zone 0: Stage3 -> Stage2
-				  {200.0f, 10.0f, 200.0f},           // center
-				  {20.0f, 20.0f, 20.0f},             // size
+				  {52.0f, -40.0f, -31.0f},           // center
+				  {40.0f, 30.0f, 50.0f},             // size
 				  1,                                  // targetMapID (stage2)
 				  true,                               // enabled
 				  {0.5f, 0.0f, 0.5f, 0.5f},          // debugColor (Ž‡F)
@@ -259,7 +259,7 @@ void CheckPlayerInTransitionZones()
 			switch (zone->targetMapID) {
 			case 0: targetMode = MODE_TUTORIAL; break;     // Stage1
 			case 1: targetMode = MODE_STAGE2; break;   // Stage2
-			case 3: targetMode = MODE_STAGE3; break;   // Stage3
+			case 2: targetMode = MODE_STAGE3; break;   // Stage3
 			default: continue;
 			}
 
