@@ -114,6 +114,19 @@ void ITEM_OBJ::Update()
 				Inventory* inv = GetPlayerInventory();
 				switch (item.GetCategory()) {
 				case ItemCategory::WeaponPart_Ammo:
+				{
+					PLAYER* player = GetPlayer();
+					int* currentAmmo = (player->currentBullet == BULLET_NORMAL) ? &player->ammoNormal : &player->ammoFire;
+					int maxAmmo = (player->currentBullet == BULLET_NORMAL) ? player->maxAmmoNormal : player->maxAmmoFire;
+
+					if (*currentAmmo < maxAmmo) {
+						(*currentAmmo) += 5;
+						if (*currentAmmo > maxAmmo)
+							*currentAmmo = maxAmmo;
+						use = false;
+					}
+				}
+				break;
 				case ItemCategory::WeaponPart_FireType:
 				case ItemCategory::Consumable:
 					if (inv->AddItem(item)) use = false;
@@ -189,34 +202,43 @@ void ITEM_OBJ::Update()
 		}
 	}
 
-	// 当たり判定
-	if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
+	//// 当たり判定
+	//if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
 
-		Inventory* playerInventory = GetPlayerInventory();
+	//	Inventory* playerInventory = GetPlayerInventory();
 
-		PlaySound(SOUND_LABEL_SE_pickItem);
+	//	PlaySound(SOUND_LABEL_SE_pickItem);
 
-		switch (item.GetCategory())
-		{
-		case ItemCategory::WeaponPart_Ammo:
-		case ItemCategory::WeaponPart_FireType:
-		case ItemCategory::Consumable:
-			//インベントリーに入れる
-			if (playerInventory->AddItem(item)) {
+	//	switch (item.GetCategory())
+	//	{
+	//	case ItemCategory::WeaponPart_Ammo:
+	//		// 弾数補充
+	//	{
+	//		Weapon* revolver = GetRevolver();
+	//		Weapon* shotgun = GetShotgun();
+	//		Weapon* rocket = GetRocket_Launcher();
 
+	//		//revolver->clipSize += 10;
+	//	}
+	//	case ItemCategory::WeaponPart_FireType:
+	//	case ItemCategory::Consumable:
+	//		//インベントリーに入れる
+	//		//if (playerInventory->AddItem(item)) {
 
-				use = false;  // アイテムを消す
-			}
-			break;
-		case ItemCategory::InstantEffect:
-			//相応の効果
-			ApplyInstantItemEffect(item.GetID());
-			use = false;
-			break;
-		default:
-			break;
-		}
-	}
+	//		//	PLAYER* player = GetPlayer();
+	//		//	player->HP += 5;
+	//		//	use = false;  // アイテムを消す
+	//		//}
+	//		break;
+	//	case ItemCategory::InstantEffect:
+	//		//相応の効果
+	//		ApplyInstantItemEffect(item.GetID());
+	//		use = false;
+	//		break;
+	//	default:
+	//		break;
+	//	}
+	//}
 
 	if (isGround) {
 		float sp2 = velocity.x * velocity.x + velocity.z * velocity.z;

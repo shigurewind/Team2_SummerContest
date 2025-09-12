@@ -110,11 +110,6 @@ enum ItemID
 	PART_NORMAL_AMMO,
 	PART_FIRE,
 
-	//打ち方を決めるパーツ
-	PART_REVOLVER,
-	PART_SHUTGUN,
-	PART_ROCKET,
-
 	//消耗品
 	ITEM_APPLE,
 	ITEM_SPEED_UP,
@@ -124,6 +119,11 @@ enum ItemID
 	ITEM_BULLET,
 
 	ITEM_BUG,
+
+	//打ち方を決めるパーツ
+	PART_REVOLVER,
+	PART_SHUTGUN,
+	PART_ROCKET,
 
 	ITEM_ID_COUNT//ItemIDの数
 };
