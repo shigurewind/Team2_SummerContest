@@ -12,6 +12,7 @@
 #include "sprite.h"
 #include "title.h"
 #include "inputManager.h"
+#include "light.h"
 
 
 //*****************************************************************************

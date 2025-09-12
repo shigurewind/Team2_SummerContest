@@ -7,6 +7,7 @@
 #include "sprite.h"
 #include "GameUI.h"
 #include "inputManager.h"
+#include "light.h"
 
 
 #define TEXTURE_WIDTH           (SCREEN_WIDTH)  // 背景サイズ
@@ -100,6 +101,16 @@ void UpdateVictory(void)
 
 void DrawVictory(void)
 {
+
+    BOOL fogWas = GetFogEnable();
+    SetFogEnable(FALSE);
+    SetLightEnable(FALSE);
+    SetDepthEnable(FALSE);
+
+    SetWorldViewProjection2D();
+    SetAlphaTestEnable(FALSE);
+    SetBlendState(BLEND_MODE_ALPHABLEND);
+
     // 頂点バッファ設定
     UINT stride = sizeof(VERTEX_3D);
     UINT offset = 0;
@@ -130,4 +141,8 @@ void DrawVictory(void)
         SetSprite(g_VertexBuffer, g_Pos.x, g_Pos.y, 600.0f, 100.0f, 0.0f, 0.0f, 1.0f, 1.0f);
         GetDeviceContext()->Draw(4, 0);
     }
+
+    SetDepthEnable(TRUE);
+    SetFogEnable(fogWas);
+    SetLightEnable(TRUE);
 }

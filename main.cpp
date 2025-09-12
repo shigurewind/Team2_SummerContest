@@ -599,6 +599,10 @@ void SetMode(int mode)
 	case MODE_TITLE:
 		// タイトル画面の初期化
 		InitTitle();
+
+		isFirstPersonMode = false;
+		ShowCursor(TRUE);
+
 		break;
 
 	case MODE_TUTORIAL:
@@ -646,11 +650,17 @@ void SetMode(int mode)
 	case MODE_RESULT:
 		// リザルト画面の初期化
 		InitResult();
+
+		isFirstPersonMode = false;
+		ShowCursor(TRUE);
 		break;
 
 	case MODE_VICTORY:
 		// クリア画面の初期化
 		InitVictory();
+
+		isFirstPersonMode = false;
+		ShowCursor(TRUE);
 		break;
 
 		// ゲーム終了時の処理

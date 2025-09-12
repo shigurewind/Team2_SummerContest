@@ -13,6 +13,7 @@
 #include "sprite.h"
 #include "GameUI.h"
 #include "inputManager.h"
+#include "light.h"
 
 //*****************************************************************************
 // ƒ}ƒNƒ’è‹`
