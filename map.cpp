@@ -9,6 +9,36 @@
 #include "fade.h"
 
 
+
+static void ApplyEnvironmentFromConfig(const MapConfig* config)
+{
+	LIGHT* L = GetLightData(0);
+	if (!L) return;
+
+	ZeroMemory(L, sizeof(LIGHT));
+	L->Type = LIGHT_TYPE_DIRECTIONAL;
+	L->Enable = TRUE;
+
+	XMFLOAT3 dir = config->lightDirection;
+	XMVECTOR dv = XMLoadFloat3(&dir);
+	if (XMVector3Less(XMVector3Length(dv), XMVectorReplicate(1e-6f))) {
+		dv = XMVectorSet(0.0f, -1.0f, 0.0f, 0.0f); 
+	}
+	dv = XMVector3Normalize(dv);
+	XMStoreFloat3(&L->Direction, dv);
+
+	L->Diffuse = XMFLOAT4(1, 1, 1, 1);
+	L->Ambient = config->ambientColor;
+
+	L->Attenuation = 1000.0f;
+	L->SpotInnerCos = 0.95f;
+	L->SpotOuterCos = 0.85f;
+	L->SpotExponent = 1.0f;
+
+	SetLightData(0, L); 
+	SetLightEnable(TRUE); 
+}
+
 static int g_CurrentMapID = -1;
 static MapConfig* g_CurrentMapConfig = nullptr;
 
@@ -50,7 +80,7 @@ static MapConfig g_MapConfigs[] = {
 		"",                  // backgroundMusic
 		{
 			  { // Zone 0: Stage2 -> Stage1
-				  {0.0f, 10.0f, 0.0f},               // center
+				  {0.0f, 80.0f, 0.0f},               // center
 				  {20.0f, 20.0f, 20.0f},             // size
 				  0,                                  // targetMapID (stage1)
 				  true,                               // enabled
@@ -58,9 +88,9 @@ static MapConfig g_MapConfigs[] = {
 				  "To Stage1"                         // name
 			  },
 			  { // Zone 1: Stage2 -> Stage3
-				  {-980.0f, -74.0f, 321.0f},           // center
-				  {20.0f, 20.0f, 20.0f},             // size
-				  3,                                  // targetMapID (stage3)
+				  {-976.0f, -65.0f, 336.0f},           // center
+				  {30.0f, 30.0f, 30.0f},             // size
+				  2,                                  // targetMapID (stage3)
 				  true,                               // enabled
 				  {0.0f, 0.0f, 1.0f, 0.5f},          // debugColor (青色)
 				  "To Stage3"                         // name
@@ -70,7 +100,7 @@ static MapConfig g_MapConfigs[] = {
 	},
 	// stage 3 ()
   {
-	  3,                                          // mapID
+	  2,                                          // mapID
 	  "data/MODEL/stage3_collision.fbx",         // collisionModelPath
 	  "data/MODEL/stage3_Nocollision.fbx",       // decorationModelPath
 	  "data/CONFIG/map3_items.json",             // itemConfigPath
@@ -81,8 +111,8 @@ static MapConfig g_MapConfigs[] = {
 	  "",                                          // backgroundMusic
 	  {
 			  { // Zone 0: Stage3 -> Stage2
-				  {200.0f, 10.0f, 200.0f},           // center
-				  {20.0f, 20.0f, 20.0f},             // size
+				  {52.0f, -40.0f, -31.0f},           // center
+				  {40.0f, 30.0f, 50.0f},             // size
 				  1,                                  // targetMapID (stage2)
 				  true,                               // enabled
 				  {0.5f, 0.0f, 0.5f, 0.5f},          // debugColor (紫色)
@@ -158,6 +188,14 @@ HRESULT LoadMap(int mapID) {
 	SetPlayerSpawnPosition(config->playerSpawnPos);
 
 	// TODO: 環境とBGMを設定
+	ApplyEnvironmentFromConfig(config);
+
+	SetGlobalFogXZ_Y(
+		 320.0f, 750.0f,
+		 90.0f, 150.0f,
+		XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f),  
+		TRUE
+	);
 
 	// 今のマップ
 	g_CurrentMapID = mapID;
@@ -259,7 +297,7 @@ void CheckPlayerInTransitionZones()
 			switch (zone->targetMapID) {
 			case 0: targetMode = MODE_TUTORIAL; break;     // Stage1
 			case 1: targetMode = MODE_STAGE2; break;   // Stage2
-			case 3: targetMode = MODE_STAGE3; break;   // Stage3
+			case 2: targetMode = MODE_STAGE3; break;   // Stage3
 			default: continue;
 			}
 

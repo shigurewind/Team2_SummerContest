@@ -19,6 +19,7 @@
 #include <vector>
 #include "enemy.h"
 #include "item.h"
+#include "overlay2D.h"
 
 
 //=============================================================================
@@ -406,6 +407,7 @@ void UpdateBullet(void)
             b.pos.z = hitPos.z - dirN.z * backEps;
 
             if (b.firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+                SpawnRocketExplosion(hitPos, 160.0f);
                 ApplyExplosionAt(hitPos); 
             }
 

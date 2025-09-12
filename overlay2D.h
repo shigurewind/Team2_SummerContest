@@ -38,3 +38,4 @@ void PlayMeleeAnimation();
 bool IsTutorialShowing();
 void SetTutorialShowing(bool flag);
 float GetHandOffsetY();
+void SpawnRocketExplosion(const DirectX::XMFLOAT3& pos, float size);

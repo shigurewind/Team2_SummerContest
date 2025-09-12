@@ -124,7 +124,7 @@ static FUCHI			g_Fuchi;
 
 
 
-static float g_ClearColor[4] = { 0.3f, 0.3f, 0.3f, 1.0f };	// ”wŒiF
+static float g_ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };	// ”wŒiF
 
 
 ID3D11Device* GetDevice(void)
@@ -357,8 +357,10 @@ void SetFogEnable(BOOL flag)
 
 void SetFog(FOG* pFog)
 {
-	g_Fog.Fog.x = pFog->FogStart;
-	g_Fog.Fog.y = pFog->FogEnd;
+	g_Fog.Fog = XMFLOAT4(
+		pFog->FogStartXZ, pFog->FogEndXZ, 
+		pFog->FogStartY, pFog->FogEndY  
+	);
 	g_Fog.FogColor = pFog->FogColor;
 
 	SetFogBuffer();

@@ -3,7 +3,7 @@
 #include "main.h"
 #include "renderer.h"
 
-#define MAX_TRANSITION_ZONES_PER_MAP 2 // マップあたりの最大遷移ゾーン数
+#define MAX_TRANSITION_ZONES_PER_MAP 3 // マップあたりの最大遷移ゾーン数
 
 // 遷移ゾーン構造体
 struct SceneTransitionZone {

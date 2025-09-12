@@ -11,6 +11,7 @@
 #include "player.h"
 #include "bullet.h"
 #include "item.h"
+#include "light.h"
 #include "overlay2D.h"
 
 //*****************************************************************************
@@ -18,7 +19,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(16)	// キャラサイズ
 #define TEXTURE_HEIGHT				(32)	// 
-#define TEXTURE_MAX					(15)		// テクスチャの数
+#define TEXTURE_MAX					(16)		// テクスチャの数
 
 
 //*****************************************************************************
@@ -33,7 +34,7 @@ static ID3D11Buffer* g_VertexBuffer = NULL;		// 頂点情報
 static ID3D11ShaderResourceView* g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
 
 static char* g_TexturName[TEXTURE_MAX] = {
-	"data/TEXTURE/number16x32.png",
+	"data/TEXTURE/number16x32_2.png",
 	"data/TEXTURE/HP00.png",
 	"data/TEXTURE/HP01.png",
 	"data/TEXTURE/revolver.png",
@@ -49,6 +50,7 @@ static char* g_TexturName[TEXTURE_MAX] = {
 	"data/2Dpicture/UI/crosshair.png",
 	"data/2Dpicture/UI/magazine1.png",
 	"data/2Dpicture/UI/magazine2.png",
+	"data/2Dpicture/UI/wepon_bg.png",
 
 };
 
@@ -73,6 +75,8 @@ float bugEffectTimer = 0.0f;
 
 static float g_UIRecoilY = 0.0f;       // 現在のリコイル量
 static float g_UIRecoilRecover = 2.0f; // リコイル回復速度
+static int g_HandFrame = 0;
+static float g_HandAnimTimer = 0.0f;
 
 
 //=============================================================================
@@ -173,6 +177,11 @@ void UpdateGameUI(void)
 		g_UIRecoilY += g_UIRecoilRecover;
 		if (g_UIRecoilY > 0.0f) g_UIRecoilY = 0.0f;
 	}
+	g_HandAnimTimer += 1.0f / 60.0f; // 60fps
+	if (g_HandFrame == 1 && g_HandAnimTimer > 0.1f) {
+		g_HandFrame = 0;       // idle frame に戻る
+		g_HandAnimTimer = 0.0f;
+	}
 
 
 #ifdef _DEBUG	// デバッグ情報を表示する
@@ -188,6 +197,16 @@ void UpdateGameUI(void)
 //=============================================================================
 void DrawGameUI(void)
 {
+
+	BOOL fogWas = GetFogEnable();
+	SetFogEnable(FALSE);
+	SetLightEnable(FALSE);
+	SetDepthEnable(FALSE);
+
+	SetWorldViewProjection2D();
+	SetAlphaTestEnable(FALSE);
+	SetBlendState(BLEND_MODE_ALPHABLEND);
+
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
@@ -266,10 +285,15 @@ void DrawGameUI(void)
 
 	DrawShootingHand();
 
+	DrawWeponBG();
+
 	//弾数表示の呼び出し
 	DrawAmmoUI();
 
 
+	SetDepthEnable(TRUE);
+	SetFogEnable(fogWas);
+	SetLightEnable(TRUE);
 }
 
 
@@ -306,8 +330,14 @@ void DrawShootingHand()
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[11]);
 
 	float drawX = SCREEN_CENTER_X + 240;
-	float drawY = SCREEN_HEIGHT - 255 + g_UIRecoilY + GetHandOffsetY();
-	SetSprite(g_VertexBuffer, drawX, drawY, 800, 800, 0.0f, 0.0f, 1.0f, 1.0f);
+	float drawY = SCREEN_HEIGHT - 385 + g_UIRecoilY + GetHandOffsetY();
+	float u = (g_HandFrame == 0) ? 0.0f : 0.5f; // 2 frame ngang
+	float v = 0.0f;
+	float uw = 0.5f;
+	float vh = 1.0f;
+
+	//SetSprite(g_VertexBuffer, drawX, drawY, 800, 800, 0.0f, 0.0f, 1.0f, 1.0f);
+	SetSprite(g_VertexBuffer, drawX, drawY, 800, 800, u, v, uw, vh);
 
 	// ポリゴン描画
 	GetDeviceContext()->Draw(4, 0);
@@ -350,10 +380,10 @@ void DrawAmmoUI(void)
 	}
 
 	// === 武器アイコン表示（現状維持） ===
-	const float weaponIconX = 560.0f;
-	const float weaponIconY = 650.0f;
+	const float weaponIconX = 945.0f;
+	const float weaponIconY = 700.0f;
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[weaponTexNo]);
-	SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 90, 60, 0.0f, 0.0f, 1.0f, 1.0f);
+	SetSprite(g_VertexBuffer, weaponIconX, weaponIconY, 60, 45, 0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
 	// === 追加：未所持なら「武器アイコン」に × を重ねる ===
@@ -383,10 +413,10 @@ void DrawAmmoUI(void)
 	}
 
 	// 数字レイアウト（既存と同値）
-	const float digitWidth = 16.0f;
-	const float digitHeight = 32.0f;
-	const float baseX = 550.0f;
-	const float baseY = 690.0f;
+	const float digitWidth = 14.0f;
+	const float digitHeight = 28.0f;
+	const float baseX = 1050.0f;
+	const float baseY = 685.0f;
 
 	// --- 追加：マガジンアイコン（弾種に応じて切替／数字の左側に表示） ---
 	{
@@ -399,8 +429,8 @@ void DrawAmmoUI(void)
 
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[magTexNo]);
 
-		const float magSize = 100.0f;      // アイコンサイズ
-		const float magOffsetX = 45.0f;      // 数字の左に寄せる量（好みで調整可）
+		const float magSize = 50.0f;      // アイコンサイズ
+		const float magOffsetX = 40.0f;      // 数字の左に寄せる量（好みで調整可）
 		const float magX = baseX - magOffsetX;
 		const float magY = baseY + digitHeight * 0.5f; // 中央合わせ（SetSpriteは中心指定）
 
@@ -414,7 +444,7 @@ void DrawAmmoUI(void)
 		material.Diffuse = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);  // 赤
 	}
 	else {
-		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // 白
+		material.Diffuse = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);  // 黒
 	}
 	SetMaterial(material);
 
@@ -442,6 +472,19 @@ void DrawAmmoUI(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 }
+
+
+void DrawWeponBG()
+{
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[15]);
+
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSprite(g_VertexBuffer, 1000.0f, 700.0f, 200, 50, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+}
+
 
 // 画面中央に "PAUSED" 画像を出す
 void DrawPaused(void)
@@ -497,6 +540,9 @@ void HideBugEffect()
 void AddUIRecoil()
 {
 	g_UIRecoilY = -15.0f; // 上方向に15px移動
+
+	g_HandFrame = 1;
+	g_HandAnimTimer = 0.0f;
 }
 
 
