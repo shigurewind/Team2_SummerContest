@@ -58,7 +58,7 @@ static MapConfig g_MapConfigs[] = {
 				  "To Stage1"                         // name
 			  },
 			  { // Zone 1: Stage2 -> Stage3
-				  {200.0f, 10.0f, 200.0f},           // center
+				  {-980.0f, -74.0f, 321.0f},           // center
 				  {20.0f, 20.0f, 20.0f},             // size
 				  3,                                  // targetMapID (stage3)
 				  true,                               // enabled
