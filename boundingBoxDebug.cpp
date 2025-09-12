@@ -131,19 +131,47 @@ void BoundingBoxDebugRenderer::Update() {
         AddTerrainBoxes();
     }
 
-	// シーン遷移ゾーンのボックスを追加
+	// シーン遷移ゾーンのボックスを追加 
     if (m_showTransitionZone && m_globalEnable) {
         SceneTransitionZone* zones = GetCurrentMapTransitionZones();
         int zoneCount = GetCurrentMapTransitionZoneCount();
+
+#ifdef _DEBUG
+		// debug: マップ切り替え時にゾーン情報を表示
+        static int lastMapID = -1;
+        int currentMapID = GetCurrentMapID();
+        if (lastMapID != currentMapID) {
+            printf("DEBUG: Map changed to %d, transition zones: %d\n", currentMapID, zoneCount);
+            if (zones) {
+                for (int i = 0; i < zoneCount; i++) {
+                    printf("  Zone %d: %s, center:(%.1f,%.1f,%.1f), enabled:%s\n",
+                        i, zones[i].name, zones[i].center.x, zones[i].center.y, zones[i].center.z,
+                        zones[i].enabled ? "true" : "false");
+                }
+            }
+            else {
+                printf("  ERROR: zones is null!\n");
+            }
+            lastMapID = currentMapID;
+        }
+#endif
+
 
         for (int i = 0; i < zoneCount; i++) {
             if (zones[i].enabled) {
                 XMFLOAT3 min = zones[i].GetMin();
                 XMFLOAT3 max = zones[i].GetMax();
                 AddBox(min, max, zones[i].debugColor);
+
+#ifdef _DEBUG
+                // 
+                printf("Adding transition box %d: min(%.1f,%.1f,%.1f) max(%.1f,%.1f,%.1f)\n",
+                    i, min.x, min.y, min.z, max.x, max.y, max.z);
+#endif
             }
         }
     }
+
 
 }
 

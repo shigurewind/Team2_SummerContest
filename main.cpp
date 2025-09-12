@@ -601,6 +601,9 @@ void SetMode(int mode)
 		UninitCamera();
 		InitCamera();
 
+		InitGame2();
+		LoadMap(2);
+
 
 		break;
 

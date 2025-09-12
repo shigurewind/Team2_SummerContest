@@ -224,6 +224,8 @@ void UpdateGame2(void)
 
 	UpdateItem();
 
+	BoundingBoxDebugRenderer::GetInstance().Update();
+
 
 }
 
