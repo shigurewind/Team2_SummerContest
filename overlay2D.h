@@ -28,4 +28,4 @@ void PlayMeleeAnimation();
 
 bool IsTutorialShowing();
 void SetTutorialShowing(bool flag);
-void SpawnRocketExplosion(const XMFLOAT3& pos, float size = 160.0f);
+void SpawnRocketExplosion(const DirectX::XMFLOAT3& pos, float size);

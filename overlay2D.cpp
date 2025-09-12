@@ -10,6 +10,7 @@
 #include "sprite.h"
 #include "player.h"
 #include"camera.h"
+#include"light.h"
 
 //*****************************************************************************
 // ƒ}ƒNƒ’è‹`
@@ -134,6 +135,42 @@ void UpdateOverlay2D()
 
 void DrawOverlay2D()
 {
+    if (g_TexExplosion) {
+
+        CAMERA* cam = GetCamera();
+        XMMATRIX viewM = XMLoadFloat4x4(&cam->mtxView);
+        XMMATRIX projM = XMLoadFloat4x4(&cam->mtxProjection);
+        SetViewMatrix(&viewM);
+        SetProjectionMatrix(&projM);
+
+        SetDepthEnable(TRUE);
+        SetFogEnable(TRUE);
+
+        UINT stride = sizeof(VERTEX_3D);
+        UINT offset = 0;
+        GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferOverlay, &stride, &offset);
+        GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+        SetLightEnable(FALSE);
+        SetBlendState(BLEND_MODE_ADD);
+        GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexExplosion);
+
+        for (auto& e : g_Explosions) if (e.use) {
+            float u, v, tw, th; GetExplosionUV_7x3(e.frame, u, v, tw, th);
+            WriteQuadVB_EnemyLayout(g_VertexBufferOverlay, u, v, tw, th);
+
+            XMMATRIX world = MakeBillboardWorld_EnemyStyle(e.pos, e.size);
+            SetWorldMatrix(&world);
+
+
+            GetDeviceContext()->Draw(4, 0);
+        }
+        SetBlendState(BLEND_MODE_ALPHABLEND);
+    }
+
+    SetFogEnable(FALSE);
+    SetDepthEnable(FALSE);
+    SetWorldViewProjection2D();
 
     if (g_IsMeleePlaying)
     {
@@ -176,6 +213,8 @@ void DrawOverlay2D()
         GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexTutorial);
         GetDeviceContext()->Draw(4, 0);
 
+        SetDepthEnable(TRUE);
+        SetFogEnable(TRUE);
         return; 
     }
 
@@ -197,36 +236,9 @@ void DrawOverlay2D()
     //    GetDeviceContext()->Draw(4, 0);
     //}
 
-    if (g_TexExplosion) {
+   
 
-        CAMERA* cam = GetCamera();
-        XMMATRIX viewM = XMLoadFloat4x4(&cam->mtxView);
-        XMMATRIX projM = XMLoadFloat4x4(&cam->mtxProjection);
-        SetViewMatrix(&viewM);
-        SetProjectionMatrix(&projM);
-
-        UINT stride = sizeof(VERTEX_3D);
-        UINT offset = 0;
-        GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferOverlay, &stride, &offset);
-        GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-        SetLightEnable(FALSE);
-        SetBlendState(BLEND_MODE_ADD);
-        GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexExplosion);
-
-        for (auto& e : g_Explosions) if (e.use) {
-            float u, v, tw, th; GetExplosionUV_7x3(e.frame, u, v, tw, th);
-            WriteQuadVB_EnemyLayout(g_VertexBufferOverlay, u, v, tw, th);
-
-            XMMATRIX world = MakeBillboardWorld_EnemyStyle(e.pos, e.size);
-            SetWorldMatrix(&world);
-
-
-            GetDeviceContext()->Draw(4, 0);
-        }
-        SetDepthEnable(TRUE);
-        SetBlendState(BLEND_MODE_ALPHABLEND);
-    }
+   
 }
 
 void PlayMeleeAnimation()

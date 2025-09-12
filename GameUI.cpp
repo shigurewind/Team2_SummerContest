@@ -11,6 +11,7 @@
 #include "player.h"
 #include "bullet.h"
 #include "item.h"
+#include "light.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -184,6 +185,16 @@ void UpdateGameUI(void)
 //=============================================================================
 void DrawGameUI(void)
 {
+
+	BOOL fogWas = GetFogEnable();
+	SetFogEnable(FALSE);
+	SetLightEnable(FALSE);
+	SetDepthEnable(FALSE);
+
+	SetWorldViewProjection2D();
+	SetAlphaTestEnable(FALSE);
+	SetBlendState(BLEND_MODE_ALPHABLEND);
+
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
@@ -264,6 +275,9 @@ void DrawGameUI(void)
 
 	DrawShootingHand();
 
+	SetDepthEnable(TRUE);
+	SetFogEnable(fogWas);
+	SetLightEnable(TRUE);
 }
 
 
