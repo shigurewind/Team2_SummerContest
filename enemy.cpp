@@ -667,7 +667,7 @@ void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType)
 		{
 			dropItemAtOffset(PART_FIRE);
 		}
-		if (random < 0.2f)  // shutgun 20%
+		if (random < 0.05f)  // shutgun 20%
 		{
 			dropItemAtOffset(PART_SHUTGUN);
 		}
@@ -690,7 +690,7 @@ void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType)
 		{
 			dropItemAtOffset(PART_FIRE);
 		}
-		if (random < 0.2f)  // shutgun 20%
+		if (random < 0.05f)  // shutgun 20%
 		{
 			dropItemAtOffset(PART_SHUTGUN);
 		}
