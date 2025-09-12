@@ -54,7 +54,7 @@ void InitOverlay2D()
         NULL);
     //TutorialShowing
     D3DX11CreateShaderResourceViewFromFile(GetDevice(),
-        "data/TEXTURE/bg002.jpg", 
+        "data/TEXTURE/TUTORIAL.png", 
         NULL,
         NULL,
         &g_TexTutorial,
