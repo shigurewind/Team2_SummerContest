@@ -30,6 +30,9 @@ void ShowDetailedOctreeInfo(OctreeNode* node, int depth, int maxShow);
 
 void ShowDebugUI()
 {
+#ifdef _DEBUG
+
+
 	ImGui::Begin("Debug Menu");
 
 	ImGui::Checkbox(u8"ÉQÅ[ÉÄÇí‚é~", (bool*)&g_bPause);
@@ -677,6 +680,9 @@ void ShowDebugUI()
 	//ShaderManager::ShowShaderDebugUI();
 
 	ShaderManager::ShowEffectDebugUI();
+
+
+#endif // DEBUG
 }
 
 
