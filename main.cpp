@@ -31,6 +31,7 @@
 #include "shaderManager.h"
 #include "inputManager.h"
 #include "map.h"
+#include "victory.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -412,6 +413,11 @@ void Update(void)
 
 	case MODE_RESULT:		// リザルト画面の更新
 		UpdateResult();
+
+		break;
+
+	case MODE_VICTORY:      // クリア画面の更新
+		UpdateVictory();
 		break;
 	}
 
@@ -481,6 +487,25 @@ void Draw(void)
 		SetLightEnable(TRUE);
 
 		// Z比較あり
+		SetDepthEnable(TRUE);
+		break;
+
+	case MODE_VICTORY:      // クリア画面の描画
+		SetViewPort(TYPE_FULL_SCREEN);
+
+		// 2Dの物を描画する処理
+		// Z比較なし
+		SetDepthEnable(FALSE);
+
+		// ライティングを無効
+		SetLightEnable(FALSE);
+
+		DrawVictory();
+
+		// ライティングを有効に
+		SetLightEnable(TRUE);
+
+		// Z比較有り
 		SetDepthEnable(TRUE);
 		break;
 	}
@@ -561,6 +586,8 @@ void SetMode(int mode)
 	// ゲーム画面の終了処理
 	UninitGame1();
 
+	UninitGame2();
+
 	// リザルト画面の終了処理
 	UninitResult();
 
@@ -610,6 +637,11 @@ void SetMode(int mode)
 	case MODE_RESULT:
 		// リザルト画面の初期化
 		InitResult();
+		break;
+
+	case MODE_VICTORY:
+		// クリア画面の初期化
+		InitVictory();
 		break;
 
 		// ゲーム終了時の処理

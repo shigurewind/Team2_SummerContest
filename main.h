@@ -84,6 +84,7 @@ enum MODE
 	MODE_STAGE2,				// ゲーム画面
 	MODE_STAGE3,				// ゲーム画面
 
+	MODE_VICTORY,			// 勝利画面
 	MODE_RESULT,			// リザルト画面
 	MODE_MAX
 };
