@@ -310,7 +310,12 @@ void UpdatePlayer(void)
 		{
 			g_Player.HP = g_Player.HP - 50;
 		}
+		if (g_Player.GetPosition().y < -400.0f)
+		{
+			g_Player.HP -= 9999;   
 
+
+		}
 
 		if (g_Player.HP <= 0 && g_Player.alive)
 		{
