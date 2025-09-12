@@ -610,6 +610,9 @@ void SetMode(int mode)
 		InitGame();
 		LoadMap(0);
 
+		isFirstPersonMode = true;
+		ShowCursor(FALSE);
+
 		break;
 
 	case MODE_STAGE2:
@@ -621,6 +624,9 @@ void SetMode(int mode)
 		InitGame1();
 		LoadMap(1);
 
+		isFirstPersonMode = true;
+		ShowCursor(FALSE);
+
 		break;
 
 	case MODE_STAGE3:
@@ -630,6 +636,9 @@ void SetMode(int mode)
 
 		InitGame2();
 		LoadMap(2);
+
+		isFirstPersonMode = true;
+		ShowCursor(FALSE);
 
 
 		break;
