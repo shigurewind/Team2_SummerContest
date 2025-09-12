@@ -114,6 +114,8 @@ void ITEM_OBJ::Update()
 				Inventory* inv = GetPlayerInventory();
 				switch (item.GetCategory()) {
 				case ItemCategory::WeaponPart_Ammo:
+				case ItemCategory::WeaponPart_FireType:
+				case ItemCategory::Consumable:
 				{
 					PLAYER* player = GetPlayer();
 					int* currentAmmo = (player->currentBullet == BULLET_NORMAL) ? &player->ammoNormal : &player->ammoFire;
@@ -126,11 +128,10 @@ void ITEM_OBJ::Update()
 						use = false;
 					}
 				}
-				break;
-				case ItemCategory::WeaponPart_FireType:
-				case ItemCategory::Consumable:
+
 					if (inv->AddItem(item)) use = false;
 					break;
+
 				case ItemCategory::InstantEffect:
 					ApplyInstantItemEffect(item.GetID());
 					use = false;
@@ -212,23 +213,19 @@ void ITEM_OBJ::Update()
 	//	switch (item.GetCategory())
 	//	{
 	//	case ItemCategory::WeaponPart_Ammo:
-	//		// 弾数補充
-	//	{
-	//		Weapon* revolver = GetRevolver();
-	//		Weapon* shotgun = GetShotgun();
-	//		Weapon* rocket = GetRocket_Launcher();
-
-	//		//revolver->clipSize += 10;
-	//	}
 	//	case ItemCategory::WeaponPart_FireType:
 	//	case ItemCategory::Consumable:
-	//		//インベントリーに入れる
-	//		//if (playerInventory->AddItem(item)) {
+	//		// 弾数補充
+	//		PLAYER* player = GetPlayer();
+	//		int* currentAmmo = (player->currentBullet == BULLET_NORMAL) ? &player->ammoNormal : &player->ammoFire;
+	//		int maxAmmo = (player->currentBullet == BULLET_NORMAL) ? player->maxAmmoNormal : player->maxAmmoFire;
 
-	//		//	PLAYER* player = GetPlayer();
-	//		//	player->HP += 5;
-	//		//	use = false;  // アイテムを消す
-	//		//}
+	//		if (*currentAmmo < maxAmmo) {
+	//			(*currentAmmo) += 5;
+	//			if (*currentAmmo > maxAmmo)
+	//				*currentAmmo = maxAmmo;
+	//			use = false;
+	//		}
 	//		break;
 	//	case ItemCategory::InstantEffect:
 	//		//相応の効果
