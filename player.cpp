@@ -232,10 +232,7 @@ void PLAYER::Init()
 			inv->AddItem(CreateItemFromID(PART_REVOLVER));                 // 追加
 		}
 
-		// ・ロケットランチャーを最初から所持
-		if (!inv->Has(ItemCategory::WeaponPart_FireType, PART_ROCKET)) {
-			inv->AddItem(CreateItemFromID(PART_ROCKET));
-		}
+		
 
 		//・ノーマル弾
 		if (!inv->Has(ItemCategory::WeaponPart_Ammo, PART_NORMAL_AMMO))    // 所持確認
@@ -304,12 +301,16 @@ void UpdatePlayer(void)
 
 
 
+#ifdef _DEBUG
 
 		//HP減るtest
 		if (GetKeyboardTrigger(DIK_H))
 		{
 			g_Player.HP = g_Player.HP - 50;
 		}
+
+#endif
+		
 
 
 		if (g_Player.HP <= 0 && g_Player.alive)
