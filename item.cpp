@@ -117,8 +117,22 @@ void ITEM_OBJ::Update()
 				case ItemCategory::WeaponPart_Ammo:
 				case ItemCategory::WeaponPart_FireType:
 				case ItemCategory::Consumable:
+				{
+					PLAYER* player = GetPlayer();
+					int* currentAmmo = (player->currentBullet == BULLET_NORMAL) ? &player->ammoNormal : &player->ammoFire;
+					int maxAmmo = (player->currentBullet == BULLET_NORMAL) ? player->maxAmmoNormal : player->maxAmmoFire;
+
+					if (*currentAmmo < maxAmmo) {
+						(*currentAmmo) += 5;
+						if (*currentAmmo > maxAmmo)
+							*currentAmmo = maxAmmo;
+						use = false;
+					}
+				}
+
 					if (inv->AddItem(item)) use = false;
 					break;
+
 				case ItemCategory::InstantEffect:
 					ApplyInstantItemEffect(item.GetID());
 					use = false;
@@ -190,34 +204,39 @@ void ITEM_OBJ::Update()
 		}
 	}
 
-	// 当たり判定
-	if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
+	//// 当たり判定
+	//if (CollisionBC(pos, GetPlayer()->GetPosition(), ITEM_SIZE, GetPlayer()->size)) {
 
-		Inventory* playerInventory = GetPlayerInventory();
+	//	Inventory* playerInventory = GetPlayerInventory();
 
-		PlaySound(SOUND_LABEL_SE_pickItem);
+	//	PlaySound(SOUND_LABEL_SE_pickItem);
 
-		switch (item.GetCategory())
-		{
-		case ItemCategory::WeaponPart_Ammo:
-		case ItemCategory::WeaponPart_FireType:
-		case ItemCategory::Consumable:
-			//インベントリーに入れる
-			if (playerInventory->AddItem(item)) {
+	//	switch (item.GetCategory())
+	//	{
+	//	case ItemCategory::WeaponPart_Ammo:
+	//	case ItemCategory::WeaponPart_FireType:
+	//	case ItemCategory::Consumable:
+	//		// 弾数補充
+	//		PLAYER* player = GetPlayer();
+	//		int* currentAmmo = (player->currentBullet == BULLET_NORMAL) ? &player->ammoNormal : &player->ammoFire;
+	//		int maxAmmo = (player->currentBullet == BULLET_NORMAL) ? player->maxAmmoNormal : player->maxAmmoFire;
 
-
-				use = false;  // アイテムを消す
-			}
-			break;
-		case ItemCategory::InstantEffect:
-			//相応の効果
-			ApplyInstantItemEffect(item.GetID());
-			use = false;
-			break;
-		default:
-			break;
-		}
-	}
+	//		if (*currentAmmo < maxAmmo) {
+	//			(*currentAmmo) += 5;
+	//			if (*currentAmmo > maxAmmo)
+	//				*currentAmmo = maxAmmo;
+	//			use = false;
+	//		}
+	//		break;
+	//	case ItemCategory::InstantEffect:
+	//		//相応の効果
+	//		ApplyInstantItemEffect(item.GetID());
+	//		use = false;
+	//		break;
+	//	default:
+	//		break;
+	//	}
+	//}
 
 	if (isGround) {
 		float sp2 = velocity.x * velocity.x + velocity.z * velocity.z;
