@@ -893,6 +893,22 @@ void GhostEnemy::Update()
 			XMStoreFloat3(&hitNormal, v);
 			SpawnBlood(closestPoint, 8, hitNormal);
 
+
+			//血痕エフェクト
+			XMFLOAT3 bulletDirection = {
+		  b->vel.x,
+		  b->vel.y,
+		  b->vel.z
+			};// 弾のベクトルを使用
+
+			XMVECTOR bulletDir = XMVector3Normalize(XMLoadFloat3(&bulletDirection));
+			XMFLOAT3 normalizedBulletDir;
+			XMStoreFloat3(&normalizedBulletDir, bulletDir);
+
+			EffectManager::CreateBloodSplatter(pos, normalizedBulletDir, normalizedBulletDir, 1.5f);
+			EffectManager::ApplyEffects();
+
+
 			if (HP <= 0)
 			{
 				use = false;
@@ -1139,6 +1155,23 @@ void BugEnemy::Update()
 		{
 			b->use = false;
 			HP -= 1;
+
+
+			//血痕エフェクト
+			XMFLOAT3 bulletDirection = {
+		  b->vel.x,
+		  b->vel.y,
+		  b->vel.z
+			};// 弾のベクトルを使用
+
+			XMVECTOR bulletDir = XMVector3Normalize(XMLoadFloat3(&bulletDirection));
+			XMFLOAT3 normalizedBulletDir;
+			XMStoreFloat3(&normalizedBulletDir, bulletDir);
+
+			EffectManager::CreateBloodSplatter(pos, normalizedBulletDir, normalizedBulletDir, 1.5f);
+			EffectManager::ApplyEffects();
+
+
 			if (HP <= 0)
 			{
 				use = false;
