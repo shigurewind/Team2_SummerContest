@@ -195,7 +195,7 @@ void ITEM_OBJ::Update()
 	}
 
 	// Bug item 爆発タイマー
-	if (item.GetID() == ITEM_BUG) {
+	if (item.GetID() == ITEM_GRENADE) {
 		bugTimer += 1.0f / 60.0f;
 		if (bugTimer >= 5.0f) {
 			ExplodeBug();
@@ -469,7 +469,7 @@ int SpawnItem(XMFLOAT3 pos, int itemID)
 
 			g_aItem[i].SnapToGroundIfPossible();
 
-			if (itemID == ITEM_BUG)
+			if (itemID == ITEM_GRENADE)
 				g_aItem[i].bugTimer = 0.0f;
 
 
@@ -681,8 +681,6 @@ Item CreateItemFromID(int id) {
 		return Item(id, "Part: Rocket", 1, ItemCategory::WeaponPart_FireType);
 
 
-	case ITEM_BUG:
-		return Item(id, "Bug", 10, ItemCategory::Consumable);
 
 	case ITEM_GRENADE:
 		return Item(id, "Grenade", 1, ItemCategory::Consumable);

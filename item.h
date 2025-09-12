@@ -118,8 +118,6 @@ enum ItemID
 	ITEM_SAN,
 	ITEM_BULLET,
 
-	ITEM_BUG,
-
 	ITEM_GRENADE,
 
 	//‘Å‚¿•û‚ðŒˆ‚ß‚éƒp[ƒc

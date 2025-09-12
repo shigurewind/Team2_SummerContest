@@ -696,7 +696,7 @@ void DropItems(const XMFLOAT3& pos, ENEMY_TYPE enemyType)
 		break;
 
 	case BUG:
-		dropItemAtOffset(ITEM_BUG);
+		dropItemAtOffset(ITEM_GRENADE);
 		break;
 
 	default:
