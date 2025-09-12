@@ -12,6 +12,9 @@ ItemDatabase::ItemDatabase() {
 	//texturePaths[ITEM_BUG] = "data/2Dpicture/item/bug_item.png";
 	texturePaths[ITEM_SPEED_UP] = "data/2Dpicture/item/.png";
 	texturePaths[ITEM_GRENADE] = "data/2Dpicture/item/bug_item.png";
+	texturePaths[PART_SHUTGUN] = "data/2Dpicture/item/shotgun.png";
+	texturePaths[PART_ROCKET] = "data/2Dpicture/item/rocket_launcher.png";
+
 }
 
 

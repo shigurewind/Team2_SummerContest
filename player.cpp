@@ -233,12 +233,12 @@ void PLAYER::Init()
 		}
 
 
-#ifdef _DEBUG
-		// ・ロケットランチャーを最初から所持
-		if (!inv->Has(ItemCategory::WeaponPart_FireType, PART_ROCKET)) {
-			inv->AddItem(CreateItemFromID(PART_ROCKET));
-		}
-#endif // DEBUG
+//#ifdef _DEBUG
+//		// ・ロケットランチャーを最初から所持
+//		if (!inv->Has(ItemCategory::WeaponPart_FireType, PART_ROCKET)) {
+//			inv->AddItem(CreateItemFromID(PART_ROCKET));
+//		}
+//#endif // DEBUG
 
 		
 
@@ -979,14 +979,20 @@ bool CheckPlayerGroundSimple(XMFLOAT3 pos, float offsetY, float& groundY)
 
 void SavePlayerToFile() {
 	PlayerSaveData data;
+
 	data.weapon = static_cast<int>(g_Player.currentWeapon);
 	data.bullet = static_cast<int>(g_Player.currentBullet);
 	data.ammoNormal = g_Player.ammoNormal;
 	data.ammoFire = g_Player.ammoFire;
+	data.pickedUpPartsCount = static_cast<int>(g_Player.pickedUpWeaponParts.size());
 
 	std::ofstream out(SAVE_FILE_PATH, std::ios::binary);
 	if (out) {
 		out.write(reinterpret_cast<const char*>(&data), sizeof(PlayerSaveData));
+
+		for (int partId : g_Player.pickedUpWeaponParts) {
+			out.write(reinterpret_cast<const char*>(&partId), sizeof(partId));
+		}
 	}
 }
 

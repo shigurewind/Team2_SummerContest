@@ -10,6 +10,7 @@
 #include "object.h"
 #include "inventory.h"
 #include <fstream>
+#include <set>
 
 //*****************************************************************************
 // マクロ定義
@@ -99,6 +100,10 @@ public:
 	//インベントリ
 	Inventory inventory;
 	int currentConsumableIndex;//現在選択している消費アイテムのインデックス
+
+	// 今取得した武器パーツの種類のセット
+	std::set<int> pickedUpWeaponParts;
+
 };
 
 
@@ -108,6 +113,7 @@ struct PlayerSaveData {
 	int bullet;       
 	int ammoNormal;
 	int ammoFire;
+	int pickedUpPartsCount;
 };
 
 //*****************************************************************************

@@ -128,6 +128,13 @@ void ITEM_OBJ::Update()
 							*currentAmmo = maxAmmo;
 						use = false;
 					}
+
+					if (item.GetCategory() == ItemCategory::WeaponPart_FireType) {
+						// 拾ったら武器をアンロックする
+						GetPlayer()->pickedUpWeaponParts.insert(item.GetID());
+						SavePlayerToFile(); // 保存
+					}
+
 				}
 
 					if (inv->AddItem(item)) use = false;
@@ -738,6 +745,12 @@ void LoadItemData(const std::string& filename)
 	for (const auto& itemObj : j)
 	{
 		int id = itemObj["id"];
+
+		if ((id == PART_SHUTGUN || id == PART_ROCKET) &&
+			GetPlayer()->pickedUpWeaponParts.count(id) > 0) {
+			continue; // 取得済みならスキップ
+		}
+
 		XMFLOAT3 pos = XMFLOAT3(itemObj["pos"][0], itemObj["pos"][1], itemObj["pos"][2]);
 		int index = SpawnItem(pos, id);
 		if (index >= 0)
