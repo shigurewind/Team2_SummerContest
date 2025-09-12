@@ -9,6 +9,36 @@
 #include "fade.h"
 
 
+
+static void ApplyEnvironmentFromConfig(const MapConfig* config)
+{
+	LIGHT* L = GetLightData(0);
+	if (!L) return;
+
+	ZeroMemory(L, sizeof(LIGHT));
+	L->Type = LIGHT_TYPE_DIRECTIONAL;
+	L->Enable = TRUE;
+
+	XMFLOAT3 dir = config->lightDirection;
+	XMVECTOR dv = XMLoadFloat3(&dir);
+	if (XMVector3Less(XMVector3Length(dv), XMVectorReplicate(1e-6f))) {
+		dv = XMVectorSet(0.0f, -1.0f, 0.0f, 0.0f); 
+	}
+	dv = XMVector3Normalize(dv);
+	XMStoreFloat3(&L->Direction, dv);
+
+	L->Diffuse = XMFLOAT4(1, 1, 1, 1);
+	L->Ambient = config->ambientColor;
+
+	L->Attenuation = 1000.0f;
+	L->SpotInnerCos = 0.95f;
+	L->SpotOuterCos = 0.85f;
+	L->SpotExponent = 1.0f;
+
+	SetLightData(0, L); 
+	SetLightEnable(TRUE); 
+}
+
 static int g_CurrentMapID = -1;
 static MapConfig* g_CurrentMapConfig = nullptr;
 
@@ -158,6 +188,14 @@ HRESULT LoadMap(int mapID) {
 	SetPlayerSpawnPosition(config->playerSpawnPos);
 
 	// TODO: ŠÂ‹«‚ÆBGM‚ğİ’è
+	ApplyEnvironmentFromConfig(config);
+
+	SetGlobalFogXZ_Y(
+		 320.0f, 750.0f,
+		 90.0f, 150.0f,
+		XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f),  
+		TRUE
+	);
 
 	// ¡‚Ìƒ}ƒbƒv
 	g_CurrentMapID = mapID;

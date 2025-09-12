@@ -19,6 +19,7 @@
 #include <vector>
 #include "enemy.h"
 #include "item.h"
+#include "overlay2D.h"
 
 
 //=============================================================================
@@ -375,6 +376,7 @@ void UpdateBullet(void)
 
 
             if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+                SpawnRocketExplosion(hitPos, 160.0f);
                 ApplyExplosionAt(hitPos);
 
             }
