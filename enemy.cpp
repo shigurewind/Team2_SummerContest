@@ -27,6 +27,7 @@ using json = nlohmann::json;
 
 #include <algorithm> 
 #include <cmath> 
+#include "overlay2D.h"
 
 //*****************************************************************************
 //
@@ -282,6 +283,8 @@ void SpiderEnemy::Update() {
 		if (CheckSphereAABBCollision(b->pos, b->size, pos, enemyHalfSize))
 		{
 			if (b->firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+				SpawnRocketExplosion(b->pos, 50.0f);
+
 				ApplyExplosionAt(b->pos);
 			}
 
@@ -875,6 +878,8 @@ void GhostEnemy::Update()
 		if (CheckSphereAABBCollision(b->pos, b->size, pos, enemyHalfSize))
 		{
 			if (b->firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+				SpawnRocketExplosion(b->pos, 50.0f);
+
 				ApplyExplosionAt(b->pos);
 			}
 
@@ -1137,6 +1142,11 @@ void BugEnemy::Update()
 
 		if (CheckSphereAABBCollision(b->pos, b->size, pos, enemyHalfSize))
 		{
+
+			if (b->firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
+				SpawnRocketExplosion(b->pos, 50.0f);
+				ApplyExplosionAt(b->pos);  
+			}
 			b->use = false;
 			HP -= 1;
 			if (HP <= 0)

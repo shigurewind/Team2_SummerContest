@@ -173,16 +173,17 @@ void DrawOverlay2D()
         SetViewMatrix(&viewM);
         SetProjectionMatrix(&projM);
 
-        SetDepthEnable(TRUE);
-        SetFogEnable(TRUE);
+        BOOL fogWas = GetFogEnable();
+        SetFogEnable(FALSE);
+        SetLightEnable(FALSE);
+        SetDepthEnable(FALSE);
 
         UINT stride = sizeof(VERTEX_3D);
         UINT offset = 0;
         GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBufferOverlay, &stride, &offset);
         GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-        SetLightEnable(FALSE);
-        SetBlendState(BLEND_MODE_ADD);
+        SetBlendState(BLEND_MODE_ALPHABLEND);
         GetDeviceContext()->PSSetShaderResources(0, 1, &g_TexExplosion);
 
         for (auto& e : g_Explosions) if (e.use) {
@@ -191,10 +192,16 @@ void DrawOverlay2D()
 
             XMMATRIX world = MakeBillboardWorld_EnemyStyle(e.pos, e.size);
             SetWorldMatrix(&world);
-
+            MATERIAL m = {};
+            m.Diffuse = XMFLOAT4(1, 1, 1, 1);
+            SetMaterial(m);
             GetDeviceContext()->Draw(4, 0);
         }
+        SetDepthEnable(TRUE);
+        SetFogEnable(fogWas);
+        SetLightEnable(TRUE);
         SetBlendState(BLEND_MODE_ALPHABLEND);
+    
     }
 
     BOOL fogWas = GetFogEnable();
@@ -309,10 +316,10 @@ static inline void WriteQuadVB_EnemyLayout(ID3D11Buffer* vb, float u, float v, f
         VERTEX_3D* vt = (VERTEX_3D*)msr.pData;
 
         float w = 1.0f, h = 1.0f;
-        vt[0].Position = XMFLOAT3(-w * 0.5f, h, 0);
-        vt[1].Position = XMFLOAT3(w * 0.5f, h, 0);
-        vt[2].Position = XMFLOAT3(-w * 0.5f, 0, 0);
-        vt[3].Position = XMFLOAT3(w * 0.5f, 0, 0);
+        vt[0].Position = XMFLOAT3(-w * 0.5f, h * 0.5f, 0);
+        vt[1].Position = XMFLOAT3(w * 0.5f, h * 0.5f, 0);
+        vt[2].Position = XMFLOAT3(-w * 0.5f, -h * 0.5f, 0);
+        vt[3].Position = XMFLOAT3(w * 0.5f, -h * 0.5f, 0);
 
         for (int i = 0; i < 4; ++i) {
             vt[i].Normal = XMFLOAT3(0, 0, -1);

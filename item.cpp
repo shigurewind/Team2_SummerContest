@@ -15,6 +15,7 @@
 
 #include "Octree.h"
 #include "sound.h"
+#include "overlay2D.h"
 
 using json = nlohmann::json;
 
@@ -313,6 +314,8 @@ void ITEM_OBJ::SnapToGroundIfPossible()
 //bug enemy@”š”­ŠÖ”
 void ITEM_OBJ::ExplodeBug()
 {
+	XMFLOAT3 center = pos;
+	SpawnRocketExplosion(center, 200.0f);
 	PLAYER* player = GetPlayer();
 	float distance = sqrtf(
 		(player->GetPosition().x - pos.x) * (player->GetPosition().x - pos.x) +
