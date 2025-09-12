@@ -5,6 +5,7 @@
 #include "collision.h"
 #include "player.h"
 #include "FBXmodel.h"
+#include "bullet.h"
 
 #include <cstdlib> // for rand()
 #include <ctime>   // for time()
@@ -664,6 +665,9 @@ Item CreateItemFromID(int id) {
 	case ITEM_BUG:
 		return Item(id, "Bug", 10, ItemCategory::Consumable);
 
+	case ITEM_GRENADE:
+		return Item(id, "Grenade", 1, ItemCategory::Consumable);
+
 	default:
 		return Item(id, "Unknown", 1, ItemCategory::Consumable);
 	}
@@ -782,6 +786,22 @@ void ApplyConsumableItemEffect(int itemID) {
 		// Speed Up
 		player->speed += 1.0f;  // TODO：数値調整(永久？)
 		break;
+
+	case ITEM_GRENADE:
+	{
+		// 弾データ：ノーマル弾をベースに少し大きく・投擲速度を設定（お好みで調整可）
+		BulletData data = bulletData_Normal;
+		data.size = bulletData_Normal.size * 2.00f;
+		data.speed = 10.0f;
+		data.lifetime = (std::max)(data.lifetime, 2.0f);
+
+		// ★ロケランと同じ銃口から発射★
+		XMFLOAT3 pos = GetGunMuzzlePosition();     // camera.cpp 実装あり
+		XMFLOAT3 rot = GetGunMuzzleRotation();     // カメラの現在の回転を使用
+
+		SetBulletWithData(data, pos, rot, WEAPON_ROCKET_LAUNCHER);
+		break;
+	}
 
 	default:
 		break;

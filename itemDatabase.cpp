@@ -9,7 +9,7 @@ ItemDatabase::ItemDatabase() {
 	texturePaths[ITEM_BULLET] = "data/2Dpicture/item/bullet.png";
 	texturePaths[ITEM_BUG] = "data/2Dpicture/item/bug_item.png";
 	texturePaths[ITEM_SPEED_UP] = "data/2Dpicture/item/.png";
-
+	texturePaths[ITEM_GRENADE] = "data/2Dpicture/item/grenade.png";
 }
 
 

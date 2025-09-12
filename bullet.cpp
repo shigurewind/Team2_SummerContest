@@ -24,10 +24,8 @@
 //=============================================================================
 // 弾の基本データ構造（属性など） //追加箇所
 //=============================================================================
-//                                  種類　　　　速さ  DMG  scl  lifetime    　　モデル　　　　　　　　RGB
-BulletData bulletData_Normal = { BULLET_NORMAL,  40.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
-BulletData bulletData_Fire = { BULLET_FIRE,     15.0f, 20, 0.6f, 200.0f, "data/MODEL/FireBullet.obj", /*XMFLOAT3(1.0f, 0.0f, 0.0f)*/ };
-
+BulletData bulletData_Normal = { BULLET_NORMAL,  40.0f, 10, 0.2f, 200.0f, "data/MODEL/NormalBullet.obj" };
+BulletData bulletData_Fire = { BULLET_FIRE,     15.0f, 20, 0.6f, 200.0f, "data/MODEL/FireBullet.obj" };
 
 // 武器インスタンス 
 Weapon g_Revolver;
@@ -378,6 +376,7 @@ void UpdateBullet(void)
 
             if (g_Bullet[i].firedByWeapon == WEAPON_ROCKET_LAUNCHER) {
                 ApplyExplosionAt(hitPos);
+
             }
             g_Bullet[i].use = FALSE;
 
@@ -453,3 +452,6 @@ Weapon* GetRocket_Launcher()
 {
     return &g_RocketLauncher;
 }
+//=================================================================
+//
+//==============================================================

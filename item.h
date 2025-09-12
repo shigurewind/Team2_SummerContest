@@ -125,6 +125,8 @@ enum ItemID
 
 	ITEM_BUG,
 
+	ITEM_GRENADE,
+
 	ITEM_ID_COUNT//ItemIDÇÃêî
 };
 
