@@ -70,6 +70,8 @@ float bugEffectTimer = 0.0f;
 
 static float g_UIRecoilY = 0.0f;       // 現在のリコイル量
 static float g_UIRecoilRecover = 2.0f; // リコイル回復速度
+static int g_HandFrame = 0;
+static float g_HandAnimTimer = 0.0f;
 
 
 //=============================================================================
@@ -169,6 +171,11 @@ void UpdateGameUI(void)
 	if (g_UIRecoilY < 0.0f) {
 		g_UIRecoilY += g_UIRecoilRecover;
 		if (g_UIRecoilY > 0.0f) g_UIRecoilY = 0.0f;
+	}
+	g_HandAnimTimer += 1.0f / 60.0f; // 60fps
+	if (g_HandFrame == 1 && g_HandAnimTimer > 0.1f) {
+		g_HandFrame = 0;       // idle frame に戻る
+		g_HandAnimTimer = 0.0f;
 	}
 
 
@@ -302,7 +309,13 @@ void DrawShootingHand()
 
 	float drawX = SCREEN_CENTER_X + 240;
 	float drawY = SCREEN_HEIGHT - 385 + g_UIRecoilY + GetHandOffsetY();
-	SetSprite(g_VertexBuffer, drawX, drawY, 800, 800, 0.0f, 0.0f, 1.0f, 1.0f);
+	float u = (g_HandFrame == 0) ? 0.0f : 0.5f; // 2 frame ngang
+	float v = 0.0f;
+	float uw = 0.5f;
+	float vh = 1.0f;
+
+	//SetSprite(g_VertexBuffer, drawX, drawY, 800, 800, 0.0f, 0.0f, 1.0f, 1.0f);
+	SetSprite(g_VertexBuffer, drawX, drawY, 800, 800, u, v, uw, vh);
 
 	// ポリゴン描画
 	GetDeviceContext()->Draw(4, 0);
@@ -472,6 +485,9 @@ void HideBugEffect()
 void AddUIRecoil()
 {
 	g_UIRecoilY = -15.0f; // 上方向に15px移動
+
+	g_HandFrame = 1;
+	g_HandAnimTimer = 0.0f;
 }
 
 
